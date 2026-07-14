@@ -85,6 +85,16 @@ export interface SessionStore {
   save(session: Session): void;
 }
 
+// --- Conocimiento ---
+
+/**
+ * Fuente de la base de conocimiento (grounding del LLM). Hoy archivos markdown,
+ * mañana un CMS o una API. Async a propósito: una fuente remota hace I/O.
+ */
+export interface KnowledgeSource {
+  load(): Promise<string>;
+}
+
 // --- Dependencias inyectadas en el núcleo ---
 
 /** Puertos que el motor de conversación recibe inyectados. Crece con cada borde. */
@@ -93,4 +103,5 @@ export interface Dependencies {
   events: EventSink;
   llm: LlmPort;
   sessions: SessionStore;
+  knowledge: KnowledgeSource;
 }

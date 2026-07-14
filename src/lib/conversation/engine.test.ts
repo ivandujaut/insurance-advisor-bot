@@ -32,6 +32,7 @@ test("una consulta abierta cae al fallback cuando el LLM no está configurado", 
       },
     },
     sessions: createInMemorySessionStore(),
+    knowledge: { load: async () => "" },
   };
   // El primer mensaje siempre muestra el menú; recién el segundo (texto libre
   // que no matchea ningún menú) se delega al asistente.
@@ -70,6 +71,7 @@ test("processMessage acepta dependencias inyectadas (sin tocar disco)", async ()
     events: { log: () => {} },
     llm: { generate: async () => "" },
     sessions: createInMemorySessionStore(),
+    knowledge: { load: async () => "" },
   };
   for (const text of ["hola", "1", "Peugeot 208 2022", "5000", "0km", "3"]) {
     await processMessage({ from: "e-inject", text, name: "Eze" }, deps);
