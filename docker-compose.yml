@@ -1,22 +1,49 @@
-# Compose mínimo: un solo servicio (el bot). Preparado para crecer: cuando los
-# puertos de persistencia/sesión tengan adapters reales, se suman aquí servicios
-# `db` (postgres) y `redis`, y un reverse-proxy (caddy/traefik) para el HTTPS
-# del webhook. Requiere un archivo .env (cp .env.example .env).
+# Stack completo: el bot + Postgres (leads/eventos) + Redis (sesiones).
+# El bot arranca en modo postgres/redis vía las variables de entorno.
+# Para WhatsApp real: cp .env.example .env y completar META_* + ANTHROPIC_API_KEY.
 
 services:
   bot:
     build: .
     image: lacaja-whatsapp-bot
-    # Opcional: sin .env arranca con los defaults (provider cli). Para WhatsApp
-    # real: cp .env.example .env y completar META_* + ANTHROPIC_API_KEY.
     env_file:
       - path: .env
         required: false
     environment:
       PORT: "3000"
+      PERSISTENCE: postgres
+      SESSION_STORE: redis
+      DATABASE_URL: postgres://postgres:postgres@db:5432/lacaja
+      REDIS_URL: redis://redis:6379
     ports:
       - "3000:3000"
-    volumes:
-      # Persiste leads y eventos entre reinicios; el host puede leerlos (pnpm funnel).
-      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lacaja
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lacaja"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
