@@ -70,10 +70,47 @@ En **WhatsApp > Configuration > Webhook**:
 
 Mandá un WhatsApp al número de prueba. El bot debería responder con el menú.
 
+### 7. Token permanente (System User)
+
+El token de **API Setup vence a las 24 hs**, así que para no renovarlo a mano
+conviene generar uno **sin expiración** con un *System User* del Business. Un
+System User es una identidad no-humana (un "usuario de servicio") a la que le
+asignás la app y el WhatsApp Business Account (WABA), y en su nombre emitís el
+token que usa el bot.
+
+Requisito previo: la app tiene que pertenecer a un **Meta Business** (Business
+Manager). Si la creaste suelta, asociala en **Business Settings > Accounts >
+Apps > Add > Connect an app**.
+
+1. Entrá a [business.facebook.com/settings](https://business.facebook.com/settings)
+   (Business Settings).
+2. **Users > System users > Add**. Nombralo (ej: `lacaja-bot`) y asignale el rol
+   **Admin** (o **Employee**; alcanza para mensajería).
+3. Con el System User seleccionado, **Add assets**:
+   - **Apps** > tu app > activá **Full control** (Manage app).
+   - **WhatsApp accounts** > tu WABA > activá **Full control**.
+4. **Generate new token**:
+   - **App:** tu app.
+   - **Token expiration:** **Never**.
+   - **Permissions:** marcá `whatsapp_business_messaging` (enviar/recibir) y
+     `whatsapp_business_management` (gestionar números y plantillas).
+5. Copialo apenas aparece: **se muestra una sola vez**. Guardalo en `.env`:
+
+   ```
+   META_ACCESS_TOKEN=<token permanente del System User>
+   ```
+
+6. Reiniciá el bot para que lo tome. El `META_PHONE_NUMBER_ID` y el resto del
+   `.env` no cambian.
+
+Chequeo rápido de que quedó bien (no vence): en el
+[Access Token Debugger](https://developers.facebook.com/tools/debug/accesstoken/)
+pegá el token; **Expires** debe decir **Never**.
+
 ## Cosas a tener en cuenta
 
-- **Token temporal:** el de API Setup vence a las 24 hs. Para uso real, generá un
-  **token permanente** con un *System User* (Business Settings).
+- **Token temporal vs permanente:** el de API Setup vence a las 24 hs (bien para
+  probar). Para algo estable, usá el token del System User del paso 7.
 - **Número de prueba:** hasta que la app esté verificada, solo podés escribirle a
   destinatarios que agregues a mano en API Setup.
 - **Ventana de 24 hs:** se puede responder texto libre dentro de las 24 hs del
