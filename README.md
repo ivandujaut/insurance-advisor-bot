@@ -23,6 +23,10 @@ src/
     │   ├── flows.ts              #   máquina de estados de menús
     │   ├── llm.ts                #   respuesta con Claude + grounding
     │   └── session.ts            #   sesiones en memoria
+    ├── analytics/
+    │   └── events.ts             #   log de eventos del funnel (data/events.jsonl)
+    ├── leads/
+    │   └── store.ts              #   persistencia de leads (data/leads.jsonl)
     └── knowledge/
         └── productos/*.md        #   base de conocimiento (auto, general, ...)
 ```
@@ -41,6 +45,14 @@ pnpm chat                 # probar el bot en la terminal (no requiere WhatsApp)
 
 Los flujos de menú funcionan sin API key. Para las respuestas abiertas del LLM
 hay que setear `ANTHROPIC_API_KEY`.
+
+Al completar una cotización, el lead se guarda en `data/leads.jsonl` y los pasos
+del recorrido quedan registrados en `data/events.jsonl`. Para ver las métricas
+del funnel (activación, drop-off por paso, mix de plan):
+
+```bash
+pnpm funnel
+```
 
 ## Conectar WhatsApp (Meta Cloud API)
 
