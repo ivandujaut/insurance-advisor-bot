@@ -214,7 +214,9 @@ métricas que instrumentaría:
 3. Integrar precios reales vía los cotizadores existentes.
 4. ~~Instrumentar las métricas de la sección 6.~~ **Hecho:** log de eventos del
    funnel y reporte `pnpm funnel` (activación, drop-off, mix de plan).
-5. Conectar la API oficial de Meta para pruebas en WhatsApp real.
+5. ~~Conectar la API oficial de Meta para pruebas en WhatsApp real.~~ **Hecho:**
+   el bot corre en WhatsApp real (webhook verificado y firmado). Paso a paso en
+   `docs/conectar-meta.md`.
 
 ## 9. Qué demuestra este ejercicio
 
