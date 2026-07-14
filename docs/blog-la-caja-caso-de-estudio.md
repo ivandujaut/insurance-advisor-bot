@@ -1,4 +1,4 @@
-# La Caja ya tenía un bot de WhatsApp. Me puse a diseñar el que le falta.
+# Letizia atiende a los clientes de La Caja. ¿Y a los que todavía no lo son?
 
 *Un caso de estudio sobre decisiones de producto: cómo leer el recorrido de un
 cliente, encontrar un hueco y decidir dónde jugar. Lectura: ~8 min.*
@@ -44,10 +44,9 @@ Los dos extremos están cubiertos. El medio, no. La etapa de **venta asesorada**
 ese momento en que alguien todavía no sabe si le conviene Terceros Completo o
 Todo Riesgo y necesita que le expliquen, no tiene un dueño conversacional.
 
-Y acá va la parte que me parece más interesante como decisión: La Caja ya
-demostró que WhatsApp le funciona. Invirtió en Letizia, ofrece telemedicina por
-WhatsApp. El canal está validado internamente. Solo que lo usan para la etapa
-equivocada del embudo.
+Y acá está lo más interesante: La Caja ya demostró que WhatsApp le funciona.
+Invirtió en Letizia, ofrece telemedicina por WhatsApp. El canal está validado
+internamente. Solo que lo usan para la etapa equivocada del embudo.
 
 **Mi apuesta:** no clonar a Letizia, sino ocupar el hueco de la pre-venta.
 Asesorar, comparar y cotizar dentro del chat.
@@ -59,17 +58,17 @@ tenga un criterio y un dato atrás, no una corazonada. Y trato de ser honesto
 con lo que resigno en cada caso, porque no hay decisión sin trade-off.
 
 **1. Posicionar el bot en venta asesorada, no en autogestión.**
-El criterio: no competir donde el incumbente ya es fuerte. Si Letizia resuelve
-bien la posventa, hacer otro bot igual es esfuerzo sin diferencial. La pre-venta
-ataca el momento de mayor intención de compra y menor acompañamiento. Lo que
-resigno: la venta asesorada exige más lógica de negocio (comparar, recomendar)
-que responder preguntas de autogestión.
+La regla es no competir donde el incumbente ya es fuerte. Si Letizia resuelve
+bien la posventa, hacer otro bot igual es esfuerzo sin diferencial. La pre-venta,
+en cambio, ataca el momento de mayor intención de compra y menor acompañamiento.
+El costo: asesorar exige más lógica de negocio (comparar, recomendar) que
+responder preguntas de autogestión.
 
 **2. WhatsApp como canal.**
-El criterio: encontrarme con el usuario donde ya está, y donde la empresa ya
-tiene tracción. El dato: La Caja ya usa WhatsApp con éxito. Lo que resigno:
-WhatsApp impone límites de formato y reglas de plataforma que condicionan el
-diseño.
+Encontrarme con el usuario donde ya está, y donde la empresa ya tiene tracción.
+La Caja usa WhatsApp con éxito, así que el canal no es una apuesta, es un hecho.
+El costo: WhatsApp impone límites de formato y reglas de plataforma que
+condicionan el diseño.
 
 **3. Un motor híbrido: menús más un modelo de lenguaje.**
 Esta es la que más me gusta. La cotización es un proceso estructurado y
@@ -210,5 +209,5 @@ me equivoco, que para eso lo publico), me encantaría charlarlo.
 
 ---
 
-*Este caso está documentado en detalle, decisión por decisión, en el repositorio
-del proyecto. Acá conté la versión corta.*
+*El proyecto, con el código y la base de conocimiento, vive en un repositorio
+aparte. Acá conté el razonamiento; ahí está la ejecución.*
