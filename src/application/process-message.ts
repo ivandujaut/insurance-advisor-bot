@@ -4,12 +4,16 @@
  * respuesta. No sabe nada del proveedor de mensajería ni de cómo se persisten
  * leads y eventos: depende de los puertos que recibe inyectados.
  */
-import type { Dependencies, IncomingMessage } from "./ports.js";
-import { answer } from "./assistant.js";
+
 import { handleFlow } from "../domain/conversation/flows.js";
 import { createSession, recordTurn, trimHistory } from "../domain/conversation/session.js";
+import { answer } from "./assistant.js";
+import type { Dependencies, IncomingMessage } from "./ports.js";
 
-export async function processMessage(incoming: IncomingMessage, deps: Dependencies): Promise<string> {
+export async function processMessage(
+  incoming: IncomingMessage,
+  deps: Dependencies,
+): Promise<string> {
   const session = deps.sessions.get(incoming.from) ?? createSession(incoming.from, incoming.name);
   if (incoming.name && !session.name) session.name = incoming.name;
   recordTurn(session, "user", incoming.text);

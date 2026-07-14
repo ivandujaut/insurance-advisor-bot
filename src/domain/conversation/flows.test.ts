@@ -23,7 +23,10 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
     leads: { save: (lead) => savedLeads.push(lead) },
     events: Object.assign(
       { logged },
-      { log: (type: EventType, userId: string, props?: Record<string, string>) => logged.push({ type, userId, props }) },
+      {
+        log: (type: EventType, userId: string, props?: Record<string, string>) =>
+          logged.push({ type, userId, props }),
+      },
     ),
     // handleFlow nunca llama al LLM (eso es responsabilidad del engine); stub.
     llm: { generate: async () => "" },

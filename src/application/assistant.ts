@@ -4,9 +4,10 @@
  * inyectado, y traduce las fallas a mensajes útiles para el usuario. No conoce
  * el proveedor de LLM.
  */
+
+import type { Session } from "../domain/conversation/session.js";
 import type { Dependencies } from "./ports.js";
 import { LlmNotConfiguredError } from "./ports.js";
-import type { Session } from "../domain/conversation/session.js";
 
 function systemPrompt(knowledge: string): string {
   return [
@@ -22,7 +23,11 @@ function systemPrompt(knowledge: string): string {
   ].join("\n");
 }
 
-export async function answer(session: Session, userText: string, deps: Dependencies): Promise<string> {
+export async function answer(
+  session: Session,
+  userText: string,
+  deps: Dependencies,
+): Promise<string> {
   const messages = session.history.map((t) => ({ role: t.role, content: t.content }));
   messages.push({ role: "user" as const, content: userText });
 

@@ -33,7 +33,9 @@ const events = readJsonl<AnalyticsEvent>(eventsFile);
 const leads = readJsonl<Lead>(leadsFile);
 
 if (events.length === 0) {
-  console.log("No hay eventos todavía. Generá conversaciones con `pnpm chat` y volvé a correr esto.");
+  console.log(
+    "No hay eventos todavía. Generá conversaciones con `pnpm chat` y volvé a correr esto.",
+  );
   process.exit(0);
 }
 
@@ -46,7 +48,9 @@ console.log("Etapa                     Usuarios   Tasa");
 console.log("------------------------  --------   ----");
 console.log(`Saludan                   ${String(started).padEnd(8)}   -`);
 console.log(`Arrancan a cotizar        ${String(quoting).padEnd(8)}   ${pct(quoting, started)}`);
-console.log(`Completan (lead)          ${String(leadUsers).padEnd(8)}   ${pct(leadUsers, quoting)}`);
+console.log(
+  `Completan (lead)          ${String(leadUsers).padEnd(8)}   ${pct(leadUsers, quoting)}`,
+);
 
 // Drop-off por paso de la cotización.
 const steps = ["vehiculo", "cp", "condicion"] as const;

@@ -12,7 +12,15 @@
 import type { Dependencies } from "../../application/ports.js";
 import { AUTO_PLANS, type Session } from "./session.js";
 
-const GREETINGS = ["hola", "buenas", "buenos dias", "buenas tardes", "buenas noches", "hi", "hello"];
+const GREETINGS = [
+  "hola",
+  "buenas",
+  "buenos dias",
+  "buenas tardes",
+  "buenas noches",
+  "hi",
+  "hello",
+];
 const MENU_KEYWORDS = ["menu", "menú", "inicio", "volver", "empezar", "start"];
 const ADVISOR_KEYWORDS = ["asesor", "humano", "agente", "persona"];
 

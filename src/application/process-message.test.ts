@@ -52,7 +52,10 @@ test("una consulta abierta cae al fallback cuando el LLM no está configurado", 
     },
   });
   await processMessage({ from: "u-llm", text: "hola", name: "Beto" }, deps);
-  const reply = await processMessage({ from: "u-llm", text: "¿qué es la franquicia?", name: "Beto" }, deps);
+  const reply = await processMessage(
+    { from: "u-llm", text: "¿qué es la franquicia?", name: "Beto" },
+    deps,
+  );
   assert.match(reply, /ANTHROPIC_API_KEY|clave del modelo/);
 });
 
