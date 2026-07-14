@@ -27,6 +27,8 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
     ),
     // handleFlow nunca llama al LLM (eso es responsabilidad del engine); stub.
     llm: { generate: async () => "" },
+    // handleFlow tampoco toca el store de sesiones (recibe la sesión directa); stub.
+    sessions: { get: () => undefined, save: () => {} },
   };
 }
 

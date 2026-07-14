@@ -9,13 +9,14 @@ import type { Dependencies } from "../application/ports.js";
 import type { IncomingMessage } from "../messaging/types.js";
 import { answer } from "./assistant.js";
 import { handleFlow } from "./flows.js";
-import { getSession, recordTurn, saveSession } from "./session.js";
+import { createSession, recordTurn, trimHistory } from "./session.js";
 
 export async function processMessage(
   incoming: IncomingMessage,
   deps: Dependencies = defaultDependencies(),
 ): Promise<string> {
-  const session = getSession(incoming.from, incoming.name);
+  const session = deps.sessions.get(incoming.from) ?? createSession(incoming.from, incoming.name);
+  if (incoming.name && !session.name) session.name = incoming.name;
   recordTurn(session, "user", incoming.text);
 
   // 1) Primero intentan resolver los flujos determinísticos (menús).
@@ -28,6 +29,7 @@ export async function processMessage(
   }
 
   recordTurn(session, "assistant", reply);
-  saveSession(session);
+  trimHistory(session);
+  deps.sessions.save(session);
   return reply;
 }
