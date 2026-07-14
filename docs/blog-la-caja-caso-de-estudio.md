@@ -127,6 +127,9 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Yo:** 1
 > **Bot:** Genial, cotizamos tu seguro de auto. Empecemos por el año del vehículo.
 > **Yo:** 2020
+> **Bot:** ¿Es 0km o usado? (un modelo de años anteriores también puede ser 0km si
+> es stock sin patentar)
+> **Yo:** usado
 > **Bot:** ¿De qué marca es?
 > **Yo:** Toyota
 > **Bot:** ¿Y el modelo?
@@ -145,7 +148,7 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Bot:** Listo. Con estos datos armo tu solicitud: Toyota Corolla 2020, usado,
 > plan Terceros Completo con Granizo. Un asesor te contacta con el precio final.
 
-Los datos que pide (año, marca, modelo, versión, GNC) son los mismos que el
+Los datos que pide (año, condición, marca, modelo, versión, GNC) son los mismos que el
 cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
 golpe. El menú hace el trabajo pesado del recorrido, y el momento clave (la
 comparación de planes) pasa dentro del chat, que es donde se juega la venta

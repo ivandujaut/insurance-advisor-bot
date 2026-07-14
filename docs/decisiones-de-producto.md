@@ -180,12 +180,20 @@ qué dato, y qué resigné.
   algo accionable. Pero **no** pide edad/DNI: es PII invasiva y temprana en el
   funnel, y el bot ya tiene el WhatsApp del usuario; eso lo recolecta el asesor,
   que es el lugar natural para lo sensible.
-- **Softeners** (bajan fricción sin perder dato): se **deriva 0km/usado del año**
-  (una pregunta menos) y la **versión es salteable** ("no sé", como en la web,
-  donde mucha gente no la tiene a mano).
+- **Softeners** (bajan fricción sin perder dato): la **versión es salteable**
+  ("no sé", como en la web, donde mucha gente no la tiene a mano).
+- **Iteración (0km vs usado):** al principio lo **derivé del año** (si el año era
+  el actual, 0km; si no, usado) para ahorrar una pregunta. Probándolo en WhatsApp
+  real apareció el error: un modelo de años anteriores **también puede ser 0km** si
+  es stock del concesionario sin patentar, y la condición no es cosmética (define
+  si hace falta inspección: el 0km no inspecciona, el usado carga fotos online).
+  Adivinarla mal le da al asesor un dato falso y al usuario una instrucción
+  equivocada. Lección: **no derivar un dato de negocio de un proxy frágil**; una
+  pregunta binaria corta ("0km o usado") es barata y correcta. Se pasó a pedirla
+  explícita.
 - **Trade-off:** más pasos que un flujo mínimo, con más drop-off potencial, a
-  cambio de un lead mucho más rico. Se mitiga con preguntas cortas y los softeners,
-  y se mide con el drop-off por paso (sección 6).
+  cambio de un lead mucho más rico y correcto. Se mitiga con preguntas cortas y el
+  softener de versión, y se mide con el drop-off por paso (sección 6).
 
 ## 6. Cómo mediría el éxito
 

@@ -74,7 +74,8 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2020", deps); // año -> usado
+  await handleFlow(s, "2020", deps); // año
+  await handleFlow(s, "usado", deps); // condición
   await handleFlow(s, "Toyota", deps);
   await handleFlow(s, "Corolla", deps);
   await handleFlow(s, "XEI", deps); // versión
@@ -102,7 +103,8 @@ test("auto usado dispara la nota de inspección online", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2018", deps); // usado
+  await handleFlow(s, "2018", deps); // año
+  await handleFlow(s, "usado", deps); // condición
   await handleFlow(s, "Ford", deps);
   await handleFlow(s, "Ka", deps);
   await handleFlow(s, "no sé", deps); // versión salteada
@@ -111,12 +113,41 @@ test("auto usado dispara la nota de inspección online", async () => {
   assert.match(reply, /inspección se hace online/);
 });
 
+test("un 0km de un año anterior no pide inspección (condición explícita, no derivada del año)", async () => {
+  const s = newSession("t-0km-viejo");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  await handleFlow(s, "2023", deps); // año anterior...
+  await handleFlow(s, "0km", deps); // ...pero es 0km de stock
+  await handleFlow(s, "Fiat", deps);
+  await handleFlow(s, "Cronos", deps);
+  await handleFlow(s, "no sé", deps); // versión
+  await handleFlow(s, "no", deps); // GNC
+  const reply = (await handleFlow(s, "1425", deps)) ?? ""; // CP -> muestra la nota
+  assert.match(reply, /0 km, no necesitás inspección/);
+  assert.equal(s.data.condicion, "0km");
+});
+
+test("no acepta una condición ambigua y la vuelve a pedir", async () => {
+  const s = newSession("t-cond-invalida");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  await handleFlow(s, "2020", deps);
+  const reply = (await handleFlow(s, "no sé", deps)) ?? "";
+  assert.match(reply, /0km.*usado/i);
+  assert.equal(s.data.condicion, undefined, "no guarda una condición ambigua");
+  assert.equal(s.stage, "quoting_auto", "sigue esperando la condición");
+});
+
 test("un plan inválido pide reintentar sin romper el flujo", async () => {
   const s = newSession("t-plan-invalido");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
   await handleFlow(s, "2021", deps);
+  await handleFlow(s, "usado", deps); // condición
   await handleFlow(s, "Fiat", deps);
   await handleFlow(s, "Cronos", deps);
   await handleFlow(s, "no sé", deps);
