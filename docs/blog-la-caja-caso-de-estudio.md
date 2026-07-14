@@ -1,0 +1,214 @@
+# La Caja ya tenía un bot de WhatsApp. Me puse a diseñar el que le falta.
+
+*Un caso de estudio sobre decisiones de producto: cómo leer el recorrido de un
+cliente, encontrar un hueco y decidir dónde jugar. Lectura: ~8 min.*
+
+> Análisis independiente hecho con información pública del sitio de La Caja
+> (julio de 2026). No estoy afiliado a la empresa ni tuve acceso a datos
+> internos. Lo que sigue separa lo que observé de lo que supongo.
+
+---
+
+Empecé como empieza cualquier persona que quiere un seguro: entré al sitio de
+La Caja a mirar. No buscaba una idea de producto, buscaba entender cómo te
+venden un seguro hoy. Y a los pocos minutos me encontré con un detalle que me
+hizo frenar.
+
+En la home, entre los botones de siempre, había uno que decía "Chateá por
+WhatsApp con Letizia". La Caja ya tiene un asistente de WhatsApp. Mi primera
+reacción fue la obvia: "listo, ya está hecho". Pero cuando miré para qué usan a
+Letizia, la historia cambió.
+
+## Letizia atiende, pero no vende
+
+Recorrí las páginas de producto y el centro de ayuda. En todos lados, Letizia
+aparecía como el primer canal recomendado para lo mismo: modificar una póliza,
+darse de baja, descargar documentación, hacer una consulta. Es decir, Letizia
+es un excelente bot de **posventa**. Está para el cliente que ya compró.
+
+¿Y la venta? La cotización vive en la web, en cotizadores separados por línea
+(uno para auto, otro para hogar, otro para moto), con un formulario de cuatro
+pasos. Funciona, pero es frío, y sobre todo está lejos de donde la gente
+pregunta.
+
+Ahí apareció el insight. Dibujé el recorrido del cliente y quedó así:
+
+| Etapa | Quién la atiende hoy | Cómo se siente |
+|---|---|---|
+| Entender qué me conviene | Nadie con claridad | El cliente compara solo |
+| Cotizar | Cotizador web | Formulario, hay que salir a la web |
+| Contratar | Web / asesor | |
+| Usar y gestionar (posventa) | Letizia + app | Bien resuelto |
+
+Los dos extremos están cubiertos. El medio, no. La etapa de **venta asesorada**,
+ese momento en que alguien todavía no sabe si le conviene Terceros Completo o
+Todo Riesgo y necesita que le expliquen, no tiene un dueño conversacional.
+
+Y acá va la parte que me parece más interesante como decisión: La Caja ya
+demostró que WhatsApp le funciona. Invirtió en Letizia, ofrece telemedicina por
+WhatsApp. El canal está validado internamente. Solo que lo usan para la etapa
+equivocada del embudo.
+
+**Mi apuesta:** no clonar a Letizia, sino ocupar el hueco de la pre-venta.
+Asesorar, comparar y cotizar dentro del chat.
+
+## Siete decisiones, y el porqué de cada una
+
+Una vez clara la apuesta, lo que sigue son decisiones. Trato de que cada una
+tenga un criterio y un dato atrás, no una corazonada. Y trato de ser honesto
+con lo que resigno en cada caso, porque no hay decisión sin trade-off.
+
+**1. Posicionar el bot en venta asesorada, no en autogestión.**
+El criterio: no competir donde el incumbente ya es fuerte. Si Letizia resuelve
+bien la posventa, hacer otro bot igual es esfuerzo sin diferencial. La pre-venta
+ataca el momento de mayor intención de compra y menor acompañamiento. Lo que
+resigno: la venta asesorada exige más lógica de negocio (comparar, recomendar)
+que responder preguntas de autogestión.
+
+**2. WhatsApp como canal.**
+El criterio: encontrarme con el usuario donde ya está, y donde la empresa ya
+tiene tracción. El dato: La Caja ya usa WhatsApp con éxito. Lo que resigno:
+WhatsApp impone límites de formato y reglas de plataforma que condicionan el
+diseño.
+
+**3. Un motor híbrido: menús más un modelo de lenguaje.**
+Esta es la que más me gusta. La cotización es un proceso estructurado y
+repetible (los cotizadores web ya lo modelan en cuatro pasos), pero las dudas
+son abiertas ("¿qué es la franquicia?", "¿cubre granizo?"). Usar solo menús
+sería rígido; usar solo IA sería impredecible y caro. Entonces: menús para lo
+estructurado, que dan control y previsibilidad, y el modelo de lenguaje para las
+consultas abiertas, anclado a contenido real para no inventar. El trade-off son
+dos caminos que mantener y una frontera que afinar.
+
+**4. Empezar por Auto.**
+El criterio: priorizar por volumen y claridad. Auto es la línea más destacada
+del sitio y tiene una escalera de tres planes muy explicable. Empezar por ahí
+maximiza el aprendizaje por unidad de esfuerzo. Lo que resigno: al principio
+quedan afuera líneas con otra lógica (Salud, por ejemplo, no es un seguro de
+daños sino de enfermedades graves).
+
+**5. Comparar los planes dentro del chat.**
+La estructura de La Caja es "bueno / mejor / óptimo": Terceros Completo,
+Terceros Completo con Granizo, Todo Riesgo con Franquicia. Tres opciones es un
+número manejable en una conversación. Ayudar a elegir es, justamente, el valor
+que falta en la pre-venta. El cuidado está en simplificar sin traicionar: la
+síntesis tiene que ser fiel a la cobertura real.
+
+**6. Una capa de adaptadores para no casarme con un proveedor.**
+Para conectar WhatsApp hay varios caminos: la API oficial de Meta, intermediarios
+como Twilio, o librerías no oficiales. Cada uno tiene su costo y su riesgo, y
+elegir mal temprano se paga caro. Así que separé la lógica del bot del canal por
+el que llegan los mensajes. En la práctica eso me deja desarrollar y probar todo
+con un adaptador de consola, sin credenciales ni cuentas, y enchufar la API
+oficial de Meta el día que haga falta cambiando una sola variable. El trade-off es
+una capa de abstracción más para mantener, que se justifica solo por la
+incertidumbre sobre cuál va a ser el proveedor final.
+
+**7. Una base de conocimiento con contenido real, no genérico.**
+Un asistente de seguros que inventa una cobertura es un problema, no una demo.
+Por eso las respuestas del modelo se anclan a contenido que relevé del sitio: los
+planes reales, la franquicia explicada con un ejemplo, los requisitos de una casa
+para asegurar hogar, las condiciones del seguro de salud. El modelo no habla de
+memoria, habla sobre esa base. Bajan las respuestas inventadas, a cambio de una
+obligación: mantener ese contenido al día cuando los productos cambian.
+
+Siete decisiones, siete trade-offs. Ninguna es gratis, y esa es justamente la
+idea: mostrar el costo de cada elección, no solo el beneficio.
+
+## Cómo se ve en el chat
+
+La estrategia no sirve si no baja a algo concreto. Así se ve una cotización de
+auto, con el bot asesorando en lugar de tirarte un formulario:
+
+> **Yo:** hola
+> **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
+> cotizar tu cobertura. 1 Cotizar mi seguro de auto · 2 Comparar los planes ·
+> 3 Tengo una duda · 4 Hablar con un asesor.
+> **Yo:** 1
+> **Bot:** Genial, cotizamos tu seguro de auto. Decime la marca, modelo y año
+> (ej: Toyota Corolla 2020).
+> **Yo:** Corolla 2020
+> **Bot:** ¿En qué código postal se guarda el auto?
+> **Yo:** 3011
+> **Bot:** ¿El auto es 0 km o usado?
+> **Yo:** usado
+> **Bot:** Al ser usado, la inspección se hace online cargando fotos. Estos son
+> los planes: Terceros Completo, Terceros Completo con Granizo (suma granizo,
+> cristales y auto sustituto) y Todo Riesgo con Franquicia (suma daños por
+> accidente). ¿Cuál te interesa: 1, 2 o 3?
+> **Yo:** 2
+> **Bot:** Listo. Con estos datos armo tu solicitud: Corolla 2020, CP 3011,
+> usado, plan Terceros Completo con Granizo. Un asesor te contacta con el precio
+> final y las formas de pago.
+
+El menú hace el trabajo pesado del recorrido, y el momento clave (la comparación
+de planes) pasa dentro del chat, que es donde se juega la venta asesorada. Si en
+cualquier punto pregunto algo abierto, como "¿qué es la franquicia?", ahí toma el
+modelo de lenguaje y responde con la información real, sin romper el flujo. Ese
+reparto de tareas es la Decisión 3 funcionando en vivo.
+
+## Cómo sabría si funciona
+
+Un bot no se evalúa por "responde lindo". Se evalúa por su efecto en el embudo.
+Si esto fuera un producto real, instrumentaría:
+
+- **Activación:** de quienes saludan, cuántos arrancan a cotizar, y cuántos
+  terminan el flujo.
+- **Drop-off por paso:** en qué pregunta se cae la gente (vehículo, código
+  postal, condición, elección de plan). Ahí está la fricción.
+- **Conversión:** leads generados, derivaciones a asesor y su resultado.
+- **Calidad:** tasa de contención (consultas resueltas sin humano), tasa de "no
+  entendí" del bot, y satisfacción al cierre.
+- **Mix de producto:** qué plan elige la gente. Cuando hay tres opciones, ¿se
+  van al del medio, como suele pasar?
+
+Para que no quede abstracto, un ejemplo con números inventados a modo de
+ilustración. Supongamos 1.000 personas que le escriben al bot en un mes:
+
+| Paso | Personas | Tasa |
+|---|---|---|
+| Saludan | 1.000 | - |
+| Arrancan a cotizar | 600 | 60% |
+| Completan el flujo | 360 | 60% del que arranca |
+| Dejan sus datos (lead) | 360 | - |
+| Contratan (vía asesor) | 90 | 25% de los leads |
+
+Con esta foto, la charla deja de ser "el bot anda bien" y pasa a ser algo
+accionable: "perdemos 40% entre saludar y arrancar, ¿el menú inicial confunde?",
+o "se cae 40% en el medio, ¿qué paso los frena, el código postal o la elección de
+plan?". Esas son las preguntas que mueven la aguja. Los números son inventados; lo
+que importa es el tipo de lectura que habilitan.
+
+Definir esto antes de construir no es un detalle. Es la diferencia entre un
+experimento que aprende y una función que se lanza y nadie sabe si sirvió.
+
+## Lo que este bot no hace (a propósito)
+
+Para que el análisis sea honesto, los límites. El bot no cotiza precios reales:
+arma la solicitud y deriva, porque los precios dependen de reglas de suscripción
+que no son públicas. Un despliegue real necesitaría revisión legal (en seguros
+hay requisitos de información precontractual y canales autorizados). Y la base de
+conocimiento es una síntesis de fuentes públicas: hay que mantenerla al día
+cuando cambian los productos.
+
+Nada de esto invalida el ejercicio. Al contrario: saber qué queda afuera es
+parte de tener criterio.
+
+## Qué me llevo
+
+Lo que más me interesa de este caso no es el bot. Es el método: mirar el
+recorrido real de un cliente, encontrar la etapa que nadie atiende bien, y
+decidir dónde jugar con un argumento, no con una moda. El bot es la excusa para
+mostrar cómo pienso un problema de producto.
+
+La Caja hizo algo muy bien: llevó WhatsApp a la posventa. La oportunidad que veo
+es estirar ese mismo canal una etapa antes, a la venta asesorada, que hoy queda
+en tierra de nadie.
+
+Si trabajás en producto y te interesa discutir este análisis (o marcarme dónde
+me equivoco, que para eso lo publico), me encantaría charlarlo.
+
+---
+
+*Este caso está documentado en detalle, decisión por decisión, en el repositorio
+del proyecto. Acá conté la versión corta.*
