@@ -9,7 +9,7 @@ import { processMessage } from "../application/process-message.js";
 import { buildDependencies } from "./container.js";
 
 const USER_ID = "cli-user";
-const deps = buildDependencies();
+const deps = await buildDependencies();
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 

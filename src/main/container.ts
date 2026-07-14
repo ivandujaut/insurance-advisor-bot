@@ -1,9 +1,17 @@
 /**
  * Composition root: el único lugar que conoce los adapters concretos y los
- * cablea. Arma las dependencias que se inyectan en el núcleo y elige el
- * proveedor de mensajería según la config. Ver docs/adr/0001-arquitectura-hexagonal.md.
+ * cablea. Elige el adapter de persistencia/sesión según la config y arma las
+ * dependencias que se inyectan en el núcleo. Async porque Postgres/Redis se
+ * conectan al arrancar. Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
-import type { Dependencies, MessagingProvider } from "../application/ports.js";
+import { createClient } from "redis";
+import type {
+  Dependencies,
+  EventSink,
+  LeadRepository,
+  MessagingProvider,
+  SessionStore,
+} from "../application/ports.js";
 import { config } from "../config/index.js";
 import { createFilesystemKnowledge } from "../infrastructure/knowledge/filesystem.js";
 import { createAnthropicLlm } from "../infrastructure/llm/anthropic.js";
@@ -12,14 +20,43 @@ import { MetaProvider } from "../infrastructure/messaging/meta.js";
 import { createJsonlEventSink } from "../infrastructure/persistence/jsonl-events.js";
 import { createJsonlLeadRepository } from "../infrastructure/persistence/jsonl-leads.js";
 import { createInMemorySessionStore } from "../infrastructure/persistence/memory-sessions.js";
+import {
+  createPgPool,
+  createPostgresEventSink,
+  createPostgresLeadRepository,
+  ensureSchema,
+} from "../infrastructure/persistence/postgres.js";
+import { createRedisSessionStore } from "../infrastructure/persistence/redis-sessions.js";
 
 /** Arma las dependencias concretas del núcleo. Se llama una vez por proceso. */
-export function buildDependencies(): Dependencies {
+export async function buildDependencies(): Promise<Dependencies> {
+  let leads: LeadRepository;
+  let events: EventSink;
+  if (config.persistence.driver === "postgres") {
+    const pool = createPgPool();
+    await ensureSchema(pool);
+    leads = createPostgresLeadRepository(pool);
+    events = createPostgresEventSink(pool);
+  } else {
+    leads = createJsonlLeadRepository();
+    events = createJsonlEventSink();
+  }
+
+  let sessions: SessionStore;
+  if (config.session.driver === "redis") {
+    const client = createClient({ url: config.session.redisUrl });
+    client.on("error", (err) => console.error("Error de Redis:", err));
+    await client.connect();
+    sessions = createRedisSessionStore(client, config.session.ttlSeconds);
+  } else {
+    sessions = createInMemorySessionStore();
+  }
+
   return {
-    leads: createJsonlLeadRepository(),
-    events: createJsonlEventSink(),
+    leads,
+    events,
+    sessions,
     llm: createAnthropicLlm(),
-    sessions: createInMemorySessionStore(),
     knowledge: createFilesystemKnowledge(),
   };
 }
