@@ -5,12 +5,15 @@
  * estudio. En produccion se reemplazaria por un sink de analitica real.
  */
 import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-// src/lib/analytics -> raiz del proyecto
-const dataDir = join(here, "..", "..", "..", "data");
+// src/lib/analytics -> raiz del proyecto. Se puede sobreescribir con
+// LACAJA_DATA_DIR (util para tests o para apuntar a un volumen en deploy).
+const dataDir = process.env.LACAJA_DATA_DIR
+  ? resolve(process.env.LACAJA_DATA_DIR)
+  : join(here, "..", "..", "..", "data");
 const eventsFile = join(dataDir, "events.jsonl");
 
 export type EventType =
