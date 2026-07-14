@@ -1,24 +1,29 @@
 /**
  * Motor de conversación (híbrido).
  * Orquesta: recibe un mensaje entrante, decide menú vs LLM, y devuelve la
- * respuesta. No sabe nada del proveedor de mensajería.
+ * respuesta. No sabe nada del proveedor de mensajería ni de cómo se persisten
+ * leads y eventos: depende de los puertos que recibe inyectados.
  */
-import { logEvent } from "../analytics/events.js";
+import { defaultDependencies } from "../application/dependencies.js";
+import type { Dependencies } from "../application/ports.js";
 import type { IncomingMessage } from "../messaging/types.js";
 import { handleFlow } from "./flows.js";
 import { answerWithLLM } from "./llm.js";
 import { getSession, recordTurn, saveSession } from "./session.js";
 
-export async function processMessage(incoming: IncomingMessage): Promise<string> {
+export async function processMessage(
+  incoming: IncomingMessage,
+  deps: Dependencies = defaultDependencies(),
+): Promise<string> {
   const session = getSession(incoming.from, incoming.name);
   recordTurn(session, "user", incoming.text);
 
   // 1) Primero intentan resolver los flujos determinísticos (menús).
-  let reply = handleFlow(session, incoming.text);
+  let reply = handleFlow(session, incoming.text, deps);
 
   // 2) Si ningún flujo aplica, es una consulta abierta: responde el LLM.
   if (reply === null) {
-    logEvent("open_question", incoming.from);
+    deps.events.log("open_question", incoming.from);
     reply = await answerWithLLM(session, incoming.text);
   }
 
