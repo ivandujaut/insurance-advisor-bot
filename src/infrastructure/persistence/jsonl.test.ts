@@ -17,9 +17,13 @@ test("el LeadRepository JSONL persiste el lead en disco con timestamp", async ()
   await repo.save({
     userId: "adapter-lead",
     name: "X",
-    vehiculo: "Toyota Corolla 2020",
+    anio: "2020",
+    marca: "Toyota",
+    modelo: "Corolla",
+    version: "XEI",
+    gnc: false,
     cp: "1000",
-    condicion: "0km",
+    condicion: "usado",
     plan: "Terceros Completo",
   });
   const mine = readLines(leadsFile).filter((l) => l.userId === "adapter-lead");

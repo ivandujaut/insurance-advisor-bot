@@ -54,7 +54,7 @@ test("opción 1 arranca la cotización de auto", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   const reply = await handleFlow(s, "1", deps);
-  assert.match(reply ?? "", /marca, modelo y año/);
+  assert.match(reply ?? "", /año/i);
   assert.equal(s.stage, "quoting_auto");
 });
 
@@ -74,17 +74,27 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "Toyota Corolla 2020", deps);
-  await handleFlow(s, "3011", deps);
-  await handleFlow(s, "usado", deps);
+  await handleFlow(s, "2020", deps); // año -> usado
+  await handleFlow(s, "Toyota", deps);
+  await handleFlow(s, "Corolla", deps);
+  await handleFlow(s, "XEI", deps); // versión
+  await handleFlow(s, "no", deps); // GNC
+  await handleFlow(s, "3011", deps); // CP
   const final = (await handleFlow(s, "2", deps)) ?? "";
   assert.match(final, /solicitud de cotización/);
   assert.match(final, /Terceros Completo con Granizo/);
   assert.equal(s.stage, "idle", "vuelve a idle al terminar");
-  // El lead se guardó a través del LeadRepository inyectado (sin tocar disco).
+  // El lead se guardó estructurado, a través del puerto inyectado (sin tocar disco).
   assert.equal(deps.savedLeads.length, 1);
-  assert.equal(deps.savedLeads[0]?.plan, "Terceros Completo con Granizo");
-  assert.equal(deps.savedLeads[0]?.cp, "3011");
+  const lead = deps.savedLeads[0];
+  assert.equal(lead?.plan, "Terceros Completo con Granizo");
+  assert.equal(lead?.anio, "2020");
+  assert.equal(lead?.marca, "Toyota");
+  assert.equal(lead?.modelo, "Corolla");
+  assert.equal(lead?.version, "XEI");
+  assert.equal(lead?.gnc, false);
+  assert.equal(lead?.condicion, "usado");
+  assert.equal(lead?.cp, "3011");
 });
 
 test("auto usado dispara la nota de inspección online", async () => {
@@ -92,9 +102,12 @@ test("auto usado dispara la nota de inspección online", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "Ford Ka 2018", deps);
-  await handleFlow(s, "3011", deps);
-  const reply = (await handleFlow(s, "usado", deps)) ?? "";
+  await handleFlow(s, "2018", deps); // usado
+  await handleFlow(s, "Ford", deps);
+  await handleFlow(s, "Ka", deps);
+  await handleFlow(s, "no sé", deps); // versión salteada
+  await handleFlow(s, "no", deps); // GNC
+  const reply = (await handleFlow(s, "3011", deps)) ?? ""; // CP -> muestra la nota
   assert.match(reply, /inspección se hace online/);
 });
 
@@ -103,13 +116,27 @@ test("un plan inválido pide reintentar sin romper el flujo", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "Fiat Cronos 2021", deps);
-  await handleFlow(s, "1425", deps);
-  await handleFlow(s, "0km", deps);
+  await handleFlow(s, "2021", deps);
+  await handleFlow(s, "Fiat", deps);
+  await handleFlow(s, "Cronos", deps);
+  await handleFlow(s, "no sé", deps);
+  await handleFlow(s, "sí", deps); // GNC
+  await handleFlow(s, "1425", deps); // CP
   const reply = (await handleFlow(s, "9", deps)) ?? "";
   assert.match(reply, /No te entendí el plan/);
   assert.equal(s.stage, "quoting_auto", "sigue esperando el plan");
   assert.equal(deps.savedLeads.length, 0, "no guarda lead con plan inválido");
+});
+
+test("rechaza un año fuera de rango y lo vuelve a pedir", async () => {
+  const s = newSession("t-anio-invalido");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  const reply = (await handleFlow(s, "1990", deps)) ?? "";
+  assert.match(reply, /año.*válido/i);
+  assert.equal(s.stage, "quoting_auto", "sigue esperando el año");
+  assert.equal(s.data.anio, undefined, "no guarda el año inválido");
 });
 
 test("la palabra 'asesor' deriva a un humano desde cualquier punto", async () => {

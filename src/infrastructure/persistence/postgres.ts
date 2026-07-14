@@ -20,7 +20,11 @@ export async function ensureSchema(pool: Pool): Promise<void> {
       ts        TIMESTAMPTZ NOT NULL DEFAULT now(),
       user_id   TEXT NOT NULL,
       name      TEXT,
-      vehiculo  TEXT NOT NULL,
+      anio      TEXT NOT NULL,
+      marca     TEXT NOT NULL,
+      modelo    TEXT NOT NULL,
+      version   TEXT,
+      gnc       BOOLEAN NOT NULL,
       cp        TEXT NOT NULL,
       condicion TEXT NOT NULL,
       plan      TEXT NOT NULL
@@ -40,9 +44,20 @@ export function createPostgresLeadRepository(pool: Pool): LeadRepository {
     async save(lead) {
       try {
         await pool.query(
-          `INSERT INTO leads (user_id, name, vehiculo, cp, condicion, plan)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [lead.userId, lead.name ?? null, lead.vehiculo, lead.cp, lead.condicion, lead.plan],
+          `INSERT INTO leads (user_id, name, anio, marca, modelo, version, gnc, cp, condicion, plan)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            lead.userId,
+            lead.name ?? null,
+            lead.anio,
+            lead.marca,
+            lead.modelo,
+            lead.version ?? null,
+            lead.gnc,
+            lead.cp,
+            lead.condicion,
+            lead.plan,
+          ],
         );
       } catch (err) {
         console.error("No se pudo guardar el lead en Postgres:", err);

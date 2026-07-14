@@ -22,15 +22,21 @@ test("Postgres LeadRepository persiste el lead", { skip: !url }, async () => {
   await repo.save({
     userId,
     name: "Test",
-    vehiculo: "Toyota Corolla 2020",
+    anio: "2020",
+    marca: "Toyota",
+    modelo: "Corolla",
+    version: "XEI",
+    gnc: true,
     cp: "1000",
-    condicion: "0km",
+    condicion: "usado",
     plan: "Terceros Completo",
   });
 
   const { rows } = await pool.query("SELECT * FROM leads WHERE user_id = $1", [userId]);
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.plan, "Terceros Completo");
+  assert.equal(rows[0]?.marca, "Toyota");
+  assert.equal(rows[0]?.gnc, true);
   assert.ok(rows[0]?.ts, "la fila tiene timestamp");
 
   await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);

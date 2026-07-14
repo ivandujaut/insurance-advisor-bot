@@ -62,8 +62,14 @@ export interface Lead {
   ts: string;
   userId: string;
   name?: string;
-  vehiculo: string;
+  anio: string;
+  marca: string;
+  modelo: string;
+  /** Opcional: mucha gente no la tiene a mano (está en la cédula). */
+  version?: string;
+  gnc: boolean;
   cp: string;
+  /** Derivada del año: "0km" o "usado". */
   condicion: string;
   plan: string;
 }

@@ -98,7 +98,7 @@ async function handleMainMenu(
       session.stage = "quoting_auto";
       session.data = {};
       await deps.events.log("quote_started", session.userId);
-      return "Genial, cotizamos tu *seguro de auto*. 🚗\n\nDecime la *marca, modelo y año* del vehículo (ej: Toyota Corolla 2020).";
+      return "Genial, cotizamos tu *seguro de auto*. 🚗\n\nEmpecemos por el *año* del vehículo (entre 2006 y el actual).";
     case "2":
       // La comparación es informativa; el usuario sigue en el menú.
       await deps.events.log("plan_comparison_viewed", session.userId);
@@ -112,6 +112,10 @@ async function handleMainMenu(
   }
 }
 
+// Rango de años válido para cotizar (como el cotizador web).
+const MIN_AUTO_YEAR = 2006;
+const CURRENT_YEAR = new Date().getFullYear();
+
 async function handleQuotingAuto(
   session: Session,
   rawText: string,
@@ -119,25 +123,61 @@ async function handleQuotingAuto(
 ): Promise<string | null> {
   const text = rawText.trim();
 
-  if (!session.data.vehiculo) {
-    session.data.vehiculo = text;
-    await deps.events.log("quote_step", session.userId, { step: "vehiculo" });
-    return "Perfecto. ¿En qué *código postal* se guarda el auto?";
+  // 1) Año (validado). De acá se deriva la condición (0km vs usado).
+  if (!session.data.anio) {
+    const anio = Number(text.replace(/\D/g, ""));
+    if (!anio || anio < MIN_AUTO_YEAR || anio > CURRENT_YEAR) {
+      return `Necesito un *año* válido, entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR}.`;
+    }
+    session.data.anio = String(anio);
+    session.data.condicion = anio === CURRENT_YEAR ? "0km" : "usado";
+    await deps.events.log("quote_step", session.userId, { step: "anio" });
+    return "¿De qué *marca* es? (ej: Toyota)";
   }
 
+  // 2) Marca
+  if (!session.data.marca) {
+    session.data.marca = text;
+    await deps.events.log("quote_step", session.userId, { step: "marca" });
+    return "¿Y el *modelo*? (ej: Corolla)";
+  }
+
+  // 3) Modelo
+  if (!session.data.modelo) {
+    session.data.modelo = text;
+    await deps.events.log("quote_step", session.userId, { step: "modelo" });
+    return "¿La *versión*? (la encontrás en la cédula). Si no la tenés a mano, escribí *no sé*.";
+  }
+
+  // 4) Versión (opcional: se puede saltar)
+  if (!session.data.version) {
+    const noLaSabe = /no s[eé]|ni idea|skip|saltar|omitir/.test(normalize(text));
+    session.data.version = noLaSabe ? "no especificada" : text;
+    await deps.events.log("quote_step", session.userId, { step: "version" });
+    return "¿Tiene *GNC*? Respondé *sí* o *no*.";
+  }
+
+  // 5) GNC (sí/no)
+  if (!session.data.gnc) {
+    const t = normalize(text);
+    const esSi = /^s[ií]/.test(t) || t.includes("tiene");
+    const esNo = /^no/.test(t);
+    if (!esSi && !esNo) {
+      return "No te entendí. ¿Tiene *GNC*? Respondé *sí* o *no*.";
+    }
+    session.data.gnc = esSi ? "si" : "no";
+    await deps.events.log("quote_step", session.userId, { step: "gnc" });
+    return "Último dato: ¿en qué *código postal* se guarda el auto?";
+  }
+
+  // 6) CP -> muestra los planes con la nota de inspección (según el año).
   if (!session.data.cp) {
     session.data.cp = text;
     await deps.events.log("quote_step", session.userId, { step: "cp" });
-    return "¿El auto es *0 km* o *usado*?";
-  }
-
-  if (!session.data.condicion) {
-    const esUsado = /usad/i.test(text);
-    session.data.condicion = esUsado ? "usado" : "0km";
-    await deps.events.log("quote_step", session.userId, { step: "condicion" });
-    const notaInspeccion = esUsado
-      ? "Al ser usado, la inspección se hace online cargando fotos (no hace falta llevarlo).\n\n"
-      : "Al ser 0 km, no necesitás inspección.\n\n";
+    const notaInspeccion =
+      session.data.condicion === "usado"
+        ? "Al ser usado, la inspección se hace online cargando fotos (no hace falta llevarlo).\n\n"
+        : "Al ser 0 km, no necesitás inspección.\n\n";
     return `${notaInspeccion}${PLAN_COMPARISON}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`;
   }
 
@@ -149,21 +189,31 @@ async function handleQuotingAuto(
     }
     session.data.plan = plan;
     session.stage = "idle";
+    const version =
+      session.data.version && session.data.version !== "no especificada"
+        ? session.data.version
+        : undefined;
     await deps.leads.save({
       userId: session.userId,
       name: session.name,
-      vehiculo: session.data.vehiculo ?? "",
+      anio: session.data.anio ?? "",
+      marca: session.data.marca ?? "",
+      modelo: session.data.modelo ?? "",
+      version,
+      gnc: session.data.gnc === "si",
       cp: session.data.cp ?? "",
       condicion: session.data.condicion ?? "",
       plan,
     });
     await deps.events.log("lead_captured", session.userId, { plan });
+    const autoLinea = `${session.data.marca} ${session.data.modelo} ${session.data.anio}${version ? ` (${version})` : ""}`;
     return [
       "¡Listo! Con estos datos armo tu solicitud de cotización:",
       "",
-      `🚗 Vehículo: ${session.data.vehiculo}`,
-      `📍 CP: ${session.data.cp}`,
+      `🚗 Auto: ${autoLinea}`,
+      `⛽ GNC: ${session.data.gnc === "si" ? "sí" : "no"}`,
       `🔧 Condición: ${session.data.condicion}`,
+      `📍 CP: ${session.data.cp}`,
       `🛡️ Plan de interés: ${plan}`,
       "",
       "Un asesor te va a contactar con el precio final y las opciones de pago (online: tarjeta de crédito o débito por CBU, con descuento).",
