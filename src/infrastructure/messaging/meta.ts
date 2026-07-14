@@ -3,6 +3,7 @@
  * Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
  */
 
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type {
   IncomingMessage,
   MessagingProvider,
@@ -11,6 +12,23 @@ import type {
 import { getMetaConfig } from "../../config/index.js";
 
 const GRAPH_API_VERSION = "v21.0";
+
+/**
+ * Verifica la firma X-Hub-Signature-256 que Meta pone en cada webhook (HMAC
+ * SHA256 del body crudo con el app secret). Asegura que el request viene de Meta.
+ */
+export function verifyMetaSignature(
+  rawBody: string,
+  signature: string | undefined,
+  appSecret: string,
+): boolean {
+  if (!signature) return false;
+  const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
+  const received = Buffer.from(signature);
+  const computed = Buffer.from(expected);
+  if (received.length !== computed.length) return false;
+  return timingSafeEqual(received, computed);
+}
 
 export class MetaProvider implements MessagingProvider {
   readonly name = "meta";
