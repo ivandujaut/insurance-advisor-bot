@@ -52,7 +52,7 @@ equivocada del embudo.
 **Mi apuesta:** no clonar a Letizia, sino ocupar el hueco de la pre-venta.
 Asesorar, comparar y cotizar dentro del chat.
 
-## Cinco decisiones, y el porqué de cada una
+## Siete decisiones, y el porqué de cada una
 
 Una vez clara la apuesta, lo que sigue son decisiones. Trato de que cada una
 tenga un criterio y un dato atrás, no una corazonada. Y trato de ser honesto
@@ -94,9 +94,58 @@ número manejable en una conversación. Ayudar a elegir es, justamente, el valor
 que falta en la pre-venta. El cuidado está en simplificar sin traicionar: la
 síntesis tiene que ser fiel a la cobertura real.
 
-Hay más decisiones detrás (una capa de adaptadores para no atarme a un proveedor
-de WhatsApp desde el día uno, una base de conocimiento con contenido real en vez
-de genérico), pero las cinco de arriba son las que definen el producto.
+**6. Una capa de adaptadores para no casarme con un proveedor.**
+Para conectar WhatsApp hay varios caminos: la API oficial de Meta, intermediarios
+como Twilio, o librerías no oficiales. Cada uno tiene su costo y su riesgo, y
+elegir mal temprano se paga caro. Así que separé la lógica del bot del canal por
+el que llegan los mensajes. En la práctica eso me deja desarrollar y probar todo
+con un adaptador de consola, sin credenciales ni cuentas, y enchufar la API
+oficial de Meta el día que haga falta cambiando una sola variable. El trade-off es
+una capa de abstracción más para mantener, que se justifica solo por la
+incertidumbre sobre cuál va a ser el proveedor final.
+
+**7. Una base de conocimiento con contenido real, no genérico.**
+Un asistente de seguros que inventa una cobertura es un problema, no una demo.
+Por eso las respuestas del modelo se anclan a contenido que relevé del sitio: los
+planes reales, la franquicia explicada con un ejemplo, los requisitos de una casa
+para asegurar hogar, las condiciones del seguro de salud. El modelo no habla de
+memoria, habla sobre esa base. Bajan las respuestas inventadas, a cambio de una
+obligación: mantener ese contenido al día cuando los productos cambian.
+
+Siete decisiones, siete trade-offs. Ninguna es gratis, y esa es justamente la
+idea: mostrar el costo de cada elección, no solo el beneficio.
+
+## Cómo se ve en el chat
+
+La estrategia no sirve si no baja a algo concreto. Así se ve una cotización de
+auto, con el bot asesorando en lugar de tirarte un formulario:
+
+> **Yo:** hola
+> **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
+> cotizar tu cobertura. 1 Cotizar mi seguro de auto · 2 Comparar los planes ·
+> 3 Tengo una duda · 4 Hablar con un asesor.
+> **Yo:** 1
+> **Bot:** Genial, cotizamos tu seguro de auto. Decime la marca, modelo y año
+> (ej: Toyota Corolla 2020).
+> **Yo:** Corolla 2020
+> **Bot:** ¿En qué código postal se guarda el auto?
+> **Yo:** 3011
+> **Bot:** ¿El auto es 0 km o usado?
+> **Yo:** usado
+> **Bot:** Al ser usado, la inspección se hace online cargando fotos. Estos son
+> los planes: Terceros Completo, Terceros Completo con Granizo (suma granizo,
+> cristales y auto sustituto) y Todo Riesgo con Franquicia (suma daños por
+> accidente). ¿Cuál te interesa: 1, 2 o 3?
+> **Yo:** 2
+> **Bot:** Listo. Con estos datos armo tu solicitud: Corolla 2020, CP 3011,
+> usado, plan Terceros Completo con Granizo. Un asesor te contacta con el precio
+> final y las formas de pago.
+
+El menú hace el trabajo pesado del recorrido, y el momento clave (la comparación
+de planes) pasa dentro del chat, que es donde se juega la venta asesorada. Si en
+cualquier punto pregunto algo abierto, como "¿qué es la franquicia?", ahí toma el
+modelo de lenguaje y responde con la información real, sin romper el flujo. Ese
+reparto de tareas es la Decisión 3 funcionando en vivo.
 
 ## Cómo sabría si funciona
 
@@ -112,6 +161,23 @@ Si esto fuera un producto real, instrumentaría:
   entendí" del bot, y satisfacción al cierre.
 - **Mix de producto:** qué plan elige la gente. Cuando hay tres opciones, ¿se
   van al del medio, como suele pasar?
+
+Para que no quede abstracto, un ejemplo con números inventados a modo de
+ilustración. Supongamos 1.000 personas que le escriben al bot en un mes:
+
+| Paso | Personas | Tasa |
+|---|---|---|
+| Saludan | 1.000 | - |
+| Arrancan a cotizar | 600 | 60% |
+| Completan el flujo | 360 | 60% del que arranca |
+| Dejan sus datos (lead) | 360 | - |
+| Contratan (vía asesor) | 90 | 25% de los leads |
+
+Con esta foto, la charla deja de ser "el bot anda bien" y pasa a ser algo
+accionable: "perdemos 40% entre saludar y arrancar, ¿el menú inicial confunde?",
+o "se cae 40% en el medio, ¿qué paso los frena, el código postal o la elección de
+plan?". Esas son las preguntas que mueven la aguja. Los números son inventados; lo
+que importa es el tipo de lectura que habilitan.
 
 Definir esto antes de construir no es un detalle. Es la diferencia entre un
 experimento que aprende y una función que se lanza y nadie sabe si sirvió.
