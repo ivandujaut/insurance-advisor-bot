@@ -207,12 +207,13 @@ métricas que instrumentaría:
 
 ## 8. Roadmap
 
-1. ~~Completar las líneas restantes en la base de conocimiento (Vida, Accidentes
-   Personales, Bicicleta, Cartera, Notebook, Cuidados Mayores).~~ **Hecho:** las 10
-   líneas para personas están cargadas con contenido real.
-2. Persistir los leads y notificar a un asesor.
+1. ~~Completar las líneas restantes en la base de conocimiento.~~ **Hecho:** las
+   10 líneas para personas están cargadas con contenido real.
+2. ~~Persistir los leads.~~ **Hecho:** repositorio de leads con adapters JSONL o
+   Postgres. (Pendiente: notificar automáticamente a un asesor.)
 3. Integrar precios reales vía los cotizadores existentes.
-4. Instrumentar las métricas de la sección 6.
+4. ~~Instrumentar las métricas de la sección 6.~~ **Hecho:** log de eventos del
+   funnel y reporte `pnpm funnel` (activación, drop-off, mix de plan).
 5. Conectar la API oficial de Meta para pruebas en WhatsApp real.
 
 ## 9. Qué demuestra este ejercicio
@@ -222,5 +223,9 @@ métricas que instrumentaría:
 - **Criterio de producto:** elegir dónde jugar con base en un hueco del funnel, no
   por moda tecnológica.
 - **Mentalidad analítica:** definir cómo se mide el éxito antes de construir.
-- **Ejecución:** un prototipo funcional que baja la estrategia a una experiencia
-  concreta.
+- **Ejecución:** no quedó en un prototipo. Se llevó a un estado listo para crecer:
+  arquitectura hexagonal (los bordes intercambiables detrás de puertos),
+  persistencia real opcional (Postgres para leads/eventos, Redis para sesiones),
+  tests con CI y contenedores. El criterio de arquitectura está documentado en
+  [ADR 0001](adr/0001-arquitectura-hexagonal.md); el detalle técnico vive en el
+  repositorio, no en este documento de producto.
