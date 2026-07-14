@@ -1,0 +1,22 @@
+# Compose mínimo: un solo servicio (el bot). Preparado para crecer: cuando los
+# puertos de persistencia/sesión tengan adapters reales, se suman aquí servicios
+# `db` (postgres) y `redis`, y un reverse-proxy (caddy/traefik) para el HTTPS
+# del webhook. Requiere un archivo .env (cp .env.example .env).
+
+services:
+  bot:
+    build: .
+    image: lacaja-whatsapp-bot
+    # Opcional: sin .env arranca con los defaults (provider cli). Para WhatsApp
+    # real: cp .env.example .env y completar META_* + ANTHROPIC_API_KEY.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persiste leads y eventos entre reinicios; el host puede leerlos (pnpm funnel).
+      - ./data:/app/data
+    restart: unless-stopped
