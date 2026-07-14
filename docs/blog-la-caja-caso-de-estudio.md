@@ -213,4 +213,5 @@ me equivoco, que para eso lo publico), me encantaría charlarlo.
 *El proyecto, con el código y la base de conocimiento, vive en un repositorio
 aparte. Acá conté el razonamiento; ahí está la ejecución, que llevé hasta un
 estado listo para crecer (arquitectura desacoplada, persistencia real, tests y
-deploy).*
+deploy). El detalle de ingeniería de ese "listo para crecer" está en la
+[parte 2](blog-la-caja-parte-2-arquitectura.md).*
