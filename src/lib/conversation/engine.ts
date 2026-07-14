@@ -3,6 +3,7 @@
  * Orquesta: recibe un mensaje entrante, decide menú vs LLM, y devuelve la
  * respuesta. No sabe nada del proveedor de mensajería.
  */
+import { logEvent } from "../analytics/events.js";
 import type { IncomingMessage } from "../messaging/types.js";
 import { handleFlow } from "./flows.js";
 import { answerWithLLM } from "./llm.js";
@@ -15,8 +16,9 @@ export async function processMessage(incoming: IncomingMessage): Promise<string>
   // 1) Primero intentan resolver los flujos determinísticos (menús).
   let reply = handleFlow(session, incoming.text);
 
-  // 2) Si ningún flujo aplica, responde el LLM anclado al conocimiento.
+  // 2) Si ningún flujo aplica, es una consulta abierta: responde el LLM.
   if (reply === null) {
+    logEvent("open_question", incoming.from);
     reply = await answerWithLLM(session, incoming.text);
   }
 
