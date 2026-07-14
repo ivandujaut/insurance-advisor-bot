@@ -10,6 +10,7 @@
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
 import { logEvent } from "../analytics/events.js";
+import { saveLead } from "../leads/store.js";
 import { AUTO_PLANS, type Session } from "./session.js";
 
 const GREETINGS = ["hola", "buenas", "buenos dias", "buenas tardes", "buenas noches", "hi", "hello"];
@@ -129,6 +130,14 @@ function handleQuotingAuto(session: Session, rawText: string): string | null {
     }
     session.data.plan = plan;
     session.stage = "idle";
+    saveLead({
+      userId: session.userId,
+      name: session.name,
+      vehiculo: session.data.vehiculo ?? "",
+      cp: session.data.cp ?? "",
+      condicion: session.data.condicion ?? "",
+      plan,
+    });
     logEvent("lead_captured", session.userId, { plan });
     return [
       "¡Listo! Con estos datos armo tu solicitud de cotización:",
