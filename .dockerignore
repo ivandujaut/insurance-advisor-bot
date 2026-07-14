@@ -1,0 +1,13 @@
+node_modules
+dist
+data
+.git
+.gitignore
+.env
+.env.*
+.husky
+.test-tmp
+.DS_Store
+*.log
+docs
+.github
