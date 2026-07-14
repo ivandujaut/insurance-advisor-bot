@@ -5,6 +5,9 @@
   "description": "Bot de WhatsApp para cotizacion y consulta de polizas de seguros (La Caja). Motor hibrido: menus + LLM.",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "chat": "tsx src/main/chat.ts",
     "funnel": "tsx src/main/funnel.ts",
