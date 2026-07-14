@@ -155,6 +155,18 @@ qué dato, y qué resigné.
 - **Trade-off:** el contenido hay que mantenerlo actualizado cuando cambian los
   productos.
 
+### Decisión 8: comunicar el análisis como caso de estudio público
+
+- **Criterio:** un buen análisis que nadie lee no cambia nada; la distribución es
+  parte del producto.
+- **Dato que la respalda:** el público objetivo (equipos de producto, en
+  particular La Caja) consume casos de estudio en formato blog, no repositorios de
+  código.
+- **Por qué:** publicar el razonamiento como entrada de blog (fuente: este mismo
+  documento) traduce el trabajo a un formato que llega al lector correcto.
+- **Trade-off:** exponer el análisis públicamente; se asume porque el objetivo es,
+  justamente, que se lea.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -195,8 +207,9 @@ métricas que instrumentaría:
 
 ## 8. Roadmap
 
-1. Completar las líneas restantes en la base de conocimiento (Vida, Accidentes
-   Personales, Bicicleta, Cartera, Notebook, Cuidados Mayores).
+1. ~~Completar las líneas restantes en la base de conocimiento (Vida, Accidentes
+   Personales, Bicicleta, Cartera, Notebook, Cuidados Mayores).~~ **Hecho:** las 10
+   líneas para personas están cargadas con contenido real.
 2. Persistir los leads y notificar a un asesor.
 3. Integrar precios reales vía los cotizadores existentes.
 4. Instrumentar las métricas de la sección 6.
