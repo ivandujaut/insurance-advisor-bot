@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "chat": "tsx src/scripts/chat.ts",
+    "funnel": "tsx src/scripts/funnel.ts",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
