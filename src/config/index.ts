@@ -15,6 +15,21 @@ export type MessagingProviderName = "cli" | "meta";
 export type PersistenceDriver = "jsonl" | "postgres";
 export type SessionDriver = "memory" | "redis";
 
+/**
+ * Parsea overrides de destinatario ("waId=aQuienEnviar,...").
+ * Escape hatch para el número de PRUEBA de Meta cuando la lista de autorizados
+ * guarda el número en un formato distinto al wa_id del webhook (ej: Argentina,
+ * que llega con "9" pero el sandbox lo tiene con "15"). Vacío en producción.
+ */
+export function parseRecipientOverrides(raw: string): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const pair of raw.split(",")) {
+    const [from, to] = pair.split("=");
+    if (from?.trim() && to?.trim()) map[from.trim()] = to.trim();
+  }
+  return map;
+}
+
 export const config = {
   llm: {
     apiKey: process.env.ANTHROPIC_API_KEY ?? "",
@@ -30,6 +45,8 @@ export const config = {
     verifyToken: process.env.META_VERIFY_TOKEN ?? "",
     // Opcional: si esta seteado, se verifica la firma del webhook (recomendado).
     appSecret: process.env.META_APP_SECRET ?? "",
+    // Opcional: overrides de destinatario para el numero de prueba (ver parseRecipientOverrides).
+    recipientOverrides: parseRecipientOverrides(process.env.META_RECIPIENT_OVERRIDES ?? ""),
   },
   persistence: {
     // Adapter de leads/eventos. Default JSONL (sin dependencias).

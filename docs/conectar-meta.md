@@ -82,3 +82,11 @@ Mandá un WhatsApp al número de prueba. El bot debería responder con el menú.
 - **Firma:** si dejás `META_APP_SECRET` vacío, el webhook igual funciona pero no
   verifica la firma (el server avisa al arrancar). Para un endpoint público,
   conviene setearlo.
+- **Número argentino en el sandbox:** Meta te identifica en el webhook con el
+  formato E.164 (con "9": `5491151769708`), pero la lista de autorizados del
+  número de prueba a veces guarda el formato local (con "15": `54111551769708`).
+  Si el bot recibe el mensaje pero el envío de la respuesta falla con
+  `#131030 Recipient phone number not in allowed list`, mapealo con
+  `META_RECIPIENT_OVERRIDES` (ver `.env.example`). Podés sumar varios números
+  separados por coma. En producción, con un número real, no hace falta: se
+  responde directo al wa_id.

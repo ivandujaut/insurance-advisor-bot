@@ -15,7 +15,7 @@
     "start": "node dist/main/server.js",
     "build": "tsc && node scripts/copy-assets.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/domain/conversation/*.test.ts src/application/*.test.ts src/infrastructure/persistence/*.test.ts src/infrastructure/messaging/*.test.ts",
+    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/domain/conversation/*.test.ts src/application/*.test.ts src/infrastructure/persistence/*.test.ts src/infrastructure/messaging/*.test.ts src/config/*.test.ts",
     "check:arch": "node scripts/check-arch.mjs",
     "format": "biome format --write src scripts",
     "lint": "biome check src scripts",
