@@ -4,12 +4,14 @@
  * por un CRM o una base de datos (misma interfaz saveLead()).
  */
 import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-// src/lib/leads -> raiz del proyecto
-const dataDir = join(here, "..", "..", "..", "data");
+// src/lib/leads -> raiz del proyecto. Se puede sobreescribir con LACAJA_DATA_DIR.
+const dataDir = process.env.LACAJA_DATA_DIR
+  ? resolve(process.env.LACAJA_DATA_DIR)
+  : join(here, "..", "..", "..", "data");
 const leadsFile = join(dataDir, "leads.jsonl");
 
 export interface Lead {
