@@ -1,14 +1,13 @@
 /**
- * Respuesta abierta con Claude (AI SDK), anclada a la base de conocimiento.
- * Se usa cuando el mensaje no encaja en un flujo de menú.
+ * Respuesta abierta anclada a la base de conocimiento. Es lógica de aplicación:
+ * arma el prompt con el conocimiento, delega la generación en el puerto LlmPort
+ * inyectado, y traduce las fallas a mensajes útiles para el usuario. No conoce
+ * el proveedor de LLM.
  */
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { generateText } from "ai";
-import { config } from "../config.js";
+import type { Dependencies } from "../application/ports.js";
+import { LlmNotConfiguredError } from "../application/ports.js";
 import { loadKnowledge } from "../knowledge/index.js";
 import type { Session } from "./session.js";
-
-const anthropic = createAnthropic({ apiKey: config.llm.apiKey });
 
 function systemPrompt(): string {
   return [
@@ -24,24 +23,17 @@ function systemPrompt(): string {
   ].join("\n");
 }
 
-export async function answerWithLLM(session: Session, userText: string): Promise<string> {
-  if (!config.llm.apiKey) {
-    return "Todavía no tengo configurada la clave del modelo (ANTHROPIC_API_KEY). Mientras tanto, escribí *menú* para ver las opciones disponibles.";
-  }
-
+export async function answer(session: Session, userText: string, deps: Dependencies): Promise<string> {
   const messages = session.history.map((t) => ({ role: t.role, content: t.content }));
   messages.push({ role: "user" as const, content: userText });
 
   try {
-    const { text } = await generateText({
-      model: anthropic(config.llm.model),
-      system: systemPrompt(),
-      messages,
-      maxTokens: 400,
-    });
-    return text.trim();
+    return await deps.llm.generate({ system: systemPrompt(), messages });
   } catch (err) {
-    console.error("Error en LLM:", err);
+    if (err instanceof LlmNotConfiguredError) {
+      return "Todavía no tengo configurada la clave del modelo (ANTHROPIC_API_KEY). Mientras tanto, escribí *menú* para ver las opciones disponibles.";
+    }
+    console.error("Error en el asistente:", err);
     return "Uy, tuve un problema para procesar tu consulta. ¿Probamos de nuevo, o preferís que te derive a un asesor?";
   }
 }

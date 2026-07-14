@@ -7,8 +7,8 @@
 import { defaultDependencies } from "../application/dependencies.js";
 import type { Dependencies } from "../application/ports.js";
 import type { IncomingMessage } from "../messaging/types.js";
+import { answer } from "./assistant.js";
 import { handleFlow } from "./flows.js";
-import { answerWithLLM } from "./llm.js";
 import { getSession, recordTurn, saveSession } from "./session.js";
 
 export async function processMessage(
@@ -21,10 +21,10 @@ export async function processMessage(
   // 1) Primero intentan resolver los flujos determinísticos (menús).
   let reply = handleFlow(session, incoming.text, deps);
 
-  // 2) Si ningún flujo aplica, es una consulta abierta: responde el LLM.
+  // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
   if (reply === null) {
     deps.events.log("open_question", incoming.from);
-    reply = await answerWithLLM(session, incoming.text);
+    reply = await answer(session, incoming.text, deps);
   }
 
   recordTurn(session, "assistant", reply);
