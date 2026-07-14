@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Dependencies, EventType, LeadInput } from "../application/ports.js";
+import type { Dependencies, EventType, LeadInput } from "../../application/ports.js";
 import { handleFlow } from "./flows.js";
 import type { Session } from "./session.js";
 

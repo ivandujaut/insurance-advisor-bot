@@ -9,7 +9,7 @@
  * - Devuelve string -> respuesta ya resuelta por el flujo.
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
-import type { Dependencies } from "../application/ports.js";
+import type { Dependencies } from "../../application/ports.js";
 import { AUTO_PLANS, type Session } from "./session.js";
 
 const GREETINGS = ["hola", "buenas", "buenos dias", "buenas tardes", "buenas noches", "hi", "hello"];

@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { test } from "node:test";
+import { createJsonlEventSink, eventsFile } from "./jsonl-events.js";
+import { createJsonlLeadRepository, leadsFile } from "./jsonl-leads.js";
+
+function readLines(path: string): Array<Record<string, unknown>> {
+  if (!existsSync(path)) return [];
+  return readFileSync(path, "utf8")
+    .split("\n")
+    .filter((l) => l.trim().length > 0)
+    .map((l) => JSON.parse(l) as Record<string, unknown>);
+}
+
+test("el LeadRepository JSONL persiste el lead en disco con timestamp", () => {
+  const repo = createJsonlLeadRepository();
+  repo.save({
+    userId: "adapter-lead",
+    name: "X",
+    vehiculo: "Toyota Corolla 2020",
+    cp: "1000",
+    condicion: "0km",
+    plan: "Terceros Completo",
+  });
+  const mine = readLines(leadsFile).filter((l) => l.userId === "adapter-lead");
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0]?.plan, "Terceros Completo");
+  assert.ok(mine[0]?.ts, "el adapter agrega el timestamp");
+});
+
+test("el EventSink JSONL persiste el evento en disco", () => {
+  const sink = createJsonlEventSink();
+  sink.log("lead_captured", "adapter-evt", { plan: "Terceros Completo" });
+  const mine = readLines(eventsFile).filter((e) => e.userId === "adapter-evt");
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0]?.type, "lead_captured");
+});

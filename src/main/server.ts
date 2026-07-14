@@ -7,12 +7,14 @@
  */
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { config } from "./lib/config.js";
-import { processMessage } from "./lib/conversation/engine.js";
-import { createMessagingProvider, parseMetaWebhook } from "./lib/messaging/index.js";
+import { processMessage } from "../application/process-message.js";
+import { config } from "../config/index.js";
+import { parseMetaWebhook } from "../infrastructure/messaging/meta.js";
+import { buildDependencies, buildMessagingProvider } from "./container.js";
 
 const app = new Hono();
-const provider = createMessagingProvider();
+const deps = buildDependencies();
+const provider = buildMessagingProvider();
 
 app.get("/", (c) => c.text("lacaja-whatsapp-bot OK"));
 
@@ -35,7 +37,7 @@ app.post("/webhook", async (c) => {
 
   // Respondemos 200 rápido a Meta y procesamos los mensajes aparte.
   for (const incoming of messages) {
-    processMessage(incoming)
+    processMessage(incoming, deps)
       .then((reply) => provider.send({ to: incoming.from, text: reply }))
       .catch((err) => console.error("Error procesando mensaje:", err));
   }

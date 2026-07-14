@@ -28,5 +28,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Check architecture
+        run: pnpm check:arch
+
       - name: Test
         run: pnpm test

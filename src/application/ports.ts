@@ -7,7 +7,31 @@
  *
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
-import type { Session } from "../conversation/session.js";
+import type { Session } from "../domain/conversation/session.js";
+
+// --- Mensajería ---
+
+/** Mensaje entrante ya normalizado, sin importar el proveedor de origen. */
+export interface IncomingMessage {
+  /** Identificador estable del usuario (ej: numero de telefono). */
+  from: string;
+  /** Texto del mensaje. */
+  text: string;
+  /** Nombre del contacto, si el proveedor lo expone. */
+  name?: string;
+}
+
+/** Mensaje saliente que el motor pide enviar. */
+export interface OutgoingMessage {
+  to: string;
+  text: string;
+}
+
+/** Proveedor de mensajería. El núcleo no sabe si detrás hay Meta, Twilio o consola. */
+export interface MessagingProvider {
+  readonly name: string;
+  send(message: OutgoingMessage): Promise<void>;
+}
 
 // --- Eventos del funnel ---
 

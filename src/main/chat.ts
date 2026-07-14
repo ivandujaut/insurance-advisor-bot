@@ -5,9 +5,11 @@
  *   pnpm chat
  */
 import { createInterface } from "node:readline";
-import { processMessage } from "../lib/conversation/engine.js";
+import { processMessage } from "../application/process-message.js";
+import { buildDependencies } from "./container.js";
 
 const USER_ID = "cli-user";
+const deps = buildDependencies();
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -22,7 +24,7 @@ function ask(): void {
     }
 
     try {
-      const reply = await processMessage({ from: USER_ID, text: input, name: "Usuario" });
+      const reply = await processMessage({ from: USER_ID, text: input, name: "Usuario" }, deps);
       console.log(`\n🤖 Bot:\n${reply}\n`);
     } catch (err) {
       console.error("Error:", err);
