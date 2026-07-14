@@ -4,5 +4,9 @@ dist/
 .env.local
 *.log
 .DS_Store
+
+# Datos de runtime (leads y eventos del funnel)
+data/
 .vscode
 
+.gstack/
