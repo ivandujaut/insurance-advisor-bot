@@ -4,9 +4,9 @@
  * inyectado, y traduce las fallas a mensajes útiles para el usuario. No conoce
  * el proveedor de LLM.
  */
-import type { Dependencies } from "../application/ports.js";
-import { LlmNotConfiguredError } from "../application/ports.js";
-import type { Session } from "./session.js";
+import type { Dependencies } from "./ports.js";
+import { LlmNotConfiguredError } from "./ports.js";
+import type { Session } from "../domain/conversation/session.js";
 
 function systemPrompt(knowledge: string): string {
   return [

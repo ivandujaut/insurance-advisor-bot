@@ -5,13 +5,14 @@
   "description": "Bot de WhatsApp para cotizacion y consulta de polizas de seguros (La Caja). Motor hibrido: menus + LLM.",
   "type": "module",
   "scripts": {
-    "chat": "tsx src/scripts/chat.ts",
-    "funnel": "tsx src/scripts/funnel.ts",
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
+    "chat": "tsx src/main/chat.ts",
+    "funnel": "tsx src/main/funnel.ts",
+    "dev": "tsx watch src/main/server.ts",
+    "start": "node dist/main/server.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/lib/conversation/*.test.ts"
+    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/domain/conversation/*.test.ts src/application/*.test.ts src/infrastructure/persistence/*.test.ts",
+    "check:arch": "node scripts/check-arch.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",

@@ -7,7 +7,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { KnowledgeSource } from "../application/ports.js";
+import type { KnowledgeSource } from "../../application/ports.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const productosDir = join(here, "productos");

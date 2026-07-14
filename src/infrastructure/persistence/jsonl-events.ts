@@ -6,7 +6,7 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AnalyticsEvent, EventSink } from "../application/ports.js";
+import type { AnalyticsEvent, EventSink } from "../../application/ports.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // src/lib/analytics -> raiz del proyecto. Se puede sobreescribir con

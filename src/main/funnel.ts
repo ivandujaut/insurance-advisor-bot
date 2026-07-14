@@ -6,9 +6,9 @@
  *   pnpm funnel
  */
 import { existsSync, readFileSync } from "node:fs";
-import { eventsFile } from "../lib/analytics/events.js";
-import type { AnalyticsEvent, Lead } from "../lib/application/ports.js";
-import { leadsFile } from "../lib/leads/store.js";
+import type { AnalyticsEvent, Lead } from "../application/ports.js";
+import { eventsFile } from "../infrastructure/persistence/jsonl-events.js";
+import { leadsFile } from "../infrastructure/persistence/jsonl-leads.js";
 
 function readJsonl<T>(path: string): T[] {
   if (!existsSync(path)) return [];

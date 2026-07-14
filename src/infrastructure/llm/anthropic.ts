@@ -5,8 +5,8 @@
  */
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
-import { config } from "../config.js";
-import { LlmNotConfiguredError, type LlmPort } from "../application/ports.js";
+import { config } from "../../config/index.js";
+import { LlmNotConfiguredError, type LlmPort } from "../../application/ports.js";
 
 export function createAnthropicLlm(): LlmPort {
   const { apiKey, model } = config.llm;
