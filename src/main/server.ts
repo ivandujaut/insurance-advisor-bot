@@ -9,12 +9,16 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { processMessage } from "../application/process-message.js";
 import { config } from "../config/index.js";
-import { parseMetaWebhook } from "../infrastructure/messaging/meta.js";
+import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
 import { buildDependencies, buildMessagingProvider } from "./container.js";
 
 const app = new Hono();
 const deps = await buildDependencies();
 const provider = buildMessagingProvider();
+
+if (provider.name === "meta" && !config.meta.appSecret) {
+  console.warn("⚠️  META_APP_SECRET no está seteado: no se verifica la firma del webhook.");
+}
 
 app.get("/", (c) => c.text("lacaja-whatsapp-bot OK"));
 
@@ -32,7 +36,22 @@ app.get("/webhook", (c) => {
 
 // Recepción de mensajes.
 app.post("/webhook", async (c) => {
-  const payload = await c.req.json().catch(() => null);
+  const raw = await c.req.text();
+
+  // Si hay app secret, se exige una firma válida (rechaza requests que no vienen de Meta).
+  if (config.meta.appSecret) {
+    const signature = c.req.header("x-hub-signature-256");
+    if (!verifyMetaSignature(raw, signature, config.meta.appSecret)) {
+      return c.text("Invalid signature", 403);
+    }
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    payload = null;
+  }
   const messages = parseMetaWebhook(payload);
 
   // Respondemos 200 rápido a Meta y procesamos los mensajes aparte.

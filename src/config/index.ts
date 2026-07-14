@@ -28,6 +28,8 @@ export const config = {
     accessToken: process.env.META_ACCESS_TOKEN ?? "",
     phoneNumberId: process.env.META_PHONE_NUMBER_ID ?? "",
     verifyToken: process.env.META_VERIFY_TOKEN ?? "",
+    // Opcional: si esta seteado, se verifica la firma del webhook (recomendado).
+    appSecret: process.env.META_APP_SECRET ?? "",
   },
   persistence: {
     // Adapter de leads/eventos. Default JSONL (sin dependencias).
