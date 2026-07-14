@@ -6,10 +6,9 @@
  */
 import type { Dependencies } from "../application/ports.js";
 import { LlmNotConfiguredError } from "../application/ports.js";
-import { loadKnowledge } from "../knowledge/index.js";
 import type { Session } from "./session.js";
 
-function systemPrompt(): string {
+function systemPrompt(knowledge: string): string {
   return [
     "Sos el asistente virtual de seguros de La Caja (Argentina) por WhatsApp.",
     "Respondés en español rioplatense, claro y breve (2-4 frases). Sin tecnicismos innecesarios.",
@@ -18,7 +17,7 @@ function systemPrompt(): string {
     "Cuando tenga sentido, invitás a cotizar o a escribir *menú* para ver las opciones.",
     "",
     "=== BASE DE CONOCIMIENTO ===",
-    loadKnowledge(),
+    knowledge,
     "=== FIN BASE DE CONOCIMIENTO ===",
   ].join("\n");
 }
@@ -28,7 +27,8 @@ export async function answer(session: Session, userText: string, deps: Dependenc
   messages.push({ role: "user" as const, content: userText });
 
   try {
-    return await deps.llm.generate({ system: systemPrompt(), messages });
+    const knowledge = await deps.knowledge.load();
+    return await deps.llm.generate({ system: systemPrompt(knowledge), messages });
   } catch (err) {
     if (err instanceof LlmNotConfiguredError) {
       return "Todavía no tengo configurada la clave del modelo (ANTHROPIC_API_KEY). Mientras tanto, escribí *menú* para ver las opciones disponibles.";

@@ -7,6 +7,7 @@
  * núcleo ya depende solo de los puertos.
  */
 import { createJsonlEventSink } from "../analytics/events.js";
+import { createFilesystemKnowledge } from "../knowledge/filesystem.js";
 import { createAnthropicLlm } from "../llm/anthropic.js";
 import { createJsonlLeadRepository } from "../leads/store.js";
 import { createInMemorySessionStore } from "../session/memory.js";
@@ -21,6 +22,7 @@ export function defaultDependencies(): Dependencies {
       events: createJsonlEventSink(),
       llm: createAnthropicLlm(),
       sessions: createInMemorySessionStore(),
+      knowledge: createFilesystemKnowledge(),
     };
   }
   return cached;
