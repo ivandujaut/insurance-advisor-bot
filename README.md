@@ -9,33 +9,35 @@ anclado a una base de conocimiento.
 
 ## Arquitectura
 
+Arquitectura **hexagonal (Ports & Adapters)**. Las dependencias apuntan hacia
+adentro: el núcleo no conoce la infraestructura. Ver
+[ADR 0001](docs/adr/0001-arquitectura-hexagonal.md).
+
 ```
 src/
-├── server.ts                     # Webhook HTTP (Hono) para Meta Cloud API
-├── scripts/chat.ts               # Chat por consola para probar sin WhatsApp
-└── lib/
-    ├── config.ts                 # Config desde variables de entorno
-    ├── messaging/                # Capa de adaptadores (proveedor intercambiable)
-    │   ├── types.ts              #   contrato MessagingProvider
-    │   ├── cli.ts                #   adaptador consola (dev)
-    │   ├── meta.ts               #   adaptador WhatsApp Cloud API (Meta)
-    │   └── index.ts              #   factory segun MESSAGING_PROVIDER
-    ├── conversation/
-    │   ├── engine.ts             #   orquestador: menús -> LLM
-    │   ├── flows.ts              #   máquina de estados de menús
-    │   ├── llm.ts                #   respuesta con Claude + grounding
-    │   └── session.ts            #   sesiones en memoria
-    ├── analytics/
-    │   └── events.ts             #   log de eventos del funnel (data/events.jsonl)
-    ├── leads/
-    │   └── store.ts              #   persistencia de leads (data/leads.jsonl)
-    └── knowledge/
-        └── productos/*.md        #   base de conocimiento (auto, general, ...)
+├── domain/                       # núcleo puro (sin imports de infraestructura)
+│   └── conversation/             #   session (modelo), flows (máquina de menús)
+├── application/                  # puertos + orquestación
+│   ├── ports.ts                  #   LlmPort, LeadRepository, EventSink,
+│   │                             #   SessionStore, KnowledgeSource, MessagingProvider
+│   ├── process-message.ts        #   orquestador: menús -> LLM
+│   └── assistant.ts              #   respuesta abierta anclada al conocimiento
+├── infrastructure/               # adapters concretos (implementan los puertos)
+│   ├── messaging/                #   cli, meta (WhatsApp Cloud API)
+│   ├── llm/                      #   anthropic (Claude vía AI SDK)
+│   ├── persistence/              #   jsonl-leads, jsonl-events, memory-sessions
+│   └── knowledge/                #   filesystem + productos/*.md
+├── config/
+└── main/                         # composition root
+    ├── container.ts              #   arma e inyecta las dependencias
+    └── server.ts, chat.ts, funnel.ts
 ```
 
-La clave del diseño: el **motor no depende del proveedor de mensajería**.
-Hoy se desarrolla contra la consola; mañana se conecta Meta cambiando una
-variable de entorno.
+La clave del diseño: **cada borde intercambiable vive detrás de un puerto**.
+Cambiar de canal (Meta, Twilio), de LLM (Gateway, otro modelo) o de storage
+(archivo, Postgres, CRM) es escribir otro adapter, sin tocar el núcleo. La regla
+"domain/ y application/ no importan de infrastructure/" se verifica sola en el CI
+(`pnpm check:arch`).
 
 ## Puesta en marcha
 
