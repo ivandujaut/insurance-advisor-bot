@@ -31,7 +31,9 @@ for (const base of INNER) {
 }
 
 if (violations.length > 0) {
-  console.error("❌ Violación de la regla de dependencias (domain/application no deben importar infrastructure/main):");
+  console.error(
+    "❌ Violación de la regla de dependencias (domain/application no deben importar infrastructure/main):",
+  );
   for (const v of violations) console.error(`   ${v}`);
   process.exit(1);
 }

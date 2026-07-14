@@ -2,8 +2,13 @@
  * Adaptador para la WhatsApp Cloud API de Meta.
  * Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
  */
+
+import type {
+  IncomingMessage,
+  MessagingProvider,
+  OutgoingMessage,
+} from "../../application/ports.js";
 import { getMetaConfig } from "../../config/index.js";
-import type { IncomingMessage, MessagingProvider, OutgoingMessage } from "../../application/ports.js";
 
 const GRAPH_API_VERSION = "v21.0";
 

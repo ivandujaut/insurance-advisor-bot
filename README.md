@@ -69,7 +69,22 @@ pnpm funnel
 4. Configurar el webhook en Meta apuntando a `https://TU_DOMINIO/webhook` con el
    mismo verify token.
 
+## Desarrollo
+
+Scripts: `pnpm typecheck`, `pnpm test`, `pnpm check:arch` (regla de dependencias),
+`pnpm lint` y `pnpm format` (Biome).
+
+**Convención de commits (gitmoji):** `<emoji> <tipo>: <descripción>` en inglés,
+minúscula, sin punto final (ej: `✨ feat: add auto quote flow`). Validada por
+commitlint.
+
+**Git hooks (Husky):**
+- `pre-commit`: formatea y lintea los archivos staged (Biome vía lint-staged).
+- `commit-msg`: valida el mensaje contra la convención.
+- `pre-push`: corre `typecheck` + `check:arch` + `test` antes de compartir.
+
 ## Estado
 
-Prototipo inicial. La base de conocimiento (`src/lib/knowledge/productos/`) es
-contenido semilla y hay que ajustarla a la oferta real de La Caja.
+Prototipo inicial. La base de conocimiento
+(`src/infrastructure/knowledge/productos/`) es contenido semilla y hay que
+ajustarla a la oferta real de La Caja.
