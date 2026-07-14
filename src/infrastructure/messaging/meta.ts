@@ -9,7 +9,7 @@ import type {
   MessagingProvider,
   OutgoingMessage,
 } from "../../application/ports.js";
-import { getMetaConfig } from "../../config/index.js";
+import { config, getMetaConfig } from "../../config/index.js";
 
 const GRAPH_API_VERSION = "v21.0";
 
@@ -34,14 +34,18 @@ export class MetaProvider implements MessagingProvider {
   readonly name = "meta";
   private readonly accessToken: string;
   private readonly phoneNumberId: string;
+  private readonly recipientOverrides: Record<string, string>;
 
   constructor() {
     const cfg = getMetaConfig();
     this.accessToken = cfg.accessToken;
     this.phoneNumberId = cfg.phoneNumberId;
+    this.recipientOverrides = config.meta.recipientOverrides;
   }
 
   async send(message: OutgoingMessage): Promise<void> {
+    // Escape hatch para el numero de prueba (ver META_RECIPIENT_OVERRIDES).
+    const to = this.recipientOverrides[message.to] ?? message.to;
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${this.phoneNumberId}/messages`;
     const res = await fetch(url, {
       method: "POST",
@@ -52,7 +56,7 @@ export class MetaProvider implements MessagingProvider {
       body: JSON.stringify({
         messaging_product: "whatsapp",
         recipient_type: "individual",
-        to: message.to,
+        to,
         type: "text",
         text: { body: message.text },
       }),
