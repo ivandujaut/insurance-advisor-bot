@@ -7,6 +7,7 @@
  * núcleo ya depende solo de los puertos.
  */
 import { createJsonlEventSink } from "../analytics/events.js";
+import { createAnthropicLlm } from "../llm/anthropic.js";
 import { createJsonlLeadRepository } from "../leads/store.js";
 import type { Dependencies } from "./ports.js";
 
@@ -17,6 +18,7 @@ export function defaultDependencies(): Dependencies {
     cached = {
       leads: createJsonlLeadRepository(),
       events: createJsonlEventSink(),
+      llm: createAnthropicLlm(),
     };
   }
   return cached;

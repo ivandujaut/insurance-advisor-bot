@@ -51,10 +51,36 @@ export interface LeadRepository {
   save(lead: LeadInput): void;
 }
 
+// --- LLM ---
+
+export interface LlmMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface LlmRequest {
+  system: string;
+  messages: LlmMessage[];
+}
+
+/** Puerto del modelo de lenguaje. Hoy Anthropic, mañana el AI Gateway u otro. */
+export interface LlmPort {
+  generate(request: LlmRequest): Promise<string>;
+}
+
+/** El adapter de LLM no tiene credenciales configuradas (caso típico en dev). */
+export class LlmNotConfiguredError extends Error {
+  constructor() {
+    super("El proveedor de LLM no está configurado.");
+    this.name = "LlmNotConfiguredError";
+  }
+}
+
 // --- Dependencias inyectadas en el núcleo ---
 
 /** Puertos que el motor de conversación recibe inyectados. Crece con cada borde. */
 export interface Dependencies {
   leads: LeadRepository;
   events: EventSink;
+  llm: LlmPort;
 }

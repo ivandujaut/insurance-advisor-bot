@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { eventsFile } from "../analytics/events.js";
 import type { AnalyticsEvent, Dependencies, Lead, LeadInput } from "../application/ports.js";
+import { LlmNotConfiguredError } from "../application/ports.js";
 import { leadsFile } from "../leads/store.js";
 import { processMessage } from "./engine.js";
 
@@ -19,12 +20,21 @@ test("un usuario nuevo que saluda recibe el menú", async () => {
   assert.match(reply, /Cotizar mi seguro de auto/);
 });
 
-test("una consulta abierta sin API key cae al fallback del LLM", async () => {
+test("una consulta abierta cae al fallback cuando el LLM no está configurado", async () => {
   const from = "e-llm";
+  const deps: Dependencies = {
+    leads: { save: () => {} },
+    events: { log: () => {} },
+    llm: {
+      generate: async () => {
+        throw new LlmNotConfiguredError();
+      },
+    },
+  };
   // El primer mensaje siempre muestra el menú; recién el segundo (texto libre
-  // que no matchea ningún menú) se delega al LLM.
-  await processMessage({ from, text: "hola", name: "Beto" });
-  const reply = await processMessage({ from, text: "¿qué es la franquicia?", name: "Beto" });
+  // que no matchea ningún menú) se delega al asistente.
+  await processMessage({ from, text: "hola", name: "Beto" }, deps);
+  const reply = await processMessage({ from, text: "¿qué es la franquicia?", name: "Beto" }, deps);
   assert.match(reply, /ANTHROPIC_API_KEY|clave del modelo/);
 });
 
@@ -56,6 +66,7 @@ test("processMessage acepta dependencias inyectadas (sin tocar disco)", async ()
   const deps: Dependencies = {
     leads: { save: (lead) => savedLeads.push(lead) },
     events: { log: () => {} },
+    llm: { generate: async () => "" },
   };
   for (const text of ["hola", "1", "Peugeot 208 2022", "5000", "0km", "3"]) {
     await processMessage({ from: "e-inject", text, name: "Eze" }, deps);
