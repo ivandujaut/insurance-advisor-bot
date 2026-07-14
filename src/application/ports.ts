@@ -51,9 +51,9 @@ export interface AnalyticsEvent {
   props?: Record<string, string>;
 }
 
-/** Sink de eventos: registra un momento del funnel. Hoy JSONL, mañana un sink real. */
+/** Sink de eventos: registra un momento del funnel. Hoy JSONL, mañana Postgres. */
 export interface EventSink {
-  log(type: EventType, userId: string, props?: Record<string, string>): void;
+  log(type: EventType, userId: string, props?: Record<string, string>): Promise<void>;
 }
 
 // --- Leads ---
@@ -73,7 +73,7 @@ export type LeadInput = Omit<Lead, "ts">;
 
 /** Repositorio de leads. Hoy JSONL, mañana un CRM o una base de datos. */
 export interface LeadRepository {
-  save(lead: LeadInput): void;
+  save(lead: LeadInput): Promise<void>;
 }
 
 // --- LLM ---
@@ -105,8 +105,8 @@ export class LlmNotConfiguredError extends Error {
 
 /** Almacenamiento de sesiones. Hoy en memoria, mañana Redis/KV para varias instancias. */
 export interface SessionStore {
-  get(userId: string): Session | undefined;
-  save(session: Session): void;
+  get(userId: string): Promise<Session | undefined>;
+  save(session: Session): Promise<void>;
 }
 
 // --- Conocimiento ---

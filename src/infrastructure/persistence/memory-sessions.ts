@@ -9,8 +9,8 @@ import type { Session } from "../../domain/conversation/session.js";
 export function createInMemorySessionStore(): SessionStore {
   const store = new Map<string, Session>();
   return {
-    get: (userId) => store.get(userId),
-    save: (session) => {
+    get: async (userId) => store.get(userId),
+    save: async (session) => {
       store.set(session.userId, session);
     },
   };

@@ -52,13 +52,17 @@ function normalize(text: string): string {
   return text.trim().toLowerCase();
 }
 
-export function handleFlow(session: Session, text: string, deps: Dependencies): string | null {
+export async function handleFlow(
+  session: Session,
+  text: string,
+  deps: Dependencies,
+): Promise<string | null> {
   const input = normalize(text);
 
   // Derivación a asesor: disponible en cualquier momento.
   if (ADVISOR_KEYWORDS.includes(input)) {
     session.stage = "idle";
-    deps.events.log("advisor_requested", session.userId);
+    await deps.events.log("advisor_requested", session.userId);
     return "Te derivo con un asesor de La Caja. 🧑‍💼\n\n(En producción, acá se dispara la derivación al canal oficial / Línea Única 0810-555-2252.)";
   }
 
@@ -67,7 +71,7 @@ export function handleFlow(session: Session, text: string, deps: Dependencies): 
     // "conversation_started" solo en el primer contacto (desde idle sin datos),
     // para no inflar la metrica cuando el usuario vuelve al menú.
     if (session.stage === "idle" && session.history.length <= 1) {
-      deps.events.log("conversation_started", session.userId);
+      await deps.events.log("conversation_started", session.userId);
     }
     session.stage = "main_menu";
     session.data = {};
@@ -84,16 +88,20 @@ export function handleFlow(session: Session, text: string, deps: Dependencies): 
   }
 }
 
-function handleMainMenu(session: Session, input: string, deps: Dependencies): string | null {
+async function handleMainMenu(
+  session: Session,
+  input: string,
+  deps: Dependencies,
+): Promise<string | null> {
   switch (input) {
     case "1":
       session.stage = "quoting_auto";
       session.data = {};
-      deps.events.log("quote_started", session.userId);
+      await deps.events.log("quote_started", session.userId);
       return "Genial, cotizamos tu *seguro de auto*. 🚗\n\nDecime la *marca, modelo y año* del vehículo (ej: Toyota Corolla 2020).";
     case "2":
       // La comparación es informativa; el usuario sigue en el menú.
-      deps.events.log("plan_comparison_viewed", session.userId);
+      await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
     case "3":
       // Duda abierta -> la responde el LLM con la base de conocimiento.
@@ -104,25 +112,29 @@ function handleMainMenu(session: Session, input: string, deps: Dependencies): st
   }
 }
 
-function handleQuotingAuto(session: Session, rawText: string, deps: Dependencies): string | null {
+async function handleQuotingAuto(
+  session: Session,
+  rawText: string,
+  deps: Dependencies,
+): Promise<string | null> {
   const text = rawText.trim();
 
   if (!session.data.vehiculo) {
     session.data.vehiculo = text;
-    deps.events.log("quote_step", session.userId, { step: "vehiculo" });
+    await deps.events.log("quote_step", session.userId, { step: "vehiculo" });
     return "Perfecto. ¿En qué *código postal* se guarda el auto?";
   }
 
   if (!session.data.cp) {
     session.data.cp = text;
-    deps.events.log("quote_step", session.userId, { step: "cp" });
+    await deps.events.log("quote_step", session.userId, { step: "cp" });
     return "¿El auto es *0 km* o *usado*?";
   }
 
   if (!session.data.condicion) {
     const esUsado = /usad/i.test(text);
     session.data.condicion = esUsado ? "usado" : "0km";
-    deps.events.log("quote_step", session.userId, { step: "condicion" });
+    await deps.events.log("quote_step", session.userId, { step: "condicion" });
     const notaInspeccion = esUsado
       ? "Al ser usado, la inspección se hace online cargando fotos (no hace falta llevarlo).\n\n"
       : "Al ser 0 km, no necesitás inspección.\n\n";
@@ -137,7 +149,7 @@ function handleQuotingAuto(session: Session, rawText: string, deps: Dependencies
     }
     session.data.plan = plan;
     session.stage = "idle";
-    deps.leads.save({
+    await deps.leads.save({
       userId: session.userId,
       name: session.name,
       vehiculo: session.data.vehiculo ?? "",
@@ -145,7 +157,7 @@ function handleQuotingAuto(session: Session, rawText: string, deps: Dependencies
       condicion: session.data.condicion ?? "",
       plan,
     });
-    deps.events.log("lead_captured", session.userId, { plan });
+    await deps.events.log("lead_captured", session.userId, { plan });
     return [
       "¡Listo! Con estos datos armo tu solicitud de cotización:",
       "",
