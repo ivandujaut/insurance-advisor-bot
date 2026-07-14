@@ -14,21 +14,22 @@ export async function processMessage(
   incoming: IncomingMessage,
   deps: Dependencies,
 ): Promise<string> {
-  const session = deps.sessions.get(incoming.from) ?? createSession(incoming.from, incoming.name);
+  const session =
+    (await deps.sessions.get(incoming.from)) ?? createSession(incoming.from, incoming.name);
   if (incoming.name && !session.name) session.name = incoming.name;
   recordTurn(session, "user", incoming.text);
 
   // 1) Primero intentan resolver los flujos determinísticos (menús).
-  let reply = handleFlow(session, incoming.text, deps);
+  let reply = await handleFlow(session, incoming.text, deps);
 
   // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
   if (reply === null) {
-    deps.events.log("open_question", incoming.from);
+    await deps.events.log("open_question", incoming.from);
     reply = await answer(session, incoming.text, deps);
   }
 
   recordTurn(session, "assistant", reply);
   trimHistory(session);
-  deps.sessions.save(session);
+  await deps.sessions.save(session);
   return reply;
 }

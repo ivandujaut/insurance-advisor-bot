@@ -12,9 +12,9 @@ function readLines(path: string): Array<Record<string, unknown>> {
     .map((l) => JSON.parse(l) as Record<string, unknown>);
 }
 
-test("el LeadRepository JSONL persiste el lead en disco con timestamp", () => {
+test("el LeadRepository JSONL persiste el lead en disco con timestamp", async () => {
   const repo = createJsonlLeadRepository();
-  repo.save({
+  await repo.save({
     userId: "adapter-lead",
     name: "X",
     vehiculo: "Toyota Corolla 2020",
@@ -28,9 +28,9 @@ test("el LeadRepository JSONL persiste el lead en disco con timestamp", () => {
   assert.ok(mine[0]?.ts, "el adapter agrega el timestamp");
 });
 
-test("el EventSink JSONL persiste el evento en disco", () => {
+test("el EventSink JSONL persiste el evento en disco", async () => {
   const sink = createJsonlEventSink();
-  sink.log("lead_captured", "adapter-evt", { plan: "Terceros Completo" });
+  await sink.log("lead_captured", "adapter-evt", { plan: "Terceros Completo" });
   const mine = readLines(eventsFile).filter((e) => e.userId === "adapter-evt");
   assert.equal(mine.length, 1);
   assert.equal(mine[0]?.type, "lead_captured");

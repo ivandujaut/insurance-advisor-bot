@@ -19,7 +19,7 @@ const eventsFile = join(dataDir, "events.jsonl");
 /** Crea el adapter JSONL del EventSink. Nunca lanza: la analítica no debe romper el bot. */
 export function createJsonlEventSink(): EventSink {
   return {
-    log(type, userId, props) {
+    async log(type, userId, props) {
       const event: AnalyticsEvent = {
         ts: new Date().toISOString(),
         type,

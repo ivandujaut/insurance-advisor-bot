@@ -9,8 +9,8 @@ import { processMessage } from "./process-message.js";
 function memorySessions(): SessionStore {
   const m = new Map<string, Session>();
   return {
-    get: (id) => m.get(id),
-    save: (s) => {
+    get: async (id) => m.get(id),
+    save: async (s) => {
       m.set(s.userId, s);
     },
   };
@@ -27,8 +27,16 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
   const savedLeads: LeadInput[] = [];
   const logged: LoggedEvent[] = [];
   const deps: Dependencies = {
-    leads: { save: (lead) => savedLeads.push(lead) },
-    events: { log: (type, userId, props) => logged.push({ type, userId, props }) },
+    leads: {
+      save: async (lead) => {
+        savedLeads.push(lead);
+      },
+    },
+    events: {
+      log: async (type, userId, props) => {
+        logged.push({ type, userId, props });
+      },
+    },
     llm: { generate: async () => "respuesta simulada del asistente" },
     sessions: memorySessions(),
     knowledge: { load: async () => "conocimiento de prueba" },

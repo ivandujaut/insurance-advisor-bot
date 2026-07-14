@@ -18,7 +18,7 @@ const leadsFile = join(dataDir, "leads.jsonl");
 /** Crea el adapter JSONL del LeadRepository. Nunca lanza: no debe romper el bot. */
 export function createJsonlLeadRepository(): LeadRepository {
   return {
-    save(lead) {
+    async save(lead) {
       const record: Lead = { ts: new Date().toISOString(), ...lead };
       try {
         mkdirSync(dataDir, { recursive: true });
