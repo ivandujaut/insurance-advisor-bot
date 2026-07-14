@@ -99,9 +99,10 @@ como Twilio, o librerías no oficiales. Cada uno tiene su costo y su riesgo, y
 elegir mal temprano se paga caro. Así que separé la lógica del bot del canal por
 el que llegan los mensajes. En la práctica eso me deja desarrollar y probar todo
 con un adaptador de consola, sin credenciales ni cuentas, y enchufar la API
-oficial de Meta el día que haga falta cambiando una sola variable. El trade-off es
-una capa de abstracción más para mantener, que se justifica solo por la
-incertidumbre sobre cuál va a ser el proveedor final.
+oficial de Meta cambiando una sola variable, que es justo lo que terminé
+haciendo: el bot ya corre en WhatsApp real. El trade-off es una capa de
+abstracción más para mantener, que se justifica solo por la incertidumbre sobre
+cuál va a ser el proveedor final.
 
 **7. Una base de conocimiento con contenido real, no genérico.**
 Un asistente de seguros que inventa una cobertura es un problema, no una demo.
