@@ -149,7 +149,8 @@ reparto de tareas es la Decisión 3 funcionando en vivo.
 ## Cómo sabría si funciona
 
 Un bot no se evalúa por "responde lindo". Se evalúa por su efecto en el embudo.
-Si esto fuera un producto real, instrumentaría:
+Y no me quedé en la teoría: el prototipo ya registra estos eventos y arma el
+reporte. Las métricas que miro:
 
 - **Activación:** de quienes saludan, cuántos arrancan a cotizar, y cuántos
   terminan el flujo.
@@ -210,4 +211,6 @@ me equivoco, que para eso lo publico), me encantaría charlarlo.
 ---
 
 *El proyecto, con el código y la base de conocimiento, vive en un repositorio
-aparte. Acá conté el razonamiento; ahí está la ejecución.*
+aparte. Acá conté el razonamiento; ahí está la ejecución, que llevé hasta un
+estado listo para crecer (arquitectura desacoplada, persistencia real, tests y
+deploy).*
