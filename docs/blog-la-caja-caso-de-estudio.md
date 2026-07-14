@@ -125,27 +125,33 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > cotizar tu cobertura. 1 Cotizar mi seguro de auto · 2 Comparar los planes ·
 > 3 Tengo una duda · 4 Hablar con un asesor.
 > **Yo:** 1
-> **Bot:** Genial, cotizamos tu seguro de auto. Decime la marca, modelo y año
-> (ej: Toyota Corolla 2020).
-> **Yo:** Corolla 2020
-> **Bot:** ¿En qué código postal se guarda el auto?
+> **Bot:** Genial, cotizamos tu seguro de auto. Empecemos por el año del vehículo.
+> **Yo:** 2020
+> **Bot:** ¿De qué marca es?
+> **Yo:** Toyota
+> **Bot:** ¿Y el modelo?
+> **Yo:** Corolla
+> **Bot:** ¿La versión? (está en la cédula). Si no la tenés a mano, escribí "no sé".
+> **Yo:** no sé
+> **Bot:** ¿Tiene GNC? Sí o no.
+> **Yo:** no
+> **Bot:** Último dato: ¿en qué código postal se guarda el auto?
 > **Yo:** 3011
-> **Bot:** ¿El auto es 0 km o usado?
-> **Yo:** usado
 > **Bot:** Al ser usado, la inspección se hace online cargando fotos. Estos son
 > los planes: Terceros Completo, Terceros Completo con Granizo (suma granizo,
 > cristales y auto sustituto) y Todo Riesgo con Franquicia (suma daños por
 > accidente). ¿Cuál te interesa: 1, 2 o 3?
 > **Yo:** 2
-> **Bot:** Listo. Con estos datos armo tu solicitud: Corolla 2020, CP 3011,
-> usado, plan Terceros Completo con Granizo. Un asesor te contacta con el precio
-> final y las formas de pago.
+> **Bot:** Listo. Con estos datos armo tu solicitud: Toyota Corolla 2020, usado,
+> plan Terceros Completo con Granizo. Un asesor te contacta con el precio final.
 
-El menú hace el trabajo pesado del recorrido, y el momento clave (la comparación
-de planes) pasa dentro del chat, que es donde se juega la venta asesorada. Si en
-cualquier punto pregunto algo abierto, como "¿qué es la franquicia?", ahí toma el
-modelo de lenguaje y responde con la información real, sin romper el flujo. Ese
-reparto de tareas es la Decisión 3 funcionando en vivo.
+Los datos que pide (año, marca, modelo, versión, GNC) son los mismos que el
+cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
+golpe. El menú hace el trabajo pesado del recorrido, y el momento clave (la
+comparación de planes) pasa dentro del chat, que es donde se juega la venta
+asesorada. Si en cualquier punto pregunto algo abierto, como "¿qué es la
+franquicia?", ahí toma el modelo de lenguaje y responde con la información real,
+sin romper el flujo. Ese reparto de tareas es la Decisión 3 funcionando en vivo.
 
 ## Cómo sabría si funciona
 
