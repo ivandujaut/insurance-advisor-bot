@@ -58,6 +58,25 @@ del funnel (activación, drop-off por paso, mix de plan):
 pnpm funnel
 ```
 
+## Docker
+
+El proyecto es un proceso persistente (sesiones en memoria + `data/*.jsonl`), así
+que el deploy natural es un contenedor, no serverless.
+
+```bash
+docker compose up --build
+```
+
+Levanta el bot en `http://localhost:3000` (health en `GET /`). El `.env` es
+opcional: sin él arranca con los defaults (provider `cli`); para WhatsApp real,
+`cp .env.example .env` y completar `META_*` + `ANTHROPIC_API_KEY`. Los leads y
+eventos se persisten en `./data` (volumen), así que sobreviven reinicios.
+
+La imagen es multi-stage (build con todas las deps, runtime slim con solo las de
+producción, usuario no-root). El webhook de WhatsApp igual necesita un endpoint
+público con HTTPS: eso lo da el host (un PaaS, o un reverse-proxy como Caddy en
+el compose para self-hosting).
+
 ## Conectar WhatsApp (Meta Cloud API)
 
 1. Crear una app en [Meta for Developers](https://developers.facebook.com/) con
