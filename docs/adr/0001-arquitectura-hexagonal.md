@@ -1,6 +1,6 @@
 # ADR 0001: Arquitectura hexagonal (Ports & Adapters)
 
-- **Estado:** Aceptada (2026-07-14)
+- **Estado:** Implementada (2026-07-14). Ver "Estado de implementación".
 - **Ámbito:** Estructura del código del bot de WhatsApp de seguros.
 
 ## Contexto
@@ -119,6 +119,24 @@ composition root real llega al final.
 5. **Reorganización final:** mover a `domain/`, `application/`, `infrastructure/`
    y `main/`; composition root que arma e inyecta en cada entrypoint. Agregar un
    chequeo que falle si `domain/` importa de `infrastructure/`.
+
+## Estado de implementación
+
+Los cinco pasos se completaron, cada uno como un PR con tests en verde:
+
+1. Persistencia detrás de puertos (`LeadRepository`, `EventSink`). PR #7.
+2. LLM detrás de `LlmPort` (adapter Anthropic). PR #8.
+3. Sesiones detrás de `SessionStore` (adapter en memoria). PR #9.
+4. Conocimiento detrás de `KnowledgeSource` (adapter filesystem). PR #10.
+5. Reorganización a `domain/application/infrastructure/main` + composition root +
+   chequeo de la regla de dependencias en CI (`pnpm check:arch`). PR #11.
+
+**La prueba de que el diseño paga:** después, para llevar el proyecto a
+production-ready, los puertos se hicieron async (PR #14) y se sumaron adapters de
+Postgres (leads/eventos) y Redis (sesiones) elegibles por config (PR #15). Cambiar
+de storage fue **escribir un adapter nuevo, sin tocar el núcleo**, que es justo lo
+que esta decisión buscaba. Los adapters JSONL/memoria siguen como default sin
+dependencias.
 
 ## Consecuencias
 
