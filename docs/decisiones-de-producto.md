@@ -167,6 +167,26 @@ qué dato, y qué resigné.
 - **Trade-off:** exponer el análisis públicamente; se asume porque el objetivo es,
   justamente, que se lea.
 
+### Decisión 9: cuánto pedir en la cotización de auto
+
+- **Criterio:** en pre-venta, cada campo extra cuesta conversión. Capturar el
+  mínimo que hace al lead accionable y diferir lo sensible al asesor.
+- **Dato que la respalda:** el cotizador web de La Caja pide, para el auto, año,
+  marca, modelo, versión y GNC (relevado del form real). Los datos personales
+  (DNI, edad) recién aparecen en un paso posterior del form.
+- **Por qué (la elección):** el bot replica los campos del vehículo del form real
+  (año, marca, modelo, versión, GNC), **estructurados** en vez de texto libre,
+  porque un lead detallado es el valor de la venta asesorada y le da al asesor
+  algo accionable. Pero **no** pide edad/DNI: es PII invasiva y temprana en el
+  funnel, y el bot ya tiene el WhatsApp del usuario; eso lo recolecta el asesor,
+  que es el lugar natural para lo sensible.
+- **Softeners** (bajan fricción sin perder dato): se **deriva 0km/usado del año**
+  (una pregunta menos) y la **versión es salteable** ("no sé", como en la web,
+  donde mucha gente no la tiene a mano).
+- **Trade-off:** más pasos que un flujo mínimo, con más drop-off potencial, a
+  cambio de un lead mucho más rico. Se mitiga con preguntas cortas y los softeners,
+  y se mide con el drop-off por paso (sección 6).
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las

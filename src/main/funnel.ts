@@ -53,7 +53,7 @@ console.log(
 );
 
 // Drop-off por paso de la cotización.
-const steps = ["vehiculo", "cp", "condicion"] as const;
+const steps = ["anio", "marca", "modelo", "version", "gnc", "cp"] as const;
 console.log("\n🔎 Pasos de la cotización (eventos)");
 for (const step of steps) {
   const count = events.filter((e) => e.type === "quote_step" && e.props?.step === step).length;
