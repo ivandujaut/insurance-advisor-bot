@@ -1,5 +1,7 @@
 # lacaja-whatsapp-bot
 
+[![CI](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml)
+
 Bot de WhatsApp para cotización y consulta de pólizas de seguros (orientado a la
 oferta de **La Caja**). Motor **híbrido**: menús determinísticos para lo
 estructurado (cotizar, derivar) + **LLM (Claude)** para consultas abiertas,
