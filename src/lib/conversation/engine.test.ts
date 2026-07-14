@@ -5,6 +5,7 @@ import { eventsFile } from "../analytics/events.js";
 import type { AnalyticsEvent, Dependencies, Lead, LeadInput } from "../application/ports.js";
 import { LlmNotConfiguredError } from "../application/ports.js";
 import { leadsFile } from "../leads/store.js";
+import { createInMemorySessionStore } from "../session/memory.js";
 import { processMessage } from "./engine.js";
 
 function readJsonl<T>(path: string): T[] {
@@ -30,6 +31,7 @@ test("una consulta abierta cae al fallback cuando el LLM no está configurado", 
         throw new LlmNotConfiguredError();
       },
     },
+    sessions: createInMemorySessionStore(),
   };
   // El primer mensaje siempre muestra el menú; recién el segundo (texto libre
   // que no matchea ningún menú) se delega al asistente.
@@ -67,6 +69,7 @@ test("processMessage acepta dependencias inyectadas (sin tocar disco)", async ()
     leads: { save: (lead) => savedLeads.push(lead) },
     events: { log: () => {} },
     llm: { generate: async () => "" },
+    sessions: createInMemorySessionStore(),
   };
   for (const text of ["hola", "1", "Peugeot 208 2022", "5000", "0km", "3"]) {
     await processMessage({ from: "e-inject", text, name: "Eze" }, deps);

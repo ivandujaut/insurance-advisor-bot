@@ -1,6 +1,7 @@
 /**
- * Store de sesiones en memoria. Suficiente para desarrollo y demo.
- * En produccion conviene reemplazar por un KV/Redis (misma interfaz).
+ * Modelo de dominio de la sesión de conversación y helpers puros sobre ella.
+ * El almacenamiento vive detrás del puerto SessionStore (ver application/ports),
+ * con un adapter en memoria en session/memory.ts. Este archivo no guarda estado.
  */
 
 export type Stage =
@@ -31,26 +32,20 @@ export interface Session {
 }
 
 const MAX_HISTORY = 12;
-const store = new Map<string, Session>();
 
-export function getSession(userId: string, name?: string): Session {
-  let session = store.get(userId);
-  if (!session) {
-    session = { userId, name, stage: "idle", data: {}, history: [] };
-    store.set(userId, session);
-  }
-  if (name && !session.name) session.name = name;
-  return session;
+/** Crea una sesión nueva en estado inicial. */
+export function createSession(userId: string, name?: string): Session {
+  return { userId, name, stage: "idle", data: {}, history: [] };
 }
 
-export function saveSession(session: Session): void {
-  // Recorta el historial para no crecer sin limite.
+/** Agrega un turno al historial (muta la sesión). */
+export function recordTurn(session: Session, role: Turn["role"], content: string): void {
+  session.history.push({ role, content });
+}
+
+/** Recorta el historial para no crecer sin límite (contexto acotado del LLM). */
+export function trimHistory(session: Session): void {
   if (session.history.length > MAX_HISTORY) {
     session.history = session.history.slice(-MAX_HISTORY);
   }
-  store.set(session.userId, session);
-}
-
-export function recordTurn(session: Session, role: Turn["role"], content: string): void {
-  session.history.push({ role, content });
 }

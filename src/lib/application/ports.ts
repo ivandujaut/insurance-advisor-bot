@@ -7,6 +7,7 @@
  *
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
+import type { Session } from "../conversation/session.js";
 
 // --- Eventos del funnel ---
 
@@ -76,6 +77,14 @@ export class LlmNotConfiguredError extends Error {
   }
 }
 
+// --- Sesiones ---
+
+/** Almacenamiento de sesiones. Hoy en memoria, mañana Redis/KV para varias instancias. */
+export interface SessionStore {
+  get(userId: string): Session | undefined;
+  save(session: Session): void;
+}
+
 // --- Dependencias inyectadas en el núcleo ---
 
 /** Puertos que el motor de conversación recibe inyectados. Crece con cada borde. */
@@ -83,4 +92,5 @@ export interface Dependencies {
   leads: LeadRepository;
   events: EventSink;
   llm: LlmPort;
+  sessions: SessionStore;
 }

@@ -9,6 +9,7 @@
 import { createJsonlEventSink } from "../analytics/events.js";
 import { createAnthropicLlm } from "../llm/anthropic.js";
 import { createJsonlLeadRepository } from "../leads/store.js";
+import { createInMemorySessionStore } from "../session/memory.js";
 import type { Dependencies } from "./ports.js";
 
 let cached: Dependencies | null = null;
@@ -19,6 +20,7 @@ export function defaultDependencies(): Dependencies {
       leads: createJsonlLeadRepository(),
       events: createJsonlEventSink(),
       llm: createAnthropicLlm(),
+      sessions: createInMemorySessionStore(),
     };
   }
   return cached;
