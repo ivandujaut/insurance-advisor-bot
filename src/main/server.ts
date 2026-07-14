@@ -13,7 +13,7 @@ import { parseMetaWebhook } from "../infrastructure/messaging/meta.js";
 import { buildDependencies, buildMessagingProvider } from "./container.js";
 
 const app = new Hono();
-const deps = buildDependencies();
+const deps = await buildDependencies();
 const provider = buildMessagingProvider();
 
 app.get("/", (c) => c.text("lacaja-whatsapp-bot OK"));
