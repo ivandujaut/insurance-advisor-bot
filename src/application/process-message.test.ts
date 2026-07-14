@@ -69,7 +69,18 @@ test("una consulta abierta cae al fallback cuando el LLM no está configurado", 
 
 test("completar la cotización guarda el lead vía el repositorio inyectado", async () => {
   const { deps, savedLeads } = fakeDeps();
-  for (const text of ["hola", "1", "2020", "Toyota", "Corolla", "XEI", "no", "3011", "2"]) {
+  for (const text of [
+    "hola",
+    "1",
+    "2020",
+    "usado",
+    "Toyota",
+    "Corolla",
+    "XEI",
+    "no",
+    "3011",
+    "2",
+  ]) {
     await processMessage({ from: "u-lead", text, name: "Caro" }, deps);
   }
   assert.equal(savedLeads.length, 1);
@@ -80,7 +91,7 @@ test("completar la cotización guarda el lead vía el repositorio inyectado", as
 
 test("el funnel registra el evento lead_captured", async () => {
   const { deps, logged } = fakeDeps();
-  for (const text of ["hola", "1", "2019", "VW", "Gol", "no sé", "no", "1425", "1"]) {
+  for (const text of ["hola", "1", "2019", "usado", "VW", "Gol", "no sé", "no", "1425", "1"]) {
     await processMessage({ from: "u-evento", text, name: "Dani" }, deps);
   }
   const captured = logged.filter((e) => e.type === "lead_captured");
@@ -97,10 +108,11 @@ test("una consulta abierta registra el evento open_question", async () => {
 
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
-  // A queda a mitad de una cotización (año + marca cargados).
+  // A queda a mitad de una cotización (año + condición + marca cargados).
   await processMessage({ from: "u-a", text: "hola", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "1", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "2021", name: "A" }, deps);
+  await processMessage({ from: "u-a", text: "usado", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "Fiat", name: "A" }, deps);
   // B arranca de cero y no afecta a A.
   const bReply = await processMessage({ from: "u-b", text: "hola", name: "B" }, deps);

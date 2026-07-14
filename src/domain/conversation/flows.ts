@@ -123,33 +123,46 @@ async function handleQuotingAuto(
 ): Promise<string | null> {
   const text = rawText.trim();
 
-  // 1) Año (validado). De acá se deriva la condición (0km vs usado).
+  // 1) Año (validado).
   if (!session.data.anio) {
     const anio = Number(text.replace(/\D/g, ""));
     if (!anio || anio < MIN_AUTO_YEAR || anio > CURRENT_YEAR) {
       return `Necesito un *año* válido, entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR}.`;
     }
     session.data.anio = String(anio);
-    session.data.condicion = anio === CURRENT_YEAR ? "0km" : "usado";
     await deps.events.log("quote_step", session.userId, { step: "anio" });
+    return "¿Es *0km* o *usado*? (un modelo de años anteriores también puede ser 0km si es stock sin patentar)";
+  }
+
+  // 2) Condición (0km / usado). No se deriva del año: un modelo viejo puede ser
+  // 0km de stock, y la condición define si hace falta inspección.
+  if (!session.data.condicion) {
+    const t = normalize(text);
+    const es0km = /0\s*km|cero|nuev/.test(t);
+    const esUsado = /usad|segunda|used/.test(t);
+    if (!es0km && !esUsado) {
+      return "No te entendí. ¿El auto es *0km* o *usado*?";
+    }
+    session.data.condicion = es0km ? "0km" : "usado";
+    await deps.events.log("quote_step", session.userId, { step: "condicion" });
     return "¿De qué *marca* es? (ej: Toyota)";
   }
 
-  // 2) Marca
+  // 3) Marca
   if (!session.data.marca) {
     session.data.marca = text;
     await deps.events.log("quote_step", session.userId, { step: "marca" });
     return "¿Y el *modelo*? (ej: Corolla)";
   }
 
-  // 3) Modelo
+  // 4) Modelo
   if (!session.data.modelo) {
     session.data.modelo = text;
     await deps.events.log("quote_step", session.userId, { step: "modelo" });
     return "¿La *versión*? (la encontrás en la cédula). Si no la tenés a mano, escribí *no sé*.";
   }
 
-  // 4) Versión (opcional: se puede saltar)
+  // 5) Versión (opcional: se puede saltar)
   if (!session.data.version) {
     const noLaSabe = /no s[eé]|ni idea|skip|saltar|omitir/.test(normalize(text));
     session.data.version = noLaSabe ? "no especificada" : text;
@@ -157,7 +170,7 @@ async function handleQuotingAuto(
     return "¿Tiene *GNC*? Respondé *sí* o *no*.";
   }
 
-  // 5) GNC (sí/no)
+  // 6) GNC (sí/no)
   if (!session.data.gnc) {
     const t = normalize(text);
     const esSi = /^s[ií]/.test(t) || t.includes("tiene");
@@ -170,7 +183,7 @@ async function handleQuotingAuto(
     return "Último dato: ¿en qué *código postal* se guarda el auto?";
   }
 
-  // 6) CP -> muestra los planes con la nota de inspección (según el año).
+  // 7) CP -> muestra los planes con la nota de inspección (según la condición).
   if (!session.data.cp) {
     session.data.cp = text;
     await deps.events.log("quote_step", session.userId, { step: "cp" });
