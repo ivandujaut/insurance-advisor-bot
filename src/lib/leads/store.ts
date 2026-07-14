@@ -1,11 +1,12 @@
 /**
- * Persistencia de leads de cotización. Cada lead se agrega como una linea JSON a
- * data/leads.jsonl. Suficiente para el prototipo; en produccion se reemplazaria
- * por un CRM o una base de datos (misma interfaz saveLead()).
+ * Adapter JSONL del puerto LeadRepository. Agrega cada lead como una línea a
+ * data/leads.jsonl. En producción se reemplazaría por un CRM o una base de datos
+ * (misma interfaz LeadRepository).
  */
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Lead, LeadRepository } from "../application/ports.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // src/lib/leads -> raiz del proyecto. Se puede sobreescribir con LACAJA_DATA_DIR.
@@ -14,26 +15,19 @@ const dataDir = process.env.LACAJA_DATA_DIR
   : join(here, "..", "..", "..", "data");
 const leadsFile = join(dataDir, "leads.jsonl");
 
-export interface Lead {
-  ts: string;
-  userId: string;
-  name?: string;
-  vehiculo: string;
-  cp: string;
-  condicion: string;
-  plan: string;
-}
-
-/** Guarda un lead y lo devuelve con timestamp. Nunca lanza: no debe romper el bot. */
-export function saveLead(lead: Omit<Lead, "ts">): Lead {
-  const record: Lead = { ts: new Date().toISOString(), ...lead };
-  try {
-    mkdirSync(dataDir, { recursive: true });
-    appendFileSync(leadsFile, `${JSON.stringify(record)}\n`);
-  } catch (err) {
-    console.error("No se pudo guardar el lead:", err);
-  }
-  return record;
+/** Crea el adapter JSONL del LeadRepository. Nunca lanza: no debe romper el bot. */
+export function createJsonlLeadRepository(): LeadRepository {
+  return {
+    save(lead) {
+      const record: Lead = { ts: new Date().toISOString(), ...lead };
+      try {
+        mkdirSync(dataDir, { recursive: true });
+        appendFileSync(leadsFile, `${JSON.stringify(record)}\n`);
+      } catch (err) {
+        console.error("No se pudo guardar el lead:", err);
+      }
+    },
+  };
 }
 
 export { leadsFile };

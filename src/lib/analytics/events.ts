@@ -1,12 +1,12 @@
 /**
- * Log de eventos del funnel. Cada evento se agrega como una linea JSON a
- * data/events.jsonl. Es la instrumentacion minima para medir el embudo
- * (activacion, drop-off por paso, mix de plan), como se describe en el caso de
- * estudio. En produccion se reemplazaria por un sink de analitica real.
+ * Adapter JSONL del puerto EventSink. Agrega cada evento como una línea a
+ * data/events.jsonl. En producción se reemplazaría por un sink de analítica real
+ * (misma interfaz EventSink).
  */
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { AnalyticsEvent, EventSink } from "../application/ports.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // src/lib/analytics -> raiz del proyecto. Se puede sobreescribir con
@@ -16,36 +16,24 @@ const dataDir = process.env.LACAJA_DATA_DIR
   : join(here, "..", "..", "..", "data");
 const eventsFile = join(dataDir, "events.jsonl");
 
-export type EventType =
-  | "conversation_started"
-  | "quote_started"
-  | "quote_step"
-  | "plan_comparison_viewed"
-  | "lead_captured"
-  | "advisor_requested"
-  | "open_question";
-
-export interface AnalyticsEvent {
-  ts: string;
-  type: EventType;
-  userId: string;
-  props?: Record<string, string>;
-}
-
-/** Registra un evento del funnel. Nunca lanza: la analitica no debe romper el bot. */
-export function logEvent(type: EventType, userId: string, props?: Record<string, string>): void {
-  const event: AnalyticsEvent = {
-    ts: new Date().toISOString(),
-    type,
-    userId,
-    ...(props ? { props } : {}),
+/** Crea el adapter JSONL del EventSink. Nunca lanza: la analítica no debe romper el bot. */
+export function createJsonlEventSink(): EventSink {
+  return {
+    log(type, userId, props) {
+      const event: AnalyticsEvent = {
+        ts: new Date().toISOString(),
+        type,
+        userId,
+        ...(props ? { props } : {}),
+      };
+      try {
+        mkdirSync(dataDir, { recursive: true });
+        appendFileSync(eventsFile, `${JSON.stringify(event)}\n`);
+      } catch (err) {
+        console.error("No se pudo registrar el evento:", err);
+      }
+    },
   };
-  try {
-    mkdirSync(dataDir, { recursive: true });
-    appendFileSync(eventsFile, `${JSON.stringify(event)}\n`);
-  } catch (err) {
-    console.error("No se pudo registrar el evento:", err);
-  }
 }
 
 export { eventsFile };

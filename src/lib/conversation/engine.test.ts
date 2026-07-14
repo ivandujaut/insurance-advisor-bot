@@ -2,9 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { eventsFile } from "../analytics/events.js";
-import type { AnalyticsEvent } from "../analytics/events.js";
+import type { AnalyticsEvent, Dependencies, Lead, LeadInput } from "../application/ports.js";
 import { leadsFile } from "../leads/store.js";
-import type { Lead } from "../leads/store.js";
 import { processMessage } from "./engine.js";
 
 function readJsonl<T>(path: string): T[] {
@@ -50,6 +49,19 @@ test("el funnel registra el evento lead_captured", async () => {
   const captured = events.filter((e) => e.userId === from && e.type === "lead_captured");
   assert.equal(captured.length, 1);
   assert.equal(captured[0]?.props?.plan, "Terceros Completo");
+});
+
+test("processMessage acepta dependencias inyectadas (sin tocar disco)", async () => {
+  const savedLeads: LeadInput[] = [];
+  const deps: Dependencies = {
+    leads: { save: (lead) => savedLeads.push(lead) },
+    events: { log: () => {} },
+  };
+  for (const text of ["hola", "1", "Peugeot 208 2022", "5000", "0km", "3"]) {
+    await processMessage({ from: "e-inject", text, name: "Eze" }, deps);
+  }
+  assert.equal(savedLeads.length, 1);
+  assert.equal(savedLeads[0]?.plan, "Todo Riesgo con Franquicia");
 });
 
 test("las sesiones de distintos usuarios no se mezclan", async () => {
