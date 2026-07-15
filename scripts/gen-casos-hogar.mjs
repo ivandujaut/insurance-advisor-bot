@@ -48,7 +48,8 @@ md +=
 md += "| Uso | permanente / temporal / alquilo | Ocupación (temporal > alquilo > permanente). |\n";
 md += "| m² construidos | 25 a 300 | Solo propietario: define la suma de incendio (~$2,1M/m²). |\n";
 md += "| Suma de contenido | desde $500.000 | Solo inquilino: su suma asegurada. |\n";
-md += "| Zona (por CP) | CABA / GBA / interior | Factor de riesgo por robo/siniestralidad. |\n\n";
+md +=
+  "| Zona (por CP) | CABA / GBA / interior | Casi plana en hogar (a diferencia de auto): dato real, CABA ~2% más barato que el interior. |\n\n";
 md += "Diferidos (no se preguntan hoy): barrio privado/country, atestación de seguridad.\n\n";
 
 md += "## Casos de anclaje (precios reales ya relevados)\n\n";

@@ -308,15 +308,23 @@ qué dato, y qué resigné.
   incendio de los m²** (a ~$2,1M/m²) en vez de que le pregunte el contenido, como
   hace la web; el inquilino, que no asegura el edificio, sí da su contenido. La prima
   es una tasa sobre esa suma más un cargo fijo (RC + cristales + asistencias).
+- **La zona es específica por producto (hallazgo):** coticé el mismo caso en CABA y
+  salió **~2% más barato** que en el interior. Es lo **opuesto a auto**, donde CABA
+  es mucho más cara por robo. En hogar el riesgo (incendio, edificio) no está
+  dominado por el robo, así que la zona es casi plana. Reutilizar el `factorZona` de
+  auto era un error: agregué un `factorZonaHogar` propio (CABA 0,98, resto 1,0). El
+  worksheet `casos-cotizacion-hogar.md` enumera las combinaciones para seguir
+  relevando y afinando.
 - **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
   una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
   ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
   `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
   producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
   hexagonal.
-- **Trade-off:** aunque el nivel quedó anclado a dos precios reales, los factores
-  relativos (tipo de hogar, uso, zona) siguen siendo ilustrativos y tuneables; un
-  ajuste fino necesitaría puntos con esas variables cambiadas.
+- **Trade-off:** el nivel y la zona quedaron anclados a precios reales, pero los
+  factores de **tipo de hogar y uso** siguen siendo ilustrativos: afinarlos necesita
+  cotizar el mismo caso variando esas dimensiones (el worksheet ya deja esas filas
+  listas para completar).
 
 ## 6. Cómo mediría el éxito
 
