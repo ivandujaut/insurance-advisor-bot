@@ -166,6 +166,15 @@ lo resuelve ese modelo local, mañana la API del tarifador real de La Caja entra
 el mismo lugar sin tocar el resto. Es la Decisión 10: no adivinar el número, sino
 dejar preparada la costura donde enchufa el motor de precios real.
 
+Para calibrar ese modelo fui al cotizador real de La Caja, y ahí encontré el mejor
+argumento a favor del bot. Antes de mostrarte un solo precio, la web te pide
+e-mail, teléfono, código postal y resolver un reCAPTCHA. O sea: tenés que entregar
+tu contacto para ver un número. El bot no necesita nada de eso, porque el canal ya
+es tu WhatsApp: da la orientación de precio sin un segundo formulario. Y hay un
+detalle que lo remata: intentando cotizar, la web falló dos veces ("Algo salió
+mal") y, cuando falla, te deriva a un WhatsApp. La propia La Caja usa WhatsApp como
+red de contención cuando su funnel se cae. Este bot vive justo ahí.
+
 ## Cómo sabría si funciona
 
 Un bot no se evalúa por "responde lindo". Se evalúa por su efecto en el embudo.
