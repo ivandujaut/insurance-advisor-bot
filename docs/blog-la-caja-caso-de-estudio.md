@@ -1,7 +1,7 @@
 # Letizia atiende a los clientes de La Caja. ¿Y a los que todavía no lo son?
 
 *Un caso de estudio sobre decisiones de producto: cómo leer el recorrido de un
-cliente, encontrar un hueco y decidir dónde jugar. Lectura: ~8 min.*
+cliente, encontrar un hueco y decidir dónde jugar. Lectura: ~12 min.*
 
 > Análisis independiente hecho con información pública del sitio de La Caja
 > (julio de 2026). No estoy afiliado a la empresa ni tuve acceso a datos
@@ -122,8 +122,8 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 
 > **Yo:** hola
 > **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
-> cotizar tu cobertura. 1 Cotizar mi seguro de auto · 2 Comparar los planes ·
-> 3 Tengo una duda · 4 Hablar con un asesor.
+> cotizar tu cobertura. 1 Auto · 2 Hogar · 3 Accidentes personales · 4 Bici o
+> monopatín · 5 Comparar planes · 6 Tengo una duda · 7 Hablar con un asesor.
 > **Yo:** 1
 > **Bot:** Genial, cotizamos tu seguro de auto. Empecemos por el año del vehículo.
 > **Yo:** 2020
@@ -157,6 +157,8 @@ asesorada. Si en cualquier punto pregunto algo abierto, como "¿qué es la
 franquicia?", ahí toma el modelo de lenguaje y responde con la información real,
 sin romper el flujo. Ese reparto de tareas es la Decisión 3 funcionando en vivo.
 
+## Un precio orientativo, no un número inventado
+
 Ese "$27.000 a $34.500 por mes" no lo saqué scrapeando la web ni lo inventé con un
 número fijo. Una aseguradora no mira su propio sitio: corre un tarifador que arma
 la prima por factores de riesgo (base por plan, antigüedad, 0km o usado, zona por
@@ -166,6 +168,8 @@ lo resuelve ese modelo local, mañana la API del tarifador real de La Caja entra
 el mismo lugar sin tocar el resto. Es la Decisión 10: no adivinar el número, sino
 dejar preparada la costura donde enchufa el motor de precios real.
 
+## El muro de contacto: el mejor argumento a favor del bot
+
 Para calibrar ese modelo fui al cotizador real de La Caja, y ahí encontré el mejor
 argumento a favor del bot. Antes de mostrarte un solo precio, la web te pide
 e-mail, teléfono, código postal y resolver un reCAPTCHA. O sea: tenés que entregar
@@ -174,6 +178,8 @@ es tu WhatsApp: da la orientación de precio sin un segundo formulario. Y hay un
 detalle que lo remata: intentando cotizar, la web falló una y otra vez ("Algo salió
 mal") y, cuando falla, te deriva a un WhatsApp. La propia La Caja usa WhatsApp como
 red de contención cuando su funnel se cae. Este bot vive justo ahí.
+
+## Cuatro productos, cuatro formas de cobrar
 
 El mismo esqueleto ya cubre una segunda línea: seguro de hogar. El flujo cambia
 (propietario o inquilino, tipo de vivienda, uso, y metros construidos si sos dueño o
@@ -199,6 +205,8 @@ motor: auto estima por factores, hogar estima anclado a precios reales, accident
 catálogo puro y bici es una tasa sobre el valor declarado. El bot se adapta al modelo
 de cada producto en vez de imponer uno. Eso es lo que separa un prototipo de un
 diseño que un equipo de producto puede hacer crecer.
+
+## El embudo pago: pagar por clics que rebotan
 
 Seguí el hilo un paso más y miré cómo La Caja recibe el tráfico que paga. Entré por
 un aviso de Google Ads a su landing "Elegí el mejor seguro" (con teléfono de
@@ -262,12 +270,13 @@ experimento que aprende y una función que se lanza y nadie sabe si sirvió.
 
 ## Lo que este bot no hace (a propósito)
 
-Para que el análisis sea honesto, los límites. El bot no cotiza precios reales:
-arma la solicitud y deriva, porque los precios dependen de reglas de suscripción
-que no son públicas. Un despliegue real necesitaría revisión legal (en seguros
-hay requisitos de información precontractual y canales autorizados). Y la base de
-conocimiento es una síntesis de fuentes públicas: hay que mantenerla al día
-cuando cambian los productos.
+Para que el análisis sea honesto, los límites. El bot da estimaciones
+orientativas, no cotizaciones en firme: donde el cotizador de La Caja me devolvió
+precios los usé para anclar el modelo, pero el número final depende de reglas de
+suscripción que no son públicas y lo confirma un asesor. Un despliegue real
+necesitaría revisión legal (en seguros hay requisitos de información
+precontractual y canales autorizados). Y la base de conocimiento es una síntesis
+de fuentes públicas: hay que mantenerla al día cuando cambian los productos.
 
 Nada de esto invalida el ejercicio. Al contrario: saber qué queda afuera es
 parte de tener criterio.
