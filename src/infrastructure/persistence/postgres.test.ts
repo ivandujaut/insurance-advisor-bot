@@ -75,6 +75,32 @@ test("Postgres persiste un lead de hogar en detalle jsonb", { skip: !url }, asyn
   await pool.end();
 });
 
+test("Postgres persiste un lead de accidentes en detalle jsonb", { skip: !url }, async () => {
+  const pool = createPgPool(url);
+  await ensureSchema(pool);
+  const repo = createPostgresLeadRepository(pool);
+  const userId = "pg-ap-test";
+  await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
+
+  await repo.save({
+    producto: "accidentes",
+    userId,
+    name: "Test",
+    modalidad: "personal-domestico",
+    plan: "Plan A",
+    precio: 5500,
+  });
+
+  const { rows } = await pool.query("SELECT * FROM leads WHERE user_id = $1", [userId]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.producto, "accidentes");
+  assert.equal(rows[0]?.detalle?.modalidad, "personal-domestico");
+  assert.equal(rows[0]?.detalle?.precio, 5500);
+
+  await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
+  await pool.end();
+});
+
 test("Postgres EventSink persiste el evento con props jsonb", { skip: !url }, async () => {
   const pool = createPgPool(url);
   await ensureSchema(pool);
