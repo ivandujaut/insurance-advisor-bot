@@ -4,6 +4,8 @@ import { estimarPrima, estimarPrimaBici, estimarPrimaHogar } from "./rating.js";
 
 const base = {
   anio: "2018",
+  marca: "toyota",
+  modelo: "corolla",
   condicion: "usado",
   gnc: false,
   cp: "5000", // interior
@@ -53,7 +55,14 @@ test("un plan desconocido cae a la base y no rompe", () => {
 test("auto: el rango contiene los precios reales de La Caja (Corolla 2020, CABA)", () => {
   // Toyota Corolla 2020, usado, sin GNC, CABA (CP 1425). Reales por mes:
   // Terceros Completo $160.165 ; con Granizo $202.443 ; Todo Riesgo $247.847.
-  const caso = { anio: "2020", condicion: "usado", gnc: false, cp: "1425" };
+  const caso = {
+    anio: "2020",
+    marca: "toyota",
+    modelo: "corolla",
+    condicion: "usado",
+    gnc: false,
+    cp: "1425",
+  };
   const anclajes = [
     { plan: "Terceros Completo", precio: 160165 },
     { plan: "Terceros Completo con Granizo", precio: 202443 },
@@ -66,6 +75,18 @@ test("auto: el rango contiene los precios reales de La Caja (Corolla 2020, CABA)
       `${a.plan}: ${a.precio} dentro de [${q.desde}, ${q.hasta}]`,
     );
   }
+});
+
+test("auto: un modelo más caro cuesta más que uno más barato (mismo año y plan)", () => {
+  const gol = estimarPrima({ ...base, modelo: "gol" });
+  const hilux = estimarPrima({ ...base, modelo: "hilux" });
+  assert.ok(hilux.hasta > gol.hasta);
+});
+
+test("auto: un auto más viejo cuesta menos que uno más nuevo (deprecia el valor)", () => {
+  const viejo = estimarPrima({ ...base, anio: "2010" });
+  const nuevo = estimarPrima({ ...base, anio: "2024" });
+  assert.ok(nuevo.hasta > viejo.hasta);
 });
 
 const baseHogar = {

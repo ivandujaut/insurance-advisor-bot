@@ -259,6 +259,8 @@ async function handleQuotingAuto(
     // factores; mañana el tarifador real). El precio final lo cierra el asesor.
     const estimate = await deps.quoting.quote({
       anio: session.data.anio ?? "",
+      marca: session.data.marca ?? "",
+      modelo: session.data.modelo ?? "",
       condicion: session.data.condicion ?? "",
       gnc: session.data.gnc === "si",
       cp: session.data.cp ?? "",
