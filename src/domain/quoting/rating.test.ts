@@ -93,6 +93,25 @@ test("hogar: el rango contiene los precios reales de La Caja (caso relevado)", (
     q120.desde <= 16683 && 16683 <= q120.hasta,
     `16683 dentro de [${q120.desde}, ${q120.hasta}]`,
   );
+  // Mismo caso en CABA (CP 1425), 80 m² -> $11.502/mes (real, un poco más barato).
+  const qCaba = estimarPrimaHogar({ ...real, cp: "1425", m2: 80 });
+  assert.ok(
+    qCaba.desde <= 11502 && 11502 <= qCaba.hasta,
+    `11502 dentro de [${qCaba.desde}, ${qCaba.hasta}]`,
+  );
+});
+
+test("hogar: la zona es casi plana (CABA no es más cara que el interior)", () => {
+  const base = {
+    tipoResidente: "propietario",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    m2: 80,
+    sumaContenido: 0,
+  };
+  const caba = estimarPrimaHogar({ ...base, cp: "1425" });
+  const interior = estimarPrimaHogar({ ...base, cp: "3300" });
+  assert.ok(caba.hasta <= interior.hasta, "en hogar, CABA no supera al interior");
 });
 
 test("hogar: más m² construidos, más prima (propietario)", () => {

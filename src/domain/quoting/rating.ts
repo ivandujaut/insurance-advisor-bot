@@ -140,6 +140,19 @@ function factorUso(uso: string): number {
 }
 
 /**
+ * Zona para hogar: NO es la de auto. En auto CABA es mucho más cara (robo); en
+ * hogar el riesgo (incendio, edificio) no está dominado por el robo, así que la
+ * zona es casi plana. Dato real relevado: mismo caso en CABA salió ~2% MÁS BARATO
+ * que en el interior (Posadas). Solo CABA tiene un punto real; GBA se asume neutro.
+ */
+function factorZonaHogar(cp: string): number {
+  const n = Number(cp.replace(/\D/g, ""));
+  if (!n) return 1.0;
+  if (n >= 1000 && n <= 1499) return 0.98; // CABA (dato real)
+  return 1.0; // GBA e interior (sin dato: neutro)
+}
+
+/**
  * Estima el rango de prima mensual del seguro de hogar, replicando la estructura
  * del cotizador real: una tasa sobre la suma de incendio (edificio + bienes) más
  * un cargo fijo (RC, cristales, asistencias). El propietario deriva la suma de
@@ -155,7 +168,7 @@ export function estimarPrimaHogar(input: HogarQuoteInput): QuoteEstimate {
     (CARGO_FIJO_MENSUAL + sumaIncendio * TASA_INCENDIO_MENSUAL) *
     factorTipoHogar(input.tipoHogar) *
     factorUso(input.uso) *
-    factorZona(input.cp);
+    factorZonaHogar(input.cp);
   return {
     plan: "Seguro de Hogar",
     desde: redondear(prima * 0.9),

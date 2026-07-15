@@ -48,7 +48,8 @@ md +=
 md += "| Uso | permanente / temporal / alquilo | Ocupación (temporal > alquilo > permanente). |\n";
 md += "| m² construidos | 25 a 300 | Solo propietario: define la suma de incendio (~$2,1M/m²). |\n";
 md += "| Suma de contenido | desde $500.000 | Solo inquilino: su suma asegurada. |\n";
-md += "| Zona (por CP) | CABA / GBA / interior | Factor de riesgo por robo/siniestralidad. |\n\n";
+md +=
+  "| Zona (por CP) | CABA / GBA / interior | Casi plana en hogar (a diferencia de auto): dato real, CABA ~2% más barato que el interior. |\n\n";
 md += "Diferidos (no se preguntan hoy): barrio privado/country, atestación de seguridad.\n\n";
 
 md += "## Casos de anclaje (precios reales ya relevados)\n\n";
@@ -150,7 +151,7 @@ md += "## Cómo iterar\n\n";
 md += "1. Elegí un caso de una fila y cotizalo en el cotizador real de La Caja.\n";
 md += "2. Anotá el precio en la columna **Precio real**.\n";
 md += "3. Si cae fuera del rango estimado, ajustá el factor que aísla ese caso:\n";
-md += "   - Zona → `factorZona` (comparar CABA vs interior, mismo resto).\n";
+md += "   - Zona → `factorZonaHogar` (comparar CABA vs interior, mismo resto).\n";
 md += "   - Uso → `factorUso`. Tipo de hogar → `factorTipoHogar`.\n";
 md += "   - Nivel general → `TASA_INCENDIO_MENSUAL` / `CARGO_FIJO_MENSUAL`.\n";
 md +=
