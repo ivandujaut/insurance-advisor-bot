@@ -125,11 +125,16 @@ const COSTO_RECONSTRUCCION_M2 = 2100000;
 const TASA_INCENDIO_MENSUAL = 0.0000586;
 const CARGO_FIJO_MENSUAL = 1915;
 
-/** Planta baja / PH está más expuesto que un piso; una casa, más que un depto. */
+/**
+ * Una casa cuesta más que un depto, y no solo por riesgo: se reconstruye más
+ * cara por m² (estructura propia, techo, cimientos) que un depto (que comparte
+ * la del edificio). Dato real: mismo caso como casa salió $13.665 vs $11.502
+ * depto (ratio ~1,19). PB/PH queda entre ambos (sin dato real, ilustrativo).
+ */
 function factorTipoHogar(tipoHogar: string): number {
-  if (tipoHogar === "casa") return 1.15;
-  if (tipoHogar === "departamento_pb_ph") return 1.1;
-  return 1.0; // departamento en piso
+  if (tipoHogar === "casa") return 1.19; // dato real
+  if (tipoHogar === "departamento_pb_ph") return 1.1; // ilustrativo
+  return 1.0; // departamento en piso (base)
 }
 
 /**
