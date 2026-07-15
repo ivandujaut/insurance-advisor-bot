@@ -341,6 +341,29 @@ qué dato, y qué resigné.
   cotizar el mismo caso variando esas dimensiones (el
   worksheet ya deja esas filas listas para completar).
 
+### Decisión 13: sumar accidentes personales, un tercer shape de producto
+
+- **Criterio:** una tercera línea de forma distinta prueba que el bot no está atado
+  a un modelo de pricing, sino que se adapta al del producto real.
+- **Dato que la respalda:** el sitio de La Caja muestra Accidentes Personales como
+  un **catálogo de planes fijos con precio publicado**, en tres modalidades
+  (Protección Familiar, Trabajo Independiente, Personal Doméstico). No hay
+  cotizador ni factores: el precio está listado (ej. Familiar Plan A $9.124, Plan B
+  $14.176; Personal Doméstico $5.500). Asistencias iguales en todos (telemedicina,
+  cobertura familiar, ambulancia, consulta a domicilio).
+- **Por qué (los tres shapes):** cada producto tiene su modelo de precio y el bot
+  lo respeta:
+  - **Auto:** atributos del vehículo → estimación por factores (rango).
+  - **Hogar:** atributos → estimación por factores anclada a precios reales.
+  - **Accidentes:** **catálogo → precio publicado exacto** (sin estimación).
+  El flujo de AP es elegir modalidad y plan; el precio sale de un catálogo de
+  dominio, no de un tarifador. Que las tres formas convivan en el mismo motor de
+  conversación y la misma unión de leads es la prueba de que la arquitectura no
+  asumió un único tipo de producto.
+- **Trade-off:** el catálogo hay que mantenerlo cuando La Caja cambie precios o
+  planes; se aísla en `session.ts` (una sola fuente) para que sea un cambio de dato,
+  no de lógica.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -395,7 +418,10 @@ métricas que instrumentaría:
    `docs/conectar-meta.md`.
 6. ~~Sumar una segunda línea de producto con su propio flujo de cotización.~~
    **Hecho:** flujo de hogar (propietario/inquilino, vivienda, CP, suma del
-   contenido) con su tarifador. Ver Decisión 12.
+   contenido) con su tarifador anclado a precios reales. Ver Decisión 12.
+7. ~~Sumar una tercera línea de forma distinta (no basada en atributos).~~
+   **Hecho:** accidentes personales, un catálogo de planes con precio publicado
+   (modalidad → plan), sin tarifador. Ver Decisión 13.
 
 ## 9. Qué demuestra este ejercicio
 
