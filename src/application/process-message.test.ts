@@ -40,6 +40,9 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
     llm: { generate: async () => "respuesta simulada del asistente" },
     sessions: memorySessions(),
     knowledge: { load: async () => "conocimiento de prueba" },
+    quoting: {
+      quote: async (input) => ({ plan: input.plan, desde: 10000, hasta: 15000, moneda: "ARS" }),
+    },
     ...over,
   };
   return { deps, savedLeads, logged };

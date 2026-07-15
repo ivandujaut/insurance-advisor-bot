@@ -116,6 +116,11 @@ async function handleMainMenu(
 const MIN_AUTO_YEAR = 2006;
 const CURRENT_YEAR = new Date().getFullYear();
 
+/** Formatea un monto en pesos con separador de miles ("$16.200"). */
+function pesos(monto: number): string {
+  return `$${monto.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+}
+
 async function handleQuotingAuto(
   session: Session,
   rawText: string,
@@ -219,6 +224,15 @@ async function handleQuotingAuto(
       plan,
     });
     await deps.events.log("lead_captured", session.userId, { plan });
+    // Estimación orientativa vía el puerto de cotización (hoy modelo local de
+    // factores; mañana el tarifador real). El precio final lo cierra el asesor.
+    const estimate = await deps.quoting.quote({
+      anio: session.data.anio ?? "",
+      condicion: session.data.condicion ?? "",
+      gnc: session.data.gnc === "si",
+      cp: session.data.cp ?? "",
+      plan,
+    });
     const autoLinea = `${session.data.marca} ${session.data.modelo} ${session.data.anio}${version ? ` (${version})` : ""}`;
     return [
       "¡Listo! Con estos datos armo tu solicitud de cotización:",
@@ -228,8 +242,9 @@ async function handleQuotingAuto(
       `🔧 Condición: ${session.data.condicion}`,
       `📍 CP: ${session.data.cp}`,
       `🛡️ Plan de interés: ${plan}`,
+      `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
       "",
-      "Un asesor te va a contactar con el precio final y las opciones de pago (online: tarjeta de crédito o débito por CBU, con descuento).",
+      "Es un rango orientativo según tu perfil. Un asesor te confirma el precio final y las opciones de pago (online: tarjeta de crédito o débito por CBU, con descuento).",
       "",
       "Escribí *menú* para hacer otra consulta.",
     ].join("\n");
