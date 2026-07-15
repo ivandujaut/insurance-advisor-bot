@@ -119,7 +119,7 @@ Con contenido de referencia = $3.000.000. El contenido es un eje aparte (ver aba
 1. Elegí un caso de una fila y cotizalo en el cotizador real de La Caja.
 2. Anotá el precio en la columna **Precio real**.
 3. Si cae fuera del rango estimado, ajustá el factor que aísla ese caso:
-   - Zona → `factorZona` (comparar CABA vs interior, mismo resto).
+   - Zona → `factorZonaHogar` (comparar CABA vs interior, mismo resto).
    - Uso → `factorUso`. Tipo de hogar → `factorTipoHogar`.
    - Nivel general → `TASA_INCENDIO_MENSUAL` / `CARGO_FIJO_MENSUAL`.
 4. Regenerá este doc (`node --import tsx scripts/gen-casos-hogar.mjs`) y volvé a comparar.
