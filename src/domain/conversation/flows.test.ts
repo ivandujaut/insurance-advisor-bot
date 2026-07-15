@@ -218,27 +218,58 @@ test("el funnel registra los eventos clave a través del EventSink inyectado", a
   assert.ok(tipos.includes("quote_started"));
 });
 
-test("el flujo de hogar completo guarda un lead de hogar con la estimación", async () => {
+test("el flujo de hogar de propietario guarda el lead con m² y estimación", async () => {
   const s = newSession("t-hogar-full");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "2", deps); // cotizar hogar
   await handleFlow(s, "propietario", deps);
-  await handleFlow(s, "casa", deps);
+  await handleFlow(s, "casa", deps); // tipo de hogar
+  await handleFlow(s, "permanente", deps); // uso
+  await handleFlow(s, "120", deps); // m² (solo propietario)
   await handleFlow(s, "1425", deps); // CP
   const final = (await handleFlow(s, "3000000", deps)) ?? ""; // suma contenido
   assert.match(final, /seguro de hogar/i);
   assert.match(final, /Estimación orientativa/);
+  assert.match(final, /120 m²/);
   assert.equal(s.stage, "idle", "vuelve a idle al terminar");
   assert.equal(deps.savedLeads.length, 1);
   const lead = deps.savedLeads[0];
   assert.equal(lead?.producto, "hogar");
   if (lead?.producto !== "hogar") throw new Error("esperaba un lead de hogar");
   assert.equal(lead.tipoResidente, "propietario");
-  assert.equal(lead.vivienda, "casa");
+  assert.equal(lead.tipoHogar, "casa");
+  assert.equal(lead.uso, "permanente");
+  assert.equal(lead.m2, 120);
   assert.equal(lead.cp, "1425");
   assert.equal(lead.sumaContenido, 3000000);
   assert.equal(lead.plan, "Seguro de Hogar");
+});
+
+test("hogar: al inquilino no le pide m² (no asegura el edificio)", async () => {
+  const s = newSession("t-hogar-inq");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "2", deps);
+  await handleFlow(s, "inquilino", deps);
+  await handleFlow(s, "departamento", deps); // tipo de hogar
+  const reply = (await handleFlow(s, "permanente", deps)) ?? ""; // uso -> salta m², pide CP
+  assert.match(reply, /código postal/i);
+  assert.equal(s.data.m2, undefined, "no le pide m² al inquilino");
+});
+
+test("hogar pide m² válidos a propietario y rechaza fuera de rango", async () => {
+  const s = newSession("t-hogar-m2");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "2", deps);
+  await handleFlow(s, "propietario", deps);
+  await handleFlow(s, "casa", deps);
+  await handleFlow(s, "permanente", deps);
+  const reply = (await handleFlow(s, "1000", deps)) ?? ""; // 1000 m² fuera de rango
+  assert.match(reply, /25 y 300/);
+  assert.equal(s.data.m2, undefined, "no guarda m² inválidos");
+  assert.equal(s.stage, "quoting_hogar");
 });
 
 test("hogar rechaza una suma de contenido demasiado baja y no guarda lead", async () => {
@@ -248,7 +279,8 @@ test("hogar rechaza una suma de contenido demasiado baja y no guarda lead", asyn
   await handleFlow(s, "2", deps);
   await handleFlow(s, "inquilino", deps);
   await handleFlow(s, "departamento", deps);
-  await handleFlow(s, "1425", deps);
+  await handleFlow(s, "permanente", deps); // uso
+  await handleFlow(s, "1425", deps); // CP (inquilino no da m²)
   const reply = (await handleFlow(s, "1000", deps)) ?? "";
   assert.match(reply, /contenido/i);
   assert.equal(s.data.sumaContenido, undefined, "no guarda una suma inválida");

@@ -52,7 +52,9 @@ test("un plan desconocido cae a la base y no rompe", () => {
 
 const baseHogar = {
   tipoResidente: "inquilino",
-  vivienda: "departamento",
+  tipoHogar: "departamento",
+  uso: "permanente",
+  m2: 0,
   cp: "5000", // interior
   sumaContenido: 2000000,
 };
@@ -65,14 +67,26 @@ test("hogar: rango positivo y proporcional a la suma del contenido", () => {
   assert.ok(doble.hasta > q.hasta);
 });
 
-test("hogar: propietario cuesta más que inquilino (asegura el edificio)", () => {
-  const inq = estimarPrimaHogar({ ...baseHogar, tipoResidente: "inquilino" });
-  const prop = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario" });
+test("hogar: propietario con edificio cuesta más que inquilino", () => {
+  const inq = estimarPrimaHogar({ ...baseHogar, tipoResidente: "inquilino", m2: 0 });
+  const prop = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario", m2: 100 });
   assert.ok(prop.hasta > inq.hasta);
 });
 
+test("hogar: más m² construidos, más prima (propietario)", () => {
+  const chico = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario", m2: 50 });
+  const grande = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario", m2: 200 });
+  assert.ok(grande.hasta > chico.hasta);
+});
+
 test("hogar: una casa cuesta más que un departamento", () => {
-  const depto = estimarPrimaHogar({ ...baseHogar, vivienda: "departamento" });
-  const casa = estimarPrimaHogar({ ...baseHogar, vivienda: "casa" });
+  const depto = estimarPrimaHogar({ ...baseHogar, tipoHogar: "departamento" });
+  const casa = estimarPrimaHogar({ ...baseHogar, tipoHogar: "casa" });
   assert.ok(casa.hasta > depto.hasta);
+});
+
+test("hogar: uso temporal cuesta más que permanente", () => {
+  const perm = estimarPrimaHogar({ ...baseHogar, uso: "permanente" });
+  const temp = estimarPrimaHogar({ ...baseHogar, uso: "temporal" });
+  assert.ok(temp.hasta > perm.hasta);
 });

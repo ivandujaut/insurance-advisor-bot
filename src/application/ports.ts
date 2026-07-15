@@ -87,8 +87,12 @@ export interface HogarLead extends LeadBase {
   producto: "hogar";
   /** "propietario" o "inquilino". */
   tipoResidente: string;
-  /** "casa" o "departamento". */
-  vivienda: string;
+  /** "casa", "departamento" o "departamento_pb_ph". */
+  tipoHogar: string;
+  /** "permanente", "temporal" o "alquilo". */
+  uso: string;
+  /** Metros cuadrados construidos. Solo para propietario (asegura el edificio). */
+  m2?: number;
   cp: string;
   /** Suma asegurada del contenido, en pesos. */
   sumaContenido: number;
