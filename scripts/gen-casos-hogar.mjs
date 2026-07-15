@@ -44,7 +44,7 @@ md += "| Dimensión | Valores | Impacto en el precio |\n|---|---|---|\n";
 md +=
   "| Residente | propietario / inquilino | El propietario asegura el edificio (suma de incendio derivada de m²); el inquilino, solo el contenido. |\n";
 md +=
-  "| Tipo de hogar | casa / departamento / depto PB o PH | Factor de exposición (casa > PB/PH > depto). |\n";
+  "| Tipo de hogar | casa / departamento / depto PB o PH | Una casa se reconstruye más cara por m² (~$2,4M vs ~$2,1M): estructura propia, no compartida. Dato real: casa ~1,19x depto. |\n";
 md +=
   "| Uso | permanente / temporal / alquilo | No es un multiplicador de riesgo: es el bundle de cobertura. Habitada (permanente/temporal) asegura el contenido (~2x); alquilada, solo el edificio. Dato real. |\n";
 md += "| m² construidos | 25 a 300 | Solo propietario: define la suma de incendio (~$2,1M/m²). |\n";
@@ -54,24 +54,48 @@ md +=
 md += "Diferidos (no se preguntan hoy): barrio privado/country, atestación de seguridad.\n\n";
 
 md += "## Casos de anclaje (precios reales ya relevados)\n\n";
-md += "Todos: propietario · departamento. El modelo se calibró para reproducirlos.\n\n";
-md += "| Zona | Uso | m² (suma incendio) | Estimación bot | Precio real |\n|---|---|---|---|---|\n";
+md += "Todos: propietario, 80-120 m². El modelo se calibró para reproducirlos.\n\n";
+md +=
+  "| Zona | Tipo | Uso | m² (suma incendio) | Estimación bot | Precio real |\n|---|---|---|---|---|---|\n";
 const ANCLAJES = [
-  { zona: "interior", cp: "3300", uso: "alquilo", m2: 80, real: "$11.760" },
-  { zona: "interior", cp: "3300", uso: "alquilo", m2: 120, real: "$16.683" },
-  { zona: "CABA", cp: "1425", uso: "alquilo", m2: 80, real: "$11.502" },
-  { zona: "CABA", cp: "1425", uso: "permanente", m2: 80, real: "$22.062" },
+  {
+    zona: "interior",
+    cp: "3300",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    m2: 80,
+    real: "$11.760",
+  },
+  {
+    zona: "interior",
+    cp: "3300",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    m2: 120,
+    real: "$16.683",
+  },
+  { zona: "CABA", cp: "1425", tipoHogar: "departamento", uso: "alquilo", m2: 80, real: "$11.502" },
+  {
+    zona: "CABA",
+    cp: "1425",
+    tipoHogar: "departamento",
+    uso: "permanente",
+    m2: 80,
+    real: "$22.062",
+  },
+  { zona: "CABA", cp: "1425", tipoHogar: "casa", uso: "alquilo", m2: 80, real: "$13.665" },
 ];
 for (const a of ANCLAJES) {
   const q = estimarPrimaHogar({
     tipoResidente: "propietario",
-    tipoHogar: "departamento",
+    tipoHogar: a.tipoHogar,
     uso: a.uso,
     m2: a.m2,
     cp: a.cp,
     sumaContenido: 0,
   });
-  md += `| ${a.zona} | ${a.uso} | ${a.m2} (${pesos(a.m2 * COSTO_M2)}) | ${rango(q)} | ${a.real} ✅ |\n`;
+  const tipo = a.tipoHogar === "casa" ? "casa" : "depto";
+  md += `| ${a.zona} | ${tipo} | ${a.uso} | ${a.m2} (${pesos(a.m2 * COSTO_M2)}) | ${rango(q)} | ${a.real} ✅ |\n`;
 }
 md += "\n";
 

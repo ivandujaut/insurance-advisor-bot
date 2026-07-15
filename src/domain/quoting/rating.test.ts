@@ -106,6 +106,13 @@ test("hogar: el rango contiene los precios reales de La Caja (caso relevado)", (
     qPerm.desde <= 22062 && 22062 <= qPerm.hasta,
     `22062 dentro de [${qPerm.desde}, ${qPerm.hasta}]`,
   );
+  // Mismo caso pero CASA (en vez de depto) en CABA, 80 m² -> $13.665/mes (real):
+  // se reconstruye más cara por m² (estructura propia).
+  const qCasa = estimarPrimaHogar({ ...real, cp: "1425", m2: 80, tipoHogar: "casa" });
+  assert.ok(
+    qCasa.desde <= 13665 && 13665 <= qCasa.hasta,
+    `13665 dentro de [${qCasa.desde}, ${qCasa.hasta}]`,
+  );
 });
 
 test("hogar: habitada (permanente) cuesta más que alquilada (asegura el contenido)", () => {
