@@ -268,6 +268,33 @@ qué dato, y qué resigné.
   instrumentar bien el origen; se cubre con los eventos del funnel (sección 6) y un
   parámetro de origen en el link del CTA.
 
+### Decisión 12: sumar hogar mapeando un producto personalizable a un flujo simple
+
+- **Criterio:** una segunda línea prueba que el bot escala a más productos sin
+  reescribir el núcleo, y obliga a resolver cómo se modela un producto que no tiene
+  niveles fijos.
+- **Dato que la respalda (cotizador real de hogar):** el primer paso pregunta
+  **propietario o inquilino** (define si se asegura el edificio o solo el
+  contenido), el paso 2 es **"Personalizá tu plan"** (no hay tres tiers como en
+  auto, la variable central es la suma asegurada), y el plan **incluye asistencias**
+  concretas (mascota, plomería/electricidad/cerrajería/gasista, alimentos por corte
+  de luz, mudanza/limpieza).
+- **Por qué (el flujo):** propietario/inquilino → casa/departamento → CP → **suma
+  asegurada del contenido**, y devuelvo la estimación con las asistencias reales
+  incluidas. No invento tiers que La Caja no vende: el "plan" es el producto y la
+  variable es la suma. La **valuación fina del edificio se difiere al asesor** (mismo
+  criterio que edad/DNI en auto): es un número difícil de estimar en un chat.
+- **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
+  una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
+  ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
+  `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
+  producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
+  hexagonal.
+- **Trade-off:** los factores del hogar (tasa sobre el contenido, recargo de
+  propietario y de casa) son ilustrativos y tuneables, igual que en auto; el anclaje
+  a tarifas reales queda pendiente (el cotizador de hogar tiene el mismo reCAPTCHA y
+  muro de contacto que el de auto).
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -312,12 +339,17 @@ métricas que instrumentaría:
    10 líneas para personas están cargadas con contenido real.
 2. ~~Persistir los leads.~~ **Hecho:** repositorio de leads con adapters JSONL o
    Postgres. (Pendiente: notificar automáticamente a un asesor.)
-3. Integrar precios reales vía los cotizadores existentes.
+3. Integrar precios reales vía los cotizadores existentes. (Intentado: el
+   cotizador de La Caja tiene reCAPTCHA y su backend falló en las pruebas; el
+   anclaje en pesos queda pendiente de un punto de precio real. Ver Decisión 10.)
 4. ~~Instrumentar las métricas de la sección 6.~~ **Hecho:** log de eventos del
    funnel y reporte `pnpm funnel` (activación, drop-off, mix de plan).
 5. ~~Conectar la API oficial de Meta para pruebas en WhatsApp real.~~ **Hecho:**
    el bot corre en WhatsApp real (webhook verificado y firmado). Paso a paso en
    `docs/conectar-meta.md`.
+6. ~~Sumar una segunda línea de producto con su propio flujo de cotización.~~
+   **Hecho:** flujo de hogar (propietario/inquilino, vivienda, CP, suma del
+   contenido) con su tarifador. Ver Decisión 12.
 
 ## 9. Qué demuestra este ejercicio
 
