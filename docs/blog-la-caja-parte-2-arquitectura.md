@@ -2,7 +2,7 @@
 
 *Segunda parte del caso de estudio. En la [primera](blog-la-caja-caso-de-estudio.md)
 conté la decisión de producto: dónde jugar. Acá va la de ingeniería: cómo llevé
-ese prototipo a un estado listo para crecer sin re-escribirlo. Lectura ~6 min.*
+ese prototipo a un estado listo para crecer sin re-escribirlo. Lectura ~7 min.*
 
 > Proyecto y análisis independientes, con datos públicos de La Caja. El bot es un
 > prototipo funcional, no un sistema en producción.
@@ -29,14 +29,15 @@ conoce. Es al revés. La arquitectura correcta no es la más elegante, es la que
 ataca **dónde está el cambio**.
 
 Miré el proyecto con honestidad. La complejidad no está en reglas de negocio
-profundas: cotizar un auto es un flujo de cuatro pasos. Está en los **bordes**, y
-todos son intercambiables:
+profundas: cotizar un seguro es un flujo guiado de pocos pasos. Está en los
+**bordes**, y todos son intercambiables:
 
 - **Canal**: hoy consola y WhatsApp; mañana Twilio.
 - **LLM**: hoy Anthropic; mañana el AI Gateway u otro modelo.
 - **Persistencia**: hoy archivos; mañana Postgres o un CRM.
 - **Sesiones**: hoy memoria; mañana Redis.
 - **Conocimiento**: hoy markdown; mañana un CMS.
+- **Cotización**: hoy un modelo local de factores; mañana el tarifador real de La Caja.
 
 Eso es territorio de **arquitectura hexagonal (Ports & Adapters)**: un núcleo
 rodeado de puertos (interfaces), con adapters intercambiables afuera. No elegí
@@ -67,6 +68,7 @@ export interface Dependencies {
   llm: LlmPort;
   sessions: SessionStore;
   knowledge: KnowledgeSource;
+  quoting: QuotingProvider;
 }
 ```
 
@@ -112,10 +114,12 @@ El de Postgres para leads es esto, básicamente:
 export function createPostgresLeadRepository(pool: Pool): LeadRepository {
   return {
     async save(lead) {
+      // Columnas comunes; lo específico de cada producto va a un jsonb.
+      const { userId, name, producto, plan, ...detalle } = lead;
       await pool.query(
-        `INSERT INTO leads (user_id, name, vehiculo, cp, condicion, plan)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [lead.userId, lead.name ?? null, lead.vehiculo, lead.cp, lead.condicion, lead.plan],
+        `INSERT INTO leads (user_id, name, producto, plan, detalle)
+         VALUES ($1, $2, $3, $4, $5::jsonb)`,
+        [userId, name ?? null, producto, plan, JSON.stringify(detalle)],
       );
     },
   };
@@ -145,6 +149,26 @@ Y no me quedé en el "compila". Escribí tests de integración que corren contra
 Postgres y un Redis de verdad, levantados como service containers en el CI. Guardan
 un lead, lo leen de vuelta, hacen el roundtrip de una sesión. Localmente, sin esas
 bases, se saltean solos.
+
+## Cuatro productos sin tocar el núcleo
+
+La prueba más fuerte llegó después, sumando líneas. Auto, hogar, accidentes
+personales y bici no comparten forma: uno estima por factores, otro por un valor
+declarado, otro es un catálogo de precio fijo. Y aun así el motor no cambió.
+
+La clave fue modelar el lead como una **unión discriminada** por producto:
+
+```ts
+type Lead = AutoLead | HogarLead | AccidentesLead | BiciLead;
+```
+
+Cada producto agrega su tipo y su flujo; el resto del sistema los distingue por el
+campo `producto`, y el compilador obliga a contemplar cada caso. En Postgres, en
+vez de una columna por atributo, quedaron las comunes (`producto`, `plan`) más un
+`detalle` jsonb con lo específico de cada línea. El resultado: sumar un producto
+fue agregar un flujo y, si estima, un tarifador detrás del mismo puerto. Cero
+cambios en el núcleo, cero migraciones de columnas. Los bordes crecieron; el
+corazón quedó intacto.
 
 ## Lo que sostiene todo
 
