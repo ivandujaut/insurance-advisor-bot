@@ -4,7 +4,7 @@
  * con un adapter en memoria en session/memory.ts. Este archivo no guarda estado.
  */
 
-export type Stage = "idle" | "main_menu" | "quoting_auto" | "quoting_hogar";
+export type Stage = "idle" | "main_menu" | "quoting_auto" | "quoting_hogar" | "quoting_accidentes";
 
 /** Planes de auto de La Caja, de menor a mayor cobertura. */
 export const AUTO_PLANS = [
@@ -12,6 +12,65 @@ export const AUTO_PLANS = [
   "Terceros Completo con Granizo",
   "Todo Riesgo con Franquicia",
 ] as const;
+
+/**
+ * Catálogo de Accidentes Personales de La Caja. A diferencia de auto (factores)
+ * y hogar (personalizable), es un catálogo de planes FIJOS con precio publicado
+ * (relevado del sitio). El bot solo elige modalidad + plan; no estima.
+ */
+export interface AccidentesPlan {
+  nombre: string;
+  /** Precio mensual publicado (débito automático de tarjeta). */
+  precio: number;
+  resumen: string;
+}
+
+export const ACCIDENTES_MODALIDADES: Record<string, string> = {
+  familiar: "Protección Familiar",
+  "trabajo-independiente": "Trabajo Independiente",
+  "personal-domestico": "Personal Doméstico",
+};
+
+export const ACCIDENTES_PLANES: Record<string, AccidentesPlan[]> = {
+  familiar: [
+    {
+      nombre: "Plan A",
+      precio: 9124,
+      resumen:
+        "Muerte accidental hasta $30M; en tránsito y transporte público hasta $77M; invalidez.",
+    },
+    {
+      nombre: "Plan B",
+      precio: 14176,
+      resumen: "Muerte accidental e invalidez permanente hasta $61M.",
+    },
+    {
+      nombre: "Plan C",
+      precio: 8505,
+      resumen: "Renta por internación $150.000/día; terapia intensiva; convalecencia.",
+    },
+  ],
+  "trabajo-independiente": [
+    {
+      nombre: "Trabajadores Independientes",
+      precio: 9600,
+      resumen: "Muerte, invalidez y gastos médicos por accidente hasta $10M.",
+    },
+    {
+      nombre: "Profesionales",
+      precio: 10300,
+      resumen: "Muerte e invalidez hasta $15M; gastos médicos hasta $1,5M.",
+    },
+  ],
+  "personal-domestico": [
+    {
+      nombre: "Plan A",
+      precio: 5500,
+      resumen:
+        "Muerte accidental hasta $18M; en tránsito y transporte público hasta $26,2M; invalidez.",
+    },
+  ],
+};
 
 export interface Turn {
   role: "user" | "assistant";

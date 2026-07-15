@@ -53,6 +53,22 @@ test("el LeadRepository JSONL persiste un lead de hogar", async () => {
   assert.equal(mine[0]?.sumaContenido, 2000000);
 });
 
+test("el LeadRepository JSONL persiste un lead de accidentes personales", async () => {
+  const repo = createJsonlLeadRepository();
+  await repo.save({
+    producto: "accidentes",
+    userId: "adapter-ap",
+    name: "Z",
+    modalidad: "familiar",
+    plan: "Plan A",
+    precio: 9124,
+  });
+  const mine = readLines(leadsFile).filter((l) => l.userId === "adapter-ap");
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0]?.producto, "accidentes");
+  assert.equal(mine[0]?.precio, 9124);
+});
+
 test("el EventSink JSONL persiste el evento en disco", async () => {
   const sink = createJsonlEventSink();
   await sink.log("lead_captured", "adapter-evt", { plan: "Terceros Completo" });

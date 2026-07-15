@@ -76,11 +76,39 @@ test("opción 2 arranca la cotización de hogar", async () => {
   assert.equal(s.stage, "quoting_hogar");
 });
 
-test("opción 3 muestra la comparación de los tres planes", async () => {
-  const s = newSession("t-comparar");
+test("opción 3 arranca accidentes personales", async () => {
+  const s = newSession("t-ap");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   const reply = (await handleFlow(s, "3", deps)) ?? "";
+  assert.match(reply, /familiar/i);
+  assert.equal(s.stage, "quoting_accidentes");
+});
+
+test("el flujo de accidentes guarda el lead con el precio publicado", async () => {
+  const s = newSession("t-ap-full");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "3", deps); // accidentes personales
+  const planes = (await handleFlow(s, "1", deps)) ?? ""; // modalidad familiar -> lista planes
+  assert.match(planes, /Plan B/);
+  assert.match(planes, /14\.176/);
+  const final = (await handleFlow(s, "2", deps)) ?? ""; // Plan B
+  assert.match(final, /accidentes personales/i);
+  assert.equal(s.stage, "idle");
+  const lead = deps.savedLeads[0];
+  assert.equal(lead?.producto, "accidentes");
+  if (lead?.producto !== "accidentes") throw new Error("esperaba un lead de accidentes");
+  assert.equal(lead.modalidad, "familiar");
+  assert.equal(lead.plan, "Plan B");
+  assert.equal(lead.precio, 14176);
+});
+
+test("opción 4 muestra la comparación de los tres planes", async () => {
+  const s = newSession("t-comparar");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  const reply = (await handleFlow(s, "4", deps)) ?? "";
   assert.match(reply, /Terceros Completo/);
   assert.match(reply, /Terceros Completo con Granizo/);
   assert.match(reply, /Todo Riesgo con Franquicia/);

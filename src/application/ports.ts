@@ -98,11 +98,20 @@ export interface HogarLead extends LeadBase {
   sumaContenido?: number;
 }
 
+/** Lead de una cotización de accidentes personales (catálogo de planes fijos). */
+export interface AccidentesLead extends LeadBase {
+  producto: "accidentes";
+  /** "familiar", "trabajo-independiente" o "personal-domestico". */
+  modalidad: string;
+  /** Precio mensual publicado del plan elegido. */
+  precio: number;
+}
+
 /** Un lead capturado, discriminado por `producto`. */
-export type Lead = AutoLead | HogarLead;
+export type Lead = AutoLead | HogarLead | AccidentesLead;
 
 /** Un lead antes de persistirse (el adapter le pone el timestamp). */
-export type LeadInput = Omit<AutoLead, "ts"> | Omit<HogarLead, "ts">;
+export type LeadInput = Omit<AutoLead, "ts"> | Omit<HogarLead, "ts"> | Omit<AccidentesLead, "ts">;
 
 /** Repositorio de leads. Hoy JSONL, mañana un CRM o una base de datos. */
 export interface LeadRepository {

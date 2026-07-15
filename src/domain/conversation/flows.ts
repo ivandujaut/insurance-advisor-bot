@@ -10,7 +10,7 @@
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
 import type { Dependencies } from "../../application/ports.js";
-import { AUTO_PLANS, type Session } from "./session.js";
+import { ACCIDENTES_MODALIDADES, ACCIDENTES_PLANES, AUTO_PLANS, type Session } from "./session.js";
 
 const GREETINGS = [
   "hola",
@@ -31,9 +31,10 @@ const MAIN_MENU = [
   "",
   "1️⃣ Cotizar mi seguro de auto",
   "2️⃣ Cotizar mi seguro de hogar",
-  "3️⃣ Comparar los planes de auto",
-  "4️⃣ Tengo una duda",
-  "5️⃣ Hablar con un asesor",
+  "3️⃣ Cotizar accidentes personales",
+  "4️⃣ Comparar los planes de auto",
+  "5️⃣ Tengo una duda",
+  "6️⃣ Hablar con un asesor",
   "",
   "Respondé con el número, o escribime tu consulta directamente.",
 ].join("\n");
@@ -88,6 +89,8 @@ export async function handleFlow(
       return handleQuotingAuto(session, text, deps);
     case "quoting_hogar":
       return handleQuotingHogar(session, text, deps);
+    case "quoting_accidentes":
+      return handleAccidentes(session, text, deps);
     default:
       return null;
   }
@@ -110,13 +113,18 @@ async function handleMainMenu(
       await deps.events.log("quote_started", session.userId);
       return "Buenísimo, cotizamos tu *seguro de hogar*. 🏠\n\n¿Sos *propietario* o *inquilino*?";
     case "3":
+      session.stage = "quoting_accidentes";
+      session.data = {};
+      await deps.events.log("quote_started", session.userId);
+      return "Genial, *accidentes personales*. 🩹\n\n¿Para quién es? Respondé:\n*1* Protección familiar\n*2* Trabajo independiente\n*3* Personal doméstico";
+    case "4":
       // La comparación es informativa; el usuario sigue en el menú.
       await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
-    case "4":
+    case "5":
       // Duda abierta -> la responde el LLM con la base de conocimiento.
       return null;
-    case "5":
+    case "6":
       session.stage = "idle";
       await deps.events.log("advisor_requested", session.userId);
       return ADVISOR_REPLY;
@@ -416,4 +424,81 @@ async function handleQuotingHogar(
     "Escribí *menú* para hacer otra consulta.",
   );
   return lineas.join("\n");
+}
+
+// Asistencias que La Caja incluye en todos los planes de AP (relevado del sitio).
+const ACCIDENTES_ASISTENCIAS = [
+  "🩺 Telemedicina 24 h",
+  "👨‍👩‍👧 Cobertura familiar (cónyuge e hijos menores de 21)",
+  "🚑 Ambulancia ilimitada",
+  "🏠 Consulta médica a domicilio",
+].join("\n");
+
+/**
+ * Accidentes personales: no es una cotización con factores como auto/hogar, es un
+ * catálogo de planes con precio publicado. El flujo elige modalidad y plan; el
+ * "precio" sale del catálogo (session.ts), no de un tarifador.
+ */
+async function handleAccidentes(
+  session: Session,
+  rawText: string,
+  deps: Dependencies,
+): Promise<string | null> {
+  const text = rawText.trim();
+
+  // 1) Modalidad (para quién es).
+  if (!session.data.modalidad) {
+    const t = normalize(text);
+    let modalidad: string | undefined;
+    if (t === "1" || /familiar|familia/.test(t)) modalidad = "familiar";
+    else if (t === "2" || /independiente|profesional|trabajo/.test(t))
+      modalidad = "trabajo-independiente";
+    else if (t === "3" || /dom[eé]stic|emplead|casera/.test(t)) modalidad = "personal-domestico";
+    if (!modalidad) {
+      return "No te entendí. Respondé *1* (protección familiar), *2* (trabajo independiente) o *3* (personal doméstico).";
+    }
+    session.data.modalidad = modalidad;
+    await deps.events.log("quote_step", session.userId, { step: "modalidad" });
+    const planes = ACCIDENTES_PLANES[modalidad] ?? [];
+    const lista = planes
+      .map((p, i) => `*${i + 1}.* ${p.nombre}: ${pesos(p.precio)}/mes\n   ${p.resumen}`)
+      .join("\n\n");
+    return `Planes de *${ACCIDENTES_MODALIDADES[modalidad] ?? modalidad}*:\n\n${lista}\n\n¿Cuál te interesa? Respondé el número.`;
+  }
+
+  // 2) Plan elegido -> lead con el precio publicado.
+  if (!session.data.plan) {
+    const modalidad = session.data.modalidad ?? "";
+    const planes = ACCIDENTES_PLANES[modalidad] ?? [];
+    const plan = planes[Number(text) - 1];
+    if (!plan) {
+      return "No te entendí el plan. Respondé el *número* del plan de la lista.";
+    }
+    session.data.plan = plan.nombre;
+    session.stage = "idle";
+    await deps.leads.save({
+      producto: "accidentes",
+      userId: session.userId,
+      name: session.name,
+      modalidad,
+      plan: plan.nombre,
+      precio: plan.precio,
+    });
+    await deps.events.log("lead_captured", session.userId, { plan: plan.nombre });
+    return [
+      "¡Listo! Con esto armo tu solicitud de *accidentes personales*:",
+      "",
+      `🛡️ ${ACCIDENTES_MODALIDADES[modalidad] ?? modalidad}: ${plan.nombre}`,
+      `💰 ${pesos(plan.precio)} por mes`,
+      "",
+      "*Incluye:*",
+      ACCIDENTES_ASISTENCIAS,
+      "",
+      "Es el precio publicado (débito automático de tarjeta). Un asesor te ayuda a contratarlo y con las opciones de pago.",
+      "",
+      "Escribí *menú* para hacer otra consulta.",
+    ].join("\n");
+  }
+
+  return null;
 }
