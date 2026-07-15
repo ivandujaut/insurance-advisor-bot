@@ -109,19 +109,21 @@ export interface HogarQuoteInput {
   tipoHogar: string;
   /** "permanente", "temporal" o "alquilo". */
   uso: string;
-  /** Metros cuadrados construidos. 0 si no aplica (inquilino no asegura edificio). */
+  /** m² construidos. El propietario deriva de acá la suma de incendio (edificio + bienes). */
   m2: number;
   cp: string;
-  /** Suma asegurada del contenido, en pesos. */
+  /** Suma del contenido. La usa el inquilino (no asegura el edificio). */
   sumaContenido: number;
 }
 
-// Tasas mensuales (ilustrativas): sobre la suma del contenido y sobre el valor
-// de reconstrucción del edificio (más baja, porque el edificio no se roba).
-const TASA_CONTENIDO_MENSUAL = 0.004;
-const TASA_EDIFICIO_MENSUAL = 0.0002;
-// Costo de reconstrucción por m² (ARS, ilustrativo) para estimar la suma del edificio.
-const COSTO_RECONSTRUCCION_M2 = 800000;
+// Calibrado con DOS precios reales del cotizador de La Caja (caso: propietario,
+// departamento, alquilo, Posadas): 168M de incendio -> $11.760/mes y 252M ->
+// $16.683/mes. De la regresión salen: tasa ~0,0051%/mes sobre la suma de incendio,
+// un cargo fijo (RC + cristales + asistencias, no escala) y costo de
+// reconstrucción ~$2,1M/m². Siguen siendo aproximaciones, pero ancladas a datos.
+const COSTO_RECONSTRUCCION_M2 = 2100000;
+const TASA_INCENDIO_MENSUAL = 0.000051;
+const CARGO_FIJO_MENSUAL = 1665;
 
 /** Planta baja / PH está más expuesto que un piso; una casa, más que un depto. */
 function factorTipoHogar(tipoHogar: string): number {
@@ -138,20 +140,19 @@ function factorUso(uso: string): number {
 }
 
 /**
- * Estima el rango de prima mensual del seguro de hogar. Suma dos componentes:
- * el contenido (tasa sobre la suma asegurada) y, solo para propietarios, el
- * edificio (tasa sobre su valor de reconstrucción, derivado de los m²). Ajusta
- * por tipo de hogar, uso y zona. Determinística y orientativa (el asesor cierra
- * los valores finales).
+ * Estima el rango de prima mensual del seguro de hogar, replicando la estructura
+ * del cotizador real: una tasa sobre la suma de incendio (edificio + bienes) más
+ * un cargo fijo (RC, cristales, asistencias). El propietario deriva la suma de
+ * incendio de los m² (a costo de reconstrucción); el inquilino, que no asegura el
+ * edificio, usa la suma de su contenido. Ajusta por tipo de hogar, uso y zona.
  */
 export function estimarPrimaHogar(input: HogarQuoteInput): QuoteEstimate {
-  const primaContenido = input.sumaContenido * TASA_CONTENIDO_MENSUAL;
-  const primaEdificio =
+  const sumaIncendio =
     input.tipoResidente === "propietario"
-      ? input.m2 * COSTO_RECONSTRUCCION_M2 * TASA_EDIFICIO_MENSUAL
-      : 0;
+      ? input.m2 * COSTO_RECONSTRUCCION_M2
+      : input.sumaContenido;
   const prima =
-    (primaContenido + primaEdificio) *
+    (CARGO_FIJO_MENSUAL + sumaIncendio * TASA_INCENDIO_MENSUAL) *
     factorTipoHogar(input.tipoHogar) *
     factorUso(input.uso) *
     factorZona(input.cp);

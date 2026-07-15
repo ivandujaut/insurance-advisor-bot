@@ -61,7 +61,6 @@ test("Postgres persiste un lead de hogar en detalle jsonb", { skip: !url }, asyn
     uso: "permanente",
     m2: 120,
     cp: "1425",
-    sumaContenido: 3000000,
     plan: "Seguro de Hogar",
   });
 
@@ -70,7 +69,7 @@ test("Postgres persiste un lead de hogar en detalle jsonb", { skip: !url }, asyn
   assert.equal(rows[0]?.producto, "hogar");
   assert.equal(rows[0]?.detalle?.tipoResidente, "propietario");
   assert.equal(rows[0]?.detalle?.m2, 120);
-  assert.equal(rows[0]?.detalle?.sumaContenido, 3000000);
+  assert.equal(rows[0]?.detalle?.uso, "permanente");
 
   await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
   await pool.end();
