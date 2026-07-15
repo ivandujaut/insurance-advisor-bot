@@ -1,9 +1,11 @@
 /**
- * Server HTTP (Hono). Expone el webhook de WhatsApp (Meta Cloud API).
+ * Server HTTP (Hono). Expone dos canales sobre el mismo motor:
  *
- * - GET  /webhook  -> verificación del webhook (handshake con Meta).
- * - POST /webhook  -> recepción de mensajes entrantes.
- * - GET  /         -> health check.
+ * - GET  /         -> demo web (página de chat, para que cualquiera lo pruebe).
+ * - POST /chat     -> mensaje del canal web; responde el texto directo.
+ * - GET  /webhook  -> verificación del webhook de WhatsApp (handshake con Meta).
+ * - POST /webhook  -> recepción de mensajes de WhatsApp.
+ * - GET  /health   -> health check.
  */
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
@@ -11,6 +13,7 @@ import { processMessage } from "../application/process-message.js";
 import { config } from "../config/index.js";
 import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
 import { buildDependencies, buildMessagingProvider } from "./container.js";
+import { DEMO_HTML } from "./demo-page.js";
 
 const app = new Hono();
 const deps = await buildDependencies();
@@ -20,7 +23,25 @@ if (provider.name === "meta" && !config.meta.appSecret) {
   console.warn("⚠️  META_APP_SECRET no está seteado: no se verifica la firma del webhook.");
 }
 
-app.get("/", (c) => c.text("lacaja-whatsapp-bot OK"));
+// Canal web: la demo pública. La página de chat y su endpoint.
+app.get("/", (c) => c.html(DEMO_HTML));
+app.get("/health", (c) => c.text("lacaja-whatsapp-bot OK"));
+
+app.post("/chat", async (c) => {
+  let body: { userId?: string; text?: string; name?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "JSON inválido" }, 400);
+  }
+  const userId = (body.userId ?? "").trim();
+  const text = (body.text ?? "").trim();
+  if (!userId || !text) {
+    return c.json({ error: "Faltan userId o text" }, 400);
+  }
+  const reply = await processMessage({ from: userId, text, name: body.name }, deps);
+  return c.json({ reply });
+});
 
 // Verificación del webhook: Meta manda hub.challenge y espera que lo devolvamos.
 app.get("/webhook", (c) => {
