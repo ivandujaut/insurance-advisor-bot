@@ -32,9 +32,10 @@ const MAIN_MENU = [
   "1️⃣ Cotizar mi seguro de auto",
   "2️⃣ Cotizar mi seguro de hogar",
   "3️⃣ Cotizar accidentes personales",
-  "4️⃣ Comparar los planes de auto",
-  "5️⃣ Tengo una duda",
-  "6️⃣ Hablar con un asesor",
+  "4️⃣ Cotizar bici o monopatín",
+  "5️⃣ Comparar los planes de auto",
+  "6️⃣ Tengo una duda",
+  "7️⃣ Hablar con un asesor",
   "",
   "Respondé con el número, o escribime tu consulta directamente.",
 ].join("\n");
@@ -91,6 +92,8 @@ export async function handleFlow(
       return handleQuotingHogar(session, text, deps);
     case "quoting_accidentes":
       return handleAccidentes(session, text, deps);
+    case "quoting_bici":
+      return handleBici(session, text, deps);
     default:
       return null;
   }
@@ -118,13 +121,18 @@ async function handleMainMenu(
       await deps.events.log("quote_started", session.userId);
       return "Genial, *accidentes personales*. 🩹\n\n¿Para quién es? Respondé:\n*1* Protección familiar\n*2* Trabajo independiente\n*3* Personal doméstico";
     case "4":
+      session.stage = "quoting_bici";
+      session.data = {};
+      await deps.events.log("quote_started", session.userId);
+      return "Buenísimo, cotizamos tu rodado. 🚲\n\n¿Es una *bicicleta* o un *monopatín eléctrico*?";
+    case "5":
       // La comparación es informativa; el usuario sigue en el menú.
       await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
-    case "5":
+    case "6":
       // Duda abierta -> la responde el LLM con la base de conocimiento.
       return null;
-    case "6":
+    case "7":
       session.stage = "idle";
       await deps.events.log("advisor_requested", session.userId);
       return ADVISOR_REPLY;
@@ -495,6 +503,78 @@ async function handleAccidentes(
       ACCIDENTES_ASISTENCIAS,
       "",
       "Es el precio publicado (débito automático de tarjeta). Un asesor te ayuda a contratarlo y con las opciones de pago.",
+      "",
+      "Escribí *menú* para hacer otra consulta.",
+    ].join("\n");
+  }
+
+  return null;
+}
+
+// Asistencias que incluye el seguro de bici/monopatín (relevado del sitio).
+const BICI_INCLUYE = [
+  "🛡️ Responsabilidad civil ante terceros",
+  "🔧 Mantenimiento y asistencia 24 h",
+  "🚕 Traslado tuyo y del rodado ante robo o accidente",
+  "🚑 Ambulancia y reposición de llaves",
+].join("\n");
+
+// Valor mínimo razonable para asegurar un rodado (ilustrativo).
+const MIN_VALOR_BICI = 50000;
+
+/**
+ * Bici / monopatín: el precio es una tasa sobre el VALOR declarado del rodado
+ * (~1,85% mensual, relevado del cotizador real). Un cuarto shape: pricing por
+ * valor asegurado, un solo factor.
+ */
+async function handleBici(
+  session: Session,
+  rawText: string,
+  deps: Dependencies,
+): Promise<string | null> {
+  const text = rawText.trim();
+
+  // 1) Tipo de rodado.
+  if (!session.data.tipoRodado) {
+    const t = normalize(text);
+    if (/monopat|scooter/.test(t)) session.data.tipoRodado = "monopatin";
+    else if (/bici|bicicleta|rodado/.test(t)) session.data.tipoRodado = "bicicleta";
+    else return "No te entendí. ¿Es una *bicicleta* o un *monopatín eléctrico*?";
+    await deps.events.log("quote_step", session.userId, { step: "tipo_rodado" });
+    return "¿Cuánto vale tu rodado? Un valor aproximado en pesos (es la suma que se asegura ante robo).";
+  }
+
+  // 2) Valor -> estimación + lead.
+  if (!session.data.valor) {
+    const valor = Number(text.replace(/\D/g, ""));
+    if (!valor || valor < MIN_VALOR_BICI) {
+      return `Necesito el *valor* aproximado del rodado (desde ${pesos(MIN_VALOR_BICI)}).`;
+    }
+    session.data.valor = String(valor);
+    await deps.events.log("quote_step", session.userId, { step: "valor" });
+    const tipoRodado = session.data.tipoRodado ?? "bicicleta";
+    const estimate = await deps.quoting.quoteBici({ tipoRodado, valor });
+    session.stage = "idle";
+    await deps.leads.save({
+      producto: "bici",
+      userId: session.userId,
+      name: session.name,
+      tipoRodado,
+      valor,
+      plan: estimate.plan,
+    });
+    await deps.events.log("lead_captured", session.userId, { plan: estimate.plan });
+    return [
+      "¡Listo! Con esto armo tu solicitud:",
+      "",
+      `🚲 ${tipoRodado === "monopatin" ? "Monopatín eléctrico" : "Bicicleta"}`,
+      `💵 Valor asegurado: ${pesos(valor)}`,
+      `💰 Cuota estimada: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
+      "",
+      "*Incluye:*",
+      BICI_INCLUYE,
+      "",
+      "Es una estimación sobre el valor declarado. Un asesor confirma la cuota final y te ayuda a contratarlo.",
       "",
       "Escribí *menú* para hacer otra consulta.",
     ].join("\n");

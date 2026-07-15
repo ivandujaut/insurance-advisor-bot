@@ -48,6 +48,12 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
         hasta: 12000,
         moneda: "ARS",
       }),
+      quoteBici: async () => ({
+        plan: "Seguro de Bicicleta",
+        desde: 4000,
+        hasta: 5000,
+        moneda: "ARS",
+      }),
     },
     ...over,
   };

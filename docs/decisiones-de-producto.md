@@ -364,6 +364,26 @@ qué dato, y qué resigné.
   planes; se aísla en `session.ts` (una sola fuente) para que sea un cambio de dato,
   no de lógica.
 
+### Decisión 14: bici/monopatín, un cuarto shape (precio por valor declarado)
+
+- **Criterio:** una cuarta línea con otra forma de precio confirma que el patrón
+  no era casualidad: el bot lee el modelo de cada producto.
+- **Dato que la respalda:** el cotizador de bici muestra tres tarifas por **suma
+  asegurada** (el valor del rodado): $370.800 → $6.894, $539.400 → $9.959,
+  $1.012.000 → $18.549. La tasa es muy consistente, **~1,85% mensual sobre el
+  valor**.
+- **Por qué (la mejora sobre la web):** en vez de ofrecer tres tiers fijos, el bot
+  pregunta **cuánto vale tu rodado** y estima al 1,85% real. Es un **cuarto shape**:
+  precio por **valor declarado** (un solo factor), anclado a datos y personalizado
+  al rodado del usuario, no a tres cajas.
+- **Los cuatro shapes conviviendo:** auto (multi-factor), hogar (multi-factor
+  anclado), accidentes (catálogo fijo), bici (**tasa sobre valor**). Cuatro modelos
+  de precio en el mismo motor de conversación y la misma unión de leads. Esa es la
+  tesis del ejercicio hecha evidencia: la arquitectura no asumió cómo se cobra un
+  seguro, se adapta a cada uno.
+- **Trade-off:** modelar por valor declarado extrapola fuera del rango de las tres
+  tarifas relevadas; el número es orientativo y el asesor confirma la cuota final.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -422,6 +442,8 @@ métricas que instrumentaría:
 7. ~~Sumar una tercera línea de forma distinta (no basada en atributos).~~
    **Hecho:** accidentes personales, un catálogo de planes con precio publicado
    (modalidad → plan), sin tarifador. Ver Decisión 13.
+8. ~~Sumar una cuarta línea con otro modelo de precio.~~ **Hecho:** bici/monopatín,
+   precio por valor declarado (tasa ~1,85% sobre la suma asegurada). Ver Decisión 14.
 
 ## 9. Qué demuestra este ejercicio
 

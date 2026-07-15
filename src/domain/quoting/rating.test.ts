@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { estimarPrima, estimarPrimaHogar } from "./rating.js";
+import { estimarPrima, estimarPrimaBici, estimarPrimaHogar } from "./rating.js";
 
 const base = {
   anio: "2018",
@@ -151,6 +151,33 @@ test("hogar: una casa cuesta más que un departamento", () => {
   const depto = estimarPrimaHogar({ ...baseHogar, tipoHogar: "departamento" });
   const casa = estimarPrimaHogar({ ...baseHogar, tipoHogar: "casa" });
   assert.ok(casa.hasta > depto.hasta);
+});
+
+test("bici: el rango contiene las tres tarifas reales del cotizador", () => {
+  // Reales: $370.800 -> $6.894 ; $539.400 -> $9.959 ; $1.012.000 -> $18.549.
+  const anclajes = [
+    { valor: 370800, real: 6894 },
+    { valor: 539400, real: 9959 },
+    { valor: 1012000, real: 18549 },
+  ];
+  for (const a of anclajes) {
+    const q = estimarPrimaBici({ tipoRodado: "bicicleta", valor: a.valor });
+    assert.ok(
+      q.desde <= a.real && a.real <= q.hasta,
+      `${a.real} dentro de [${q.desde}, ${q.hasta}]`,
+    );
+  }
+});
+
+test("bici: la cuota crece con el valor del rodado", () => {
+  const barata = estimarPrimaBici({ tipoRodado: "bicicleta", valor: 200000 });
+  const cara = estimarPrimaBici({ tipoRodado: "bicicleta", valor: 800000 });
+  assert.ok(cara.hasta > barata.hasta);
+});
+
+test("bici: el monopatín usa su propio nombre de plan", () => {
+  const q = estimarPrimaBici({ tipoRodado: "monopatin", valor: 400000 });
+  assert.match(q.plan, /Monopatín/);
 });
 
 test("hogar: uso temporal cuesta más que permanente", () => {
