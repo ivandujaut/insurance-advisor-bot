@@ -297,30 +297,64 @@ async function handleQuotingHogar(
     }
     session.data.tipoResidente = esProp ? "propietario" : "inquilino";
     await deps.events.log("quote_step", session.userId, { step: "tipo_residente" });
-    return "¿La vivienda es una *casa* o un *departamento*?";
+    return "¿La vivienda es una *casa*, un *departamento* o un *departamento en PB o PH*?";
   }
 
-  // 2) Tipo de vivienda.
-  if (!session.data.vivienda) {
+  // 2) Tipo de hogar (3 opciones, como el cotizador real).
+  if (!session.data.tipoHogar) {
     const t = normalize(text);
-    const esCasa = /casa|ph|chalet|duplex/.test(t);
-    const esDepto = /depto|departa|dpto|piso|monoamb/.test(t);
-    if (!esCasa && !esDepto) {
-      return "No te entendí. ¿Es una *casa* o un *departamento*?";
+    if (/\bpb\b|\bph\b|planta baja/.test(t)) {
+      session.data.tipoHogar = "departamento_pb_ph";
+    } else if (/casa|chalet|duplex/.test(t)) {
+      session.data.tipoHogar = "casa";
+    } else if (/depto|departa|dpto|piso|monoamb/.test(t)) {
+      session.data.tipoHogar = "departamento";
+    } else {
+      return "No te entendí. ¿Es una *casa*, un *departamento* o un *departamento en PB o PH*?";
     }
-    session.data.vivienda = esCasa ? "casa" : "departamento";
-    await deps.events.log("quote_step", session.userId, { step: "vivienda" });
+    await deps.events.log("quote_step", session.userId, { step: "tipo_hogar" });
+    return "¿Qué *uso* tiene? Respondé *permanente* (se vive ahí), *temporal* o *alquilada*.";
+  }
+
+  // 3) Uso (ocupación: una vivienda vacía o alquilada tiene más riesgo).
+  if (!session.data.uso) {
+    const t = normalize(text);
+    if (/tempora|transitor|fin de semana|veran/.test(t)) {
+      session.data.uso = "temporal";
+    } else if (/alquil|renta|arriend/.test(t)) {
+      session.data.uso = "alquilo";
+    } else if (/permanen|vivo|siempre/.test(t)) {
+      session.data.uso = "permanente";
+    } else {
+      return "No te entendí. ¿El uso es *permanente*, *temporal* o *alquilada*?";
+    }
+    await deps.events.log("quote_step", session.userId, { step: "uso" });
+    // Los m² solo se piden a propietario: el inquilino no asegura el edificio.
+    if (session.data.tipoResidente === "propietario") {
+      return "¿Cuántos *m² construidos* tiene? (entre 25 y 300)";
+    }
     return "¿En qué *código postal* está la vivienda?";
   }
 
-  // 3) Código postal (zona).
+  // 4) Metros cuadrados (solo propietario, para estimar el edificio).
+  if (session.data.tipoResidente === "propietario" && !session.data.m2) {
+    const m2 = Number(text.replace(/\D/g, ""));
+    if (!m2 || m2 < 25 || m2 > 300) {
+      return "Necesito los *m² construidos*, entre 25 y 300.";
+    }
+    session.data.m2 = String(m2);
+    await deps.events.log("quote_step", session.userId, { step: "m2" });
+    return "¿En qué *código postal* está la vivienda?";
+  }
+
+  // 5) Código postal (zona).
   if (!session.data.cp) {
     session.data.cp = text;
     await deps.events.log("quote_step", session.userId, { step: "cp" });
     return "Por último: ¿cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.";
   }
 
-  // 4) Suma asegurada del contenido -> estimación + lead.
+  // 6) Suma asegurada del contenido -> estimación + lead.
   if (!session.data.sumaContenido) {
     const suma = Number(text.replace(/\D/g, ""));
     if (!suma || suma < MIN_SUMA_HOGAR) {
@@ -330,13 +364,16 @@ async function handleQuotingHogar(
     await deps.events.log("quote_step", session.userId, { step: "suma_contenido" });
 
     const plan = "Seguro de Hogar";
+    const m2 = session.data.m2 ? Number(session.data.m2) : undefined;
     session.stage = "idle";
     await deps.leads.save({
       producto: "hogar",
       userId: session.userId,
       name: session.name,
       tipoResidente: session.data.tipoResidente ?? "",
-      vivienda: session.data.vivienda ?? "",
+      tipoHogar: session.data.tipoHogar ?? "",
+      uso: session.data.uso ?? "",
+      m2,
       cp: session.data.cp ?? "",
       sumaContenido: suma,
       plan,
@@ -344,14 +381,23 @@ async function handleQuotingHogar(
     await deps.events.log("lead_captured", session.userId, { plan });
     const estimate = await deps.quoting.quoteHogar({
       tipoResidente: session.data.tipoResidente ?? "",
-      vivienda: session.data.vivienda ?? "",
+      tipoHogar: session.data.tipoHogar ?? "",
+      uso: session.data.uso ?? "",
+      m2: m2 ?? 0,
       cp: session.data.cp ?? "",
       sumaContenido: suma,
     });
-    return [
+    const hogarLabel =
+      session.data.tipoHogar === "departamento_pb_ph"
+        ? "departamento (PB o PH)"
+        : (session.data.tipoHogar ?? "");
+    const lineas = [
       "¡Listo! Con estos datos armo tu solicitud de *seguro de hogar*:",
       "",
-      `🏠 ${session.data.vivienda} · ${session.data.tipoResidente}`,
+      `🏠 ${hogarLabel} · ${session.data.tipoResidente} · uso ${session.data.uso}`,
+    ];
+    if (m2) lineas.push(`📐 ${m2} m² construidos`);
+    lineas.push(
       `📍 CP: ${session.data.cp}`,
       `📦 Contenido asegurado: ${pesos(suma)}`,
       `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
@@ -362,7 +408,8 @@ async function handleQuotingHogar(
       "Es un rango orientativo. Un asesor confirma el valor final del contenido y del edificio, y las opciones de pago (CBU o tarjeta).",
       "",
       "Escribí *menú* para hacer otra consulta.",
-    ].join("\n");
+    );
+    return lineas.join("\n");
   }
 
   return null;

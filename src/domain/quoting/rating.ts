@@ -105,38 +105,55 @@ export function estimarPrima(input: AutoQuoteInput): QuoteEstimate {
 export interface HogarQuoteInput {
   /** "propietario" o "inquilino". */
   tipoResidente: string;
-  /** "casa" o "departamento". */
-  vivienda: string;
+  /** "casa", "departamento" o "departamento_pb_ph". */
+  tipoHogar: string;
+  /** "permanente", "temporal" o "alquilo". */
+  uso: string;
+  /** Metros cuadrados construidos. 0 si no aplica (inquilino no asegura edificio). */
+  m2: number;
   cp: string;
   /** Suma asegurada del contenido, en pesos. */
   sumaContenido: number;
 }
 
-// Tasa mensual sobre la suma asegurada del contenido (ilustrativa).
+// Tasas mensuales (ilustrativas): sobre la suma del contenido y sobre el valor
+// de reconstrucción del edificio (más baja, porque el edificio no se roba).
 const TASA_CONTENIDO_MENSUAL = 0.004;
+const TASA_EDIFICIO_MENSUAL = 0.0002;
+// Costo de reconstrucción por m² (ARS, ilustrativo) para estimar la suma del edificio.
+const COSTO_RECONSTRUCCION_M2 = 800000;
 
-/** El propietario asegura también el edificio; el inquilino solo el contenido. */
-function factorTipoResidente(tipo: string): number {
-  return tipo === "propietario" ? 1.5 : 1.0;
+/** Planta baja / PH está más expuesto que un piso; una casa, más que un depto. */
+function factorTipoHogar(tipoHogar: string): number {
+  if (tipoHogar === "casa") return 1.15;
+  if (tipoHogar === "departamento_pb_ph") return 1.1;
+  return 1.0; // departamento en piso
 }
 
-/** Una casa está más expuesta (accesos, frente) que un departamento. */
-function factorVivienda(vivienda: string): number {
-  return vivienda === "casa" ? 1.15 : 1.0;
+/** Una vivienda vacía o alquilada tiene más riesgo que una habitada de forma permanente. */
+function factorUso(uso: string): number {
+  if (uso === "temporal") return 1.2;
+  if (uso === "alquilo") return 1.15;
+  return 1.0; // permanente
 }
 
 /**
- * Estima el rango de prima mensual del seguro de hogar: una tasa sobre la suma
- * asegurada del contenido, ajustada por residente, vivienda y zona.
- * Determinística y orientativa (el asesor cierra el valor final, incluida la
- * suma del edificio para propietarios).
+ * Estima el rango de prima mensual del seguro de hogar. Suma dos componentes:
+ * el contenido (tasa sobre la suma asegurada) y, solo para propietarios, el
+ * edificio (tasa sobre su valor de reconstrucción, derivado de los m²). Ajusta
+ * por tipo de hogar, uso y zona. Determinística y orientativa (el asesor cierra
+ * los valores finales).
  */
 export function estimarPrimaHogar(input: HogarQuoteInput): QuoteEstimate {
+  const primaContenido = input.sumaContenido * TASA_CONTENIDO_MENSUAL;
+  const primaEdificio =
+    input.tipoResidente === "propietario"
+      ? input.m2 * COSTO_RECONSTRUCCION_M2 * TASA_EDIFICIO_MENSUAL
+      : 0;
   const prima =
-    input.sumaContenido *
-    TASA_CONTENIDO_MENSUAL *
-    factorTipoResidente(input.tipoResidente) *
-    factorVivienda(input.vivienda) *
+    (primaContenido + primaEdificio) *
+    factorTipoHogar(input.tipoHogar) *
+    factorUso(input.uso) *
     factorZona(input.cp);
   return {
     plan: "Seguro de Hogar",
