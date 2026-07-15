@@ -171,9 +171,16 @@ qué dato, y qué resigné.
 
 - **Criterio:** en pre-venta, cada campo extra cuesta conversión. Capturar el
   mínimo que hace al lead accionable y diferir lo sensible al asesor.
-- **Dato que la respalda:** el cotizador web de La Caja pide, para el auto, año,
-  marca, modelo, versión y GNC (relevado del form real). Los datos personales
-  (DNI, edad) recién aparecen en un paso posterior del form.
+- **Dato que la respalda:** relevando el cotizador web real de La Caja
+  (cotizador.lacaja.com.ar), el primer paso pide del auto año, marca, modelo,
+  versión y GNC. Pero antes de mostrar un solo precio exige **e-mail y teléfono
+  de contacto** (más CP y localidad) y un reCAPTCHA. Es decir: **la web te obliga
+  a entregar tu contacto para ver un número**. Los datos más sensibles (DNI, etc.)
+  llegan después, en el paso "Datos personales".
+- **El contraste que explota el bot:** ese muro de contacto es fricción pura en
+  pre-venta. El bot no lo necesita: **ya tiene el WhatsApp del usuario**, así que
+  puede dar una orientación de precio sin pedir e-mail ni teléfono de nuevo. Menos
+  campos, misma capacidad de que un asesor recontacte.
 - **Por qué (la elección):** el bot replica los campos del vehículo del form real
   (año, marca, modelo, versión, GNC), **estructurados** en vez de texto libre,
   porque un lead detallado es el valor de la venta asesorada y le da al asesor
@@ -218,10 +225,23 @@ qué dato, y qué resigné.
   tarifador real de La Caja** entra en el mismo puerto sin tocar el dominio ni el
   flujo. Eso es lo que un equipo de La Caja reconoce: no adiviné un número ni copié
   la web, dejé el lugar donde enchufa su rating engine.
+- **Evidencia del cotizador real (relevado a mano):**
+  - El paso a precio está **protegido por reCAPTCHA**: La Caja bloquea bots de
+    forma explícita, así que scrapear no solo es frágil, es ir contra una barrera
+    puesta a propósito. Confirma la elección de no scrapear.
+  - El precio **depende de CP y localidad** (el form los pide antes de cotizar):
+    valida el `factorZona(cp)` del modelo, la tarifación por ubicación es real.
+  - La promo vigente descuenta por antigüedad ("30% hasta 5 años, 20% hasta 15"):
+    la antigüedad mueve el precio, en línea con el `factorAntiguedad`.
+  - El cotizador es **frágil**: falló el cálculo dos veces seguidas ("Algo salió
+    mal") y, al fallar, **deriva a WhatsApp** (11-4857-7777). Refuerza la tesis del
+    proyecto: WhatsApp como canal resiliente cuando el funnel web se cae.
 - **Trade-off:** los valores de los factores son ilustrativos (no las tarifas
-  reales), así que el número es orientativo. Se mitiga siendo explícito en el chat
-  ("rango orientativo, el asesor confirma el final") y dejando los factores
-  tuneables y aislados para calibrarlos con datos reales.
+  reales), así que el número es orientativo. Intenté anclarlos a precios reales del
+  cotizador, pero su backend de cotización estaba caído; el **anclaje en pesos
+  queda pendiente** de un punto de precio real. Se mitiga siendo explícito en el
+  chat ("rango orientativo, el asesor confirma el final") y dejando los factores
+  tuneables y aislados para calibrarlos cuando haya un número real.
 
 ## 6. Cómo mediría el éxito
 
