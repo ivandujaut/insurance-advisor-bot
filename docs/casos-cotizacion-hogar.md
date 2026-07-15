@@ -22,14 +22,15 @@ Diferidos (no se preguntan hoy): barrio privado/country, atestación de segurida
 
 ## Casos de anclaje (precios reales ya relevados)
 
-Todos: propietario · departamento. El modelo se calibró para reproducirlos.
+Todos: propietario, 80-120 m². El modelo se calibró para reproducirlos.
 
-| Zona | Uso | m² (suma incendio) | Estimación bot | Precio real |
-|---|---|---|---|---|
-| interior | alquilo | 80 ($168.000.000) | $10.500 a $13.500 | $11.760 ✅ |
-| interior | alquilo | 120 ($252.000.000) | $15.000 a $19.000 | $16.683 ✅ |
-| CABA | alquilo | 80 ($168.000.000) | $10.500 a $13.500 | $11.502 ✅ |
-| CABA | permanente | 80 ($168.000.000) | $20.000 a $25.500 | $22.062 ✅ |
+| Zona | Tipo | Uso | m² (suma incendio) | Estimación bot | Precio real |
+|---|---|---|---|---|---|
+| interior | depto | alquilo | 80 ($168.000.000) | $10.500 a $13.500 | $11.760 ✅ |
+| interior | depto | alquilo | 120 ($252.000.000) | $15.000 a $19.000 | $16.683 ✅ |
+| CABA | depto | alquilo | 80 ($168.000.000) | $10.500 a $13.500 | $11.502 ✅ |
+| CABA | depto | permanente | 80 ($168.000.000) | $20.000 a $25.500 | $22.062 ✅ |
+| CABA | casa | alquilo | 80 ($168.000.000) | $12.500 a $16.000 | $13.665 ✅ |
 
 ## Matriz completa: propietario
 
@@ -37,15 +38,15 @@ Con m² de referencia = 100 (suma incendio $210.000.000). El m² es un eje apart
 
 | # | Tipo de hogar | Uso | Zona | Estimación bot (por mes) | Precio real |
 |---|---|---|---|---|---|
-| 1 | casa | permanente | CABA | $27.500 a $35.000 | |
-| 2 | casa | permanente | GBA | $28.000 a $36.000 | |
-| 3 | casa | permanente | interior | $28.000 a $36.000 | |
-| 4 | casa | temporal | CABA | $29.000 a $37.000 | |
-| 5 | casa | temporal | GBA | $29.500 a $37.500 | |
-| 6 | casa | temporal | interior | $29.500 a $37.500 | |
-| 7 | casa | alquilo | CABA | $14.500 a $18.500 | |
-| 8 | casa | alquilo | GBA | $14.500 a $19.000 | |
-| 9 | casa | alquilo | interior | $14.500 a $19.000 | |
+| 1 | casa | permanente | CABA | $28.500 a $36.500 | |
+| 2 | casa | permanente | GBA | $29.000 a $37.000 | |
+| 3 | casa | permanente | interior | $29.000 a $37.000 | |
+| 4 | casa | temporal | CABA | $30.000 a $38.000 | |
+| 5 | casa | temporal | GBA | $30.500 a $39.000 | |
+| 6 | casa | temporal | interior | $30.500 a $39.000 | |
+| 7 | casa | alquilo | CABA | $15.000 a $19.000 | |
+| 8 | casa | alquilo | GBA | $15.000 a $19.500 | |
+| 9 | casa | alquilo | interior | $15.000 a $19.500 | |
 | 10 | departamento | permanente | CABA | $24.000 a $30.500 | |
 | 11 | departamento | permanente | GBA | $24.500 a $31.000 | |
 | 12 | departamento | permanente | interior | $24.500 a $31.000 | |
@@ -71,13 +72,13 @@ Con contenido de referencia = $3.000.000. El contenido es un eje aparte (ver aba
 
 | # | Tipo de hogar | Uso | Zona | Estimación bot (por mes) | Precio real |
 |---|---|---|---|---|---|
-| 1 | casa | permanente | CABA | $4.000 a $5.000 | |
-| 2 | casa | permanente | GBA | $4.000 a $5.500 | |
-| 3 | casa | permanente | interior | $4.000 a $5.500 | |
-| 4 | casa | temporal | CABA | $4.000 a $5.500 | |
+| 1 | casa | permanente | CABA | $4.000 a $5.500 | |
+| 2 | casa | permanente | GBA | $4.500 a $5.500 | |
+| 3 | casa | permanente | interior | $4.500 a $5.500 | |
+| 4 | casa | temporal | CABA | $4.500 a $5.500 | |
 | 5 | casa | temporal | GBA | $4.500 a $5.500 | |
 | 6 | casa | temporal | interior | $4.500 a $5.500 | |
-| 7 | casa | alquilo | CABA | $2.000 a $2.500 | |
+| 7 | casa | alquilo | CABA | $2.000 a $3.000 | |
 | 8 | casa | alquilo | GBA | $2.000 a $3.000 | |
 | 9 | casa | alquilo | interior | $2.000 a $3.000 | |
 | 10 | departamento | permanente | CABA | $3.500 a $4.500 | |

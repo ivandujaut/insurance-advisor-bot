@@ -324,15 +324,21 @@ qué dato, y qué resigné.
   (dato real), temporal ~2,0 (ilustrativo). Lección de producto: no asumir la
   dirección de un factor sin el dato; a veces la variable cambia *qué* se cubre, no
   solo cuánto se cobra.
+- **Una casa cuesta más porque se reconstruye más cara (hallazgo):** coticé el mismo
+  caso como casa y salió **$13.665** vs **$11.502** depto (ratio ~1,19). La suma de
+  incendio de la casa fue mayor (193M vs 168M): se reconstruye a ~$2,4M/m² contra
+  ~$2,1M del depto, porque tiene **estructura propia** (techo, cimientos) y no la
+  comparte con un edificio. No es solo riesgo. Ajusté `factorTipoHogar(casa)` a 1,19
+  (dato real). Con esto, **todos los factores del hogar quedan anclados** salvo PB/PH.
 - **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
   una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
   ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
   `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
   producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
   hexagonal.
-- **Trade-off:** nivel, zona y uso ya están anclados a precios reales; queda
-  ilustrativo el factor de **tipo de hogar** (casa vs depto vs PB/PH) y el de
-  temporal, que necesitan cotizar el mismo caso variando esas dimensiones (el
+- **Trade-off:** nivel, zona, uso y tipo de hogar (casa vs depto) ya están anclados
+  a precios reales; quedan ilustrativos solo **PB/PH** y **temporal**, que necesitan
+  cotizar el mismo caso variando esas dimensiones (el
   worksheet ya deja esas filas listas para completar).
 
 ## 6. Cómo mediría el éxito

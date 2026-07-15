@@ -54,24 +54,48 @@ md +=
 md += "Diferidos (no se preguntan hoy): barrio privado/country, atestación de seguridad.\n\n";
 
 md += "## Casos de anclaje (precios reales ya relevados)\n\n";
-md += "Todos: propietario · departamento. El modelo se calibró para reproducirlos.\n\n";
-md += "| Zona | Uso | m² (suma incendio) | Estimación bot | Precio real |\n|---|---|---|---|---|\n";
+md += "Todos: propietario, 80-120 m². El modelo se calibró para reproducirlos.\n\n";
+md +=
+  "| Zona | Tipo | Uso | m² (suma incendio) | Estimación bot | Precio real |\n|---|---|---|---|---|---|\n";
 const ANCLAJES = [
-  { zona: "interior", cp: "3300", uso: "alquilo", m2: 80, real: "$11.760" },
-  { zona: "interior", cp: "3300", uso: "alquilo", m2: 120, real: "$16.683" },
-  { zona: "CABA", cp: "1425", uso: "alquilo", m2: 80, real: "$11.502" },
-  { zona: "CABA", cp: "1425", uso: "permanente", m2: 80, real: "$22.062" },
+  {
+    zona: "interior",
+    cp: "3300",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    m2: 80,
+    real: "$11.760",
+  },
+  {
+    zona: "interior",
+    cp: "3300",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    m2: 120,
+    real: "$16.683",
+  },
+  { zona: "CABA", cp: "1425", tipoHogar: "departamento", uso: "alquilo", m2: 80, real: "$11.502" },
+  {
+    zona: "CABA",
+    cp: "1425",
+    tipoHogar: "departamento",
+    uso: "permanente",
+    m2: 80,
+    real: "$22.062",
+  },
+  { zona: "CABA", cp: "1425", tipoHogar: "casa", uso: "alquilo", m2: 80, real: "$13.665" },
 ];
 for (const a of ANCLAJES) {
   const q = estimarPrimaHogar({
     tipoResidente: "propietario",
-    tipoHogar: "departamento",
+    tipoHogar: a.tipoHogar,
     uso: a.uso,
     m2: a.m2,
     cp: a.cp,
     sumaContenido: 0,
   });
-  md += `| ${a.zona} | ${a.uso} | ${a.m2} (${pesos(a.m2 * COSTO_M2)}) | ${rango(q)} | ${a.real} ✅ |\n`;
+  const tipo = a.tipoHogar === "casa" ? "casa" : "depto";
+  md += `| ${a.zona} | ${tipo} | ${a.uso} | ${a.m2} (${pesos(a.m2 * COSTO_M2)}) | ${rango(q)} | ${a.real} ✅ |\n`;
 }
 md += "\n";
 
