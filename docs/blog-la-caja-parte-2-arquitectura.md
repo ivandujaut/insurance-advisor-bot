@@ -170,6 +170,33 @@ fue agregar un flujo y, si estima, un tarifador detrás del mismo puerto. Cero
 cambios en el núcleo, cero migraciones de columnas. Los bordes crecieron; el
 corazón quedó intacto.
 
+## Un canal más, el mismo núcleo
+
+La última prueba de que los bordes están bien puestos fue sumar un **canal web**. El
+bot nació para WhatsApp, pero para que cualquiera lo pruebe (sin lista blanca de
+números ni un túnel local que dependa de mi máquina) quería una demo web abierta. No
+hubo que tocar el motor: la conversación ya vivía en `processMessage`, desacoplada del
+transporte. El canal web fue una ruta HTTP nueva más una página de chat autocontenida,
+contra el mismo núcleo que ya usaba WhatsApp.
+
+```ts
+app.post("/chat", async (c) => {
+  const { userId, text } = await c.req.json();
+  const reply = await processMessage({ from: userId, text }, deps);
+  return c.json({ reply });
+});
+```
+
+Los dos canales (el webhook de WhatsApp y `/chat`) llaman a la misma función con las
+mismas dependencias. Un mensaje es un mensaje: por dónde entró es un detalle del borde.
+
+Y lo desplegué de verdad. El `Dockerfile` multi-stage que ya existía se publica en un
+hosting con una URL pública y estable. La demo web arranca sin credenciales (con un
+proveedor de mensajería de consola, así no pide tokens), y el mismo servicio puede
+servir además el webhook de WhatsApp. La demo está viva en
+[lacaja-whatsapp-bot.onrender.com](https://lacaja-whatsapp-bot.onrender.com): otra vez,
+un borde nuevo sin tocar el corazón.
+
 ## Lo que sostiene todo
 
 La arquitectura sola no alcanza. Alrededor hay una red de seguridad:

@@ -415,6 +415,26 @@ qué dato, y qué resigné.
 - **Trade-off:** hay que mantener la tabla de valores; se aísla en un solo lugar para
   reemplazarla por la guía real de un plumazo.
 
+### Decisión 16: una demo web app para que cualquiera pruebe el bot
+
+- **Criterio:** la métrica es conversión y bajar fricción, y eso también aplica a la
+  fricción de **probar** el bot. El mayor freno para que un evaluador (en particular,
+  alguien de La Caja) lo pruebe era el acceso: WhatsApp Cloud API solo responde a
+  números en una lista blanca, y depender de un túnel local (ngrok) ata la demo a que
+  yo tenga la máquina prendida. Nadie debería pedir permiso ni instalar nada para ver
+  el bot funcionando.
+- **La decisión:** exponer el **mismo motor** por un segundo canal, una **web app** de
+  chat con estética de WhatsApp, servida como una página autocontenida más un endpoint
+  `POST /chat`. Es la misma conversación (menús, cotización, IA); solo cambia el
+  transporte. Y se desplegó a un hosting con una URL pública y estable, así el link se
+  comparte y listo.
+- **Por qué se pudo sin tocar el núcleo:** es la Decisión 6 pagando de nuevo. El canal
+  es un borde; el motor de conversación ya estaba desacoplado del transporte, así que
+  sumar el canal web fue una ruta HTTP nueva, no un rediseño.
+- **Trade-off:** un segundo canal para mantener y una superficie web pública (con su
+  aclaración de que es una demo con datos públicos, no un canal oficial). A cambio,
+  cualquiera prueba el bot en un clic, que es justo lo que una demo necesita.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -476,6 +496,9 @@ métricas que instrumentaría:
    (modalidad → plan), sin tarifador. Ver Decisión 13.
 8. ~~Sumar una cuarta línea con otro modelo de precio.~~ **Hecho:** bici/monopatín,
    precio por valor declarado (tasa ~1,85% sobre la suma asegurada). Ver Decisión 14.
+9. ~~Dejar el bot probable por cualquiera, sin lista blanca ni ngrok.~~ **Hecho:**
+   canal web (demo web app con estética de WhatsApp) desplegado con URL pública y
+   estable. Ver Decisión 16.
 
 ## 9. Qué demuestra este ejercicio
 
@@ -487,6 +510,7 @@ métricas que instrumentaría:
 - **Ejecución:** no quedó en un prototipo. Se llevó a un estado listo para crecer:
   arquitectura hexagonal (los bordes intercambiables detrás de puertos),
   persistencia real opcional (Postgres para leads/eventos, Redis para sesiones),
-  tests con CI y contenedores. El criterio de arquitectura está documentado en
+  tests con CI y contenedores, y una **demo web app pública** para probarlo sin
+  fricción (Decisión 16). El criterio de arquitectura está documentado en
   [ADR 0001](adr/0001-arquitectura-hexagonal.md); el detalle técnico vive en el
   repositorio, no en este documento de producto.
