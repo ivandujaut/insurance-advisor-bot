@@ -176,10 +176,15 @@ mal") y, cuando falla, te deriva a un WhatsApp. La propia La Caja usa WhatsApp c
 red de contención cuando su funnel se cae. Este bot vive justo ahí.
 
 El mismo esqueleto ya cubre una segunda línea: seguro de hogar. El flujo cambia
-(propietario o inquilino, tipo de vivienda, uso, metros construidos si sos dueño, y
-cuánto vale el contenido a asegurar), porque relevé campo por campo el cotizador de
+(propietario o inquilino, tipo de vivienda, uso, y metros construidos si sos dueño o
+cuánto vale el contenido si alquilás), porque relevé campo por campo el cotizador de
 hogar de La Caja: arranca justo así y arma un plan personalizable, no tres niveles
-fijos como el auto. Pero el motor no
+fijos como el auto. Y acá pasó algo que en auto no pude: el cotizador de hogar sí me
+devolvió precios. Saqué dos puntos reales del mismo caso (168 y 252 millones de suma
+de incendio) y calibré el tarifador para que reproduzca ambos. De ahí salió que La
+Caja estima el edificio a unos 2,1 millones por metro cuadrado y cobra una tasa
+mínima sobre esa suma más un cargo fijo. No es un modelo inventado: es ingeniería
+inversa de dos precios reales. Pero el motor no
 cambió: sumar hogar fue agregar un flujo y un tarifador detrás de los mismos
 puertos, con el lead distinguiendo auto de hogar por su tipo. Esa es la prueba de
 que la arquitectura escala: un producto nuevo toca los bordes, no el corazón.

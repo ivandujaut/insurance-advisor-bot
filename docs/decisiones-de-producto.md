@@ -236,12 +236,16 @@ qué dato, y qué resigné.
   - El cotizador es **frágil**: falló el cálculo cada vez que lo intenté (3 de 3,
     "Algo salió mal") y, al fallar, **deriva a WhatsApp** (11-4857-7777). Refuerza la
     tesis del proyecto: WhatsApp como canal resiliente cuando el funnel web se cae.
-- **Trade-off:** los valores de los factores son ilustrativos (no las tarifas
-  reales), así que el número es orientativo. Intenté anclarlos a precios reales del
-  cotizador, pero su backend de cotización estaba caído; el **anclaje en pesos
-  queda pendiente** de un punto de precio real. Se mitiga siendo explícito en el
-  chat ("rango orientativo, el asesor confirma el final") y dejando los factores
-  tuneables y aislados para calibrarlos cuando haya un número real.
+- **Trade-off:** los valores de los factores son ilustrativos, así que el número es
+  orientativo. Se mitiga siendo explícito en el chat ("rango orientativo, el asesor
+  confirma el final") y dejando los factores tuneables y aislados para calibrarlos
+  con datos reales.
+- **Anclaje real (parcial, logrado):** el cotizador de **auto** falló al calcular
+  (backend caído), así que su tarifa sigue sin anclar. Pero el de **hogar sí
+  devolvió precios**: relevé dos puntos del mismo caso (168M de incendio →
+  $11.760/mes, 252M → $16.683/mes) y con esa regresión **calibré el tarifador de
+  hogar** (tasa ~0,0051%/mes, cargo fijo ~$1.665, costo de reconstrucción ~$2,1M/m²).
+  El modelo ahora reproduce ambos precios reales. Ver Decisión 12.
 
 ### Decisión 11: conectar el bot donde ya se gasta la plata (el embudo pago)
 
@@ -297,16 +301,22 @@ qué dato, y qué resigné.
     (como el "buen estado" de auto).
   - No invento tiers que La Caja no vende: el "plan" es el producto y la variable es
     la suma.
+- **Calibrado con datos reales (a diferencia de auto):** el cotizador de hogar sí
+  devolvió precios. Relevé dos puntos del mismo caso (168M → $11.760/mes, 252M →
+  $16.683/mes) y con la regresión ajusté el tarifador para que **reproduzca ambos**.
+  De ahí también adopté su **estructura**: el propietario **deriva la suma de
+  incendio de los m²** (a ~$2,1M/m²) en vez de que le pregunte el contenido, como
+  hace la web; el inquilino, que no asegura el edificio, sí da su contenido. La prima
+  es una tasa sobre esa suma más un cargo fijo (RC + cristales + asistencias).
 - **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
   una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
   ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
   `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
   producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
   hexagonal.
-- **Trade-off:** los factores del hogar (tasas sobre contenido y edificio, costo de
-  reconstrucción por m², factores por tipo de hogar y uso) son ilustrativos y
-  tuneables, igual que en auto; el anclaje a tarifas reales queda pendiente (el
-  cotizador de hogar tiene el mismo reCAPTCHA y muro de contacto que el de auto).
+- **Trade-off:** aunque el nivel quedó anclado a dos precios reales, los factores
+  relativos (tipo de hogar, uso, zona) siguen siendo ilustrativos y tuneables; un
+  ajuste fino necesitaría puntos con esas variables cambiadas.
 
 ## 6. Cómo mediría el éxito
 
