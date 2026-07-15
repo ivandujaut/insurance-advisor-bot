@@ -175,6 +175,14 @@ detalle que lo remata: intentando cotizar, la web falló una y otra vez ("Algo s
 mal") y, cuando falla, te deriva a un WhatsApp. La propia La Caja usa WhatsApp como
 red de contención cuando su funnel se cae. Este bot vive justo ahí.
 
+El mismo esqueleto ya cubre una segunda línea: seguro de hogar. El flujo cambia
+(propietario o inquilino, casa o departamento, y cuánto vale el contenido a
+asegurar), porque relevé que el cotizador de hogar de La Caja arranca justo así y
+arma un plan personalizable, no tres niveles fijos como el auto. Pero el motor no
+cambió: sumar hogar fue agregar un flujo y un tarifador detrás de los mismos
+puertos, con el lead distinguiendo auto de hogar por su tipo. Esa es la prueba de
+que la arquitectura escala: un producto nuevo toca los bordes, no el corazón.
+
 ## El embudo pago: pagar por clics que rebotan
 
 Seguí el hilo un paso más y miré cómo La Caja recibe el tráfico que paga. Entré por

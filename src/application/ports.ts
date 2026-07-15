@@ -8,7 +8,7 @@
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
 import type { Session } from "../domain/conversation/session.js";
-import type { QuoteEstimate, QuoteInput } from "../domain/quoting/rating.js";
+import type { AutoQuoteInput, HogarQuoteInput, QuoteEstimate } from "../domain/quoting/rating.js";
 
 // --- Mensajería ---
 
@@ -59,10 +59,18 @@ export interface EventSink {
 
 // --- Leads ---
 
-export interface Lead {
+/** Campos comunes a todo lead, sin importar el producto. */
+interface LeadBase {
   ts: string;
   userId: string;
   name?: string;
+  /** Plan o cobertura de interés. */
+  plan: string;
+}
+
+/** Lead de una cotización de auto. */
+export interface AutoLead extends LeadBase {
+  producto: "auto";
   anio: string;
   marca: string;
   modelo: string;
@@ -72,11 +80,25 @@ export interface Lead {
   cp: string;
   /** "0km" o "usado" (se pregunta explícita, no se deriva del año). */
   condicion: string;
-  plan: string;
 }
 
+/** Lead de una cotización de hogar. */
+export interface HogarLead extends LeadBase {
+  producto: "hogar";
+  /** "propietario" o "inquilino". */
+  tipoResidente: string;
+  /** "casa" o "departamento". */
+  vivienda: string;
+  cp: string;
+  /** Suma asegurada del contenido, en pesos. */
+  sumaContenido: number;
+}
+
+/** Un lead capturado, discriminado por `producto`. */
+export type Lead = AutoLead | HogarLead;
+
 /** Un lead antes de persistirse (el adapter le pone el timestamp). */
-export type LeadInput = Omit<Lead, "ts">;
+export type LeadInput = Omit<AutoLead, "ts"> | Omit<HogarLead, "ts">;
 
 /** Repositorio de leads. Hoy JSONL, mañana un CRM o una base de datos. */
 export interface LeadRepository {
@@ -108,7 +130,8 @@ export interface LlmPort {
  * propósito: un tarifador remoto hace I/O.
  */
 export interface QuotingProvider {
-  quote(input: QuoteInput): Promise<QuoteEstimate>;
+  quote(input: AutoQuoteInput): Promise<QuoteEstimate>;
+  quoteHogar(input: HogarQuoteInput): Promise<QuoteEstimate>;
 }
 
 /** El adapter de LLM no tiene credenciales configuradas (caso típico en dev). */

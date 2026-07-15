@@ -23,14 +23,17 @@ const GREETINGS = [
 ];
 const MENU_KEYWORDS = ["menu", "menú", "inicio", "volver", "empezar", "start"];
 const ADVISOR_KEYWORDS = ["asesor", "humano", "agente", "persona"];
+const ADVISOR_REPLY =
+  "Te derivo con un asesor de La Caja. 🧑‍💼\n\n(En producción, acá se dispara la derivación al canal oficial / Línea Única 0810-555-2252.)";
 
 const MAIN_MENU = [
   "👋 Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y cotizar tu cobertura.",
   "",
   "1️⃣ Cotizar mi seguro de auto",
-  "2️⃣ Comparar los planes de auto",
-  "3️⃣ Tengo una duda",
-  "4️⃣ Hablar con un asesor",
+  "2️⃣ Cotizar mi seguro de hogar",
+  "3️⃣ Comparar los planes de auto",
+  "4️⃣ Tengo una duda",
+  "5️⃣ Hablar con un asesor",
   "",
   "Respondé con el número, o escribime tu consulta directamente.",
 ].join("\n");
@@ -63,7 +66,7 @@ export async function handleFlow(
   if (ADVISOR_KEYWORDS.includes(input)) {
     session.stage = "idle";
     await deps.events.log("advisor_requested", session.userId);
-    return "Te derivo con un asesor de La Caja. 🧑‍💼\n\n(En producción, acá se dispara la derivación al canal oficial / Línea Única 0810-555-2252.)";
+    return ADVISOR_REPLY;
   }
 
   // Saludo, pedido de menú, o primer contacto -> menú principal.
@@ -83,6 +86,8 @@ export async function handleFlow(
       return handleMainMenu(session, input, deps);
     case "quoting_auto":
       return handleQuotingAuto(session, text, deps);
+    case "quoting_hogar":
+      return handleQuotingHogar(session, text, deps);
     default:
       return null;
   }
@@ -100,12 +105,21 @@ async function handleMainMenu(
       await deps.events.log("quote_started", session.userId);
       return "Genial, cotizamos tu *seguro de auto*. 🚗\n\nEmpecemos por el *año* del vehículo (entre 2006 y el actual).";
     case "2":
+      session.stage = "quoting_hogar";
+      session.data = {};
+      await deps.events.log("quote_started", session.userId);
+      return "Buenísimo, cotizamos tu *seguro de hogar*. 🏠\n\n¿Sos *propietario* o *inquilino*?";
+    case "3":
       // La comparación es informativa; el usuario sigue en el menú.
       await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
-    case "3":
+    case "4":
       // Duda abierta -> la responde el LLM con la base de conocimiento.
       return null;
+    case "5":
+      session.stage = "idle";
+      await deps.events.log("advisor_requested", session.userId);
+      return ADVISOR_REPLY;
     default:
       // Cualquier otra cosa desde el menú es una consulta abierta -> LLM.
       return null;
@@ -212,6 +226,7 @@ async function handleQuotingAuto(
         ? session.data.version
         : undefined;
     await deps.leads.save({
+      producto: "auto",
       userId: session.userId,
       name: session.name,
       anio: session.data.anio ?? "",
@@ -245,6 +260,106 @@ async function handleQuotingAuto(
       `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
       "",
       "Es un rango orientativo según tu perfil. Un asesor te confirma el precio final y las opciones de pago (online: tarjeta de crédito o débito por CBU, con descuento).",
+      "",
+      "Escribí *menú* para hacer otra consulta.",
+    ].join("\n");
+  }
+
+  return null;
+}
+
+// Beneficios reales que La Caja incluye en el plan de hogar (relevado del sitio).
+const HOGAR_INCLUYE = [
+  "🐾 Asistencia y beneficios para tu mascota",
+  "🔧 Emergencias: plomería, electricidad, cerrajería y gasista",
+  "🧊 Alimentos por corte de luz (+12 h)",
+  "🚚 Servicios: mudanza, limpieza y desinfección",
+].join("\n");
+
+// Piso razonable para la suma asegurada del contenido (ilustrativo).
+const MIN_SUMA_HOGAR = 500000;
+
+async function handleQuotingHogar(
+  session: Session,
+  rawText: string,
+  deps: Dependencies,
+): Promise<string | null> {
+  const text = rawText.trim();
+
+  // 1) Propietario o inquilino. Define si se asegura el edificio o solo el
+  //    contenido (primera pregunta del cotizador real de La Caja).
+  if (!session.data.tipoResidente) {
+    const t = normalize(text);
+    const esProp = /propiet|dueñ|dueno/.test(t);
+    const esInq = /inquil|alquil|arriend/.test(t);
+    if (!esProp && !esInq) {
+      return "No te entendí. ¿Sos *propietario* o *inquilino*?";
+    }
+    session.data.tipoResidente = esProp ? "propietario" : "inquilino";
+    await deps.events.log("quote_step", session.userId, { step: "tipo_residente" });
+    return "¿La vivienda es una *casa* o un *departamento*?";
+  }
+
+  // 2) Tipo de vivienda.
+  if (!session.data.vivienda) {
+    const t = normalize(text);
+    const esCasa = /casa|ph|chalet|duplex/.test(t);
+    const esDepto = /depto|departa|dpto|piso|monoamb/.test(t);
+    if (!esCasa && !esDepto) {
+      return "No te entendí. ¿Es una *casa* o un *departamento*?";
+    }
+    session.data.vivienda = esCasa ? "casa" : "departamento";
+    await deps.events.log("quote_step", session.userId, { step: "vivienda" });
+    return "¿En qué *código postal* está la vivienda?";
+  }
+
+  // 3) Código postal (zona).
+  if (!session.data.cp) {
+    session.data.cp = text;
+    await deps.events.log("quote_step", session.userId, { step: "cp" });
+    return "Por último: ¿cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.";
+  }
+
+  // 4) Suma asegurada del contenido -> estimación + lead.
+  if (!session.data.sumaContenido) {
+    const suma = Number(text.replace(/\D/g, ""));
+    if (!suma || suma < MIN_SUMA_HOGAR) {
+      return `Necesito un monto aproximado del *contenido* (desde ${pesos(MIN_SUMA_HOGAR)}).`;
+    }
+    session.data.sumaContenido = String(suma);
+    await deps.events.log("quote_step", session.userId, { step: "suma_contenido" });
+
+    const plan = "Seguro de Hogar";
+    session.stage = "idle";
+    await deps.leads.save({
+      producto: "hogar",
+      userId: session.userId,
+      name: session.name,
+      tipoResidente: session.data.tipoResidente ?? "",
+      vivienda: session.data.vivienda ?? "",
+      cp: session.data.cp ?? "",
+      sumaContenido: suma,
+      plan,
+    });
+    await deps.events.log("lead_captured", session.userId, { plan });
+    const estimate = await deps.quoting.quoteHogar({
+      tipoResidente: session.data.tipoResidente ?? "",
+      vivienda: session.data.vivienda ?? "",
+      cp: session.data.cp ?? "",
+      sumaContenido: suma,
+    });
+    return [
+      "¡Listo! Con estos datos armo tu solicitud de *seguro de hogar*:",
+      "",
+      `🏠 ${session.data.vivienda} · ${session.data.tipoResidente}`,
+      `📍 CP: ${session.data.cp}`,
+      `📦 Contenido asegurado: ${pesos(suma)}`,
+      `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
+      "",
+      "*Incluye:*",
+      HOGAR_INCLUYE,
+      "",
+      "Es un rango orientativo. Un asesor confirma el valor final del contenido y del edificio, y las opciones de pago (CBU o tarjeta).",
       "",
       "Escribí *menú* para hacer otra consulta.",
     ].join("\n");

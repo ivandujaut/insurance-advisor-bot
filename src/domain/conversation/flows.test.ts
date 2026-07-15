@@ -40,6 +40,12 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
     knowledge: { load: async () => "" },
     quoting: {
       quote: async (input) => ({ plan: input.plan, desde: 10000, hasta: 15000, moneda: "ARS" }),
+      quoteHogar: async () => ({
+        plan: "Seguro de Hogar",
+        desde: 8000,
+        hasta: 12000,
+        moneda: "ARS",
+      }),
     },
   };
 }
@@ -61,11 +67,20 @@ test("opción 1 arranca la cotización de auto", async () => {
   assert.equal(s.stage, "quoting_auto");
 });
 
-test("opción 2 muestra la comparación de los tres planes", async () => {
-  const s = newSession("t-comparar");
+test("opción 2 arranca la cotización de hogar", async () => {
+  const s = newSession("t-hogar");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   const reply = (await handleFlow(s, "2", deps)) ?? "";
+  assert.match(reply, /propietario/i);
+  assert.equal(s.stage, "quoting_hogar");
+});
+
+test("opción 3 muestra la comparación de los tres planes", async () => {
+  const s = newSession("t-comparar");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  const reply = (await handleFlow(s, "3", deps)) ?? "";
   assert.match(reply, /Terceros Completo/);
   assert.match(reply, /Terceros Completo con Granizo/);
   assert.match(reply, /Todo Riesgo con Franquicia/);
@@ -91,14 +106,16 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   // El lead se guardó estructurado, a través del puerto inyectado (sin tocar disco).
   assert.equal(deps.savedLeads.length, 1);
   const lead = deps.savedLeads[0];
-  assert.equal(lead?.plan, "Terceros Completo con Granizo");
-  assert.equal(lead?.anio, "2020");
-  assert.equal(lead?.marca, "Toyota");
-  assert.equal(lead?.modelo, "Corolla");
-  assert.equal(lead?.version, "XEI");
-  assert.equal(lead?.gnc, false);
-  assert.equal(lead?.condicion, "usado");
-  assert.equal(lead?.cp, "3011");
+  assert.equal(lead?.producto, "auto");
+  if (lead?.producto !== "auto") throw new Error("esperaba un lead de auto");
+  assert.equal(lead.plan, "Terceros Completo con Granizo");
+  assert.equal(lead.anio, "2020");
+  assert.equal(lead.marca, "Toyota");
+  assert.equal(lead.modelo, "Corolla");
+  assert.equal(lead.version, "XEI");
+  assert.equal(lead.gnc, false);
+  assert.equal(lead.condicion, "usado");
+  assert.equal(lead.cp, "3011");
 });
 
 test("auto usado dispara la nota de inspección online", async () => {
@@ -199,4 +216,42 @@ test("el funnel registra los eventos clave a través del EventSink inyectado", a
   const tipos = deps.events.logged.map((e) => e.type);
   assert.ok(tipos.includes("conversation_started"));
   assert.ok(tipos.includes("quote_started"));
+});
+
+test("el flujo de hogar completo guarda un lead de hogar con la estimación", async () => {
+  const s = newSession("t-hogar-full");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "2", deps); // cotizar hogar
+  await handleFlow(s, "propietario", deps);
+  await handleFlow(s, "casa", deps);
+  await handleFlow(s, "1425", deps); // CP
+  const final = (await handleFlow(s, "3000000", deps)) ?? ""; // suma contenido
+  assert.match(final, /seguro de hogar/i);
+  assert.match(final, /Estimación orientativa/);
+  assert.equal(s.stage, "idle", "vuelve a idle al terminar");
+  assert.equal(deps.savedLeads.length, 1);
+  const lead = deps.savedLeads[0];
+  assert.equal(lead?.producto, "hogar");
+  if (lead?.producto !== "hogar") throw new Error("esperaba un lead de hogar");
+  assert.equal(lead.tipoResidente, "propietario");
+  assert.equal(lead.vivienda, "casa");
+  assert.equal(lead.cp, "1425");
+  assert.equal(lead.sumaContenido, 3000000);
+  assert.equal(lead.plan, "Seguro de Hogar");
+});
+
+test("hogar rechaza una suma de contenido demasiado baja y no guarda lead", async () => {
+  const s = newSession("t-hogar-suma");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "2", deps);
+  await handleFlow(s, "inquilino", deps);
+  await handleFlow(s, "departamento", deps);
+  await handleFlow(s, "1425", deps);
+  const reply = (await handleFlow(s, "1000", deps)) ?? "";
+  assert.match(reply, /contenido/i);
+  assert.equal(s.data.sumaContenido, undefined, "no guarda una suma inválida");
+  assert.equal(s.stage, "quoting_hogar", "sigue esperando la suma");
+  assert.equal(deps.savedLeads.length, 0);
 });

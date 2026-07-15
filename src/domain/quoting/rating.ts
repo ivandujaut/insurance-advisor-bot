@@ -14,7 +14,7 @@
  * antigüedad, condición y GNC) sí replica cómo se piensa una prima.
  */
 
-export interface QuoteInput {
+export interface AutoQuoteInput {
   anio: string;
   /** "0km" o "usado". */
   condicion: string;
@@ -79,7 +79,7 @@ function redondear(monto: number): number {
  * Estima el rango de prima mensual. Determinístico: mismos datos, mismo rango.
  * El ± del rango refleja que es una orientación, no una cotización en firme.
  */
-export function estimarPrima(input: QuoteInput): QuoteEstimate {
+export function estimarPrima(input: AutoQuoteInput): QuoteEstimate {
   const base = BASE_POR_PLAN[input.plan] ?? BASE_DEFAULT;
   const anio = Number(input.anio.replace(/\D/g, "")) || CURRENT_YEAR;
   const prima =
@@ -90,6 +90,56 @@ export function estimarPrima(input: QuoteInput): QuoteEstimate {
     factorGnc(input.gnc);
   return {
     plan: input.plan,
+    desde: redondear(prima * 0.9),
+    hasta: redondear(prima * 1.15),
+    moneda: "ARS",
+  };
+}
+
+// --- Hogar ---
+// La Caja no vende el hogar en niveles fijos como el auto: es un seguro
+// "personalizable" cuya variable central es la suma asegurada del contenido.
+// El bot captura esa suma y estima con una tasa sobre ella, ajustada por tipo
+// de residente, tipo de vivienda y zona.
+
+export interface HogarQuoteInput {
+  /** "propietario" o "inquilino". */
+  tipoResidente: string;
+  /** "casa" o "departamento". */
+  vivienda: string;
+  cp: string;
+  /** Suma asegurada del contenido, en pesos. */
+  sumaContenido: number;
+}
+
+// Tasa mensual sobre la suma asegurada del contenido (ilustrativa).
+const TASA_CONTENIDO_MENSUAL = 0.004;
+
+/** El propietario asegura también el edificio; el inquilino solo el contenido. */
+function factorTipoResidente(tipo: string): number {
+  return tipo === "propietario" ? 1.5 : 1.0;
+}
+
+/** Una casa está más expuesta (accesos, frente) que un departamento. */
+function factorVivienda(vivienda: string): number {
+  return vivienda === "casa" ? 1.15 : 1.0;
+}
+
+/**
+ * Estima el rango de prima mensual del seguro de hogar: una tasa sobre la suma
+ * asegurada del contenido, ajustada por residente, vivienda y zona.
+ * Determinística y orientativa (el asesor cierra el valor final, incluida la
+ * suma del edificio para propietarios).
+ */
+export function estimarPrimaHogar(input: HogarQuoteInput): QuoteEstimate {
+  const prima =
+    input.sumaContenido *
+    TASA_CONTENIDO_MENSUAL *
+    factorTipoResidente(input.tipoResidente) *
+    factorVivienda(input.vivienda) *
+    factorZona(input.cp);
+  return {
+    plan: "Seguro de Hogar",
     desde: redondear(prima * 0.9),
     hasta: redondear(prima * 1.15),
     moneda: "ARS",
