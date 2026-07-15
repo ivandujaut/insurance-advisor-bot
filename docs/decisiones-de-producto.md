@@ -233,15 +233,40 @@ qué dato, y qué resigné.
     valida el `factorZona(cp)` del modelo, la tarifación por ubicación es real.
   - La promo vigente descuenta por antigüedad ("30% hasta 5 años, 20% hasta 15"):
     la antigüedad mueve el precio, en línea con el `factorAntiguedad`.
-  - El cotizador es **frágil**: falló el cálculo dos veces seguidas ("Algo salió
-    mal") y, al fallar, **deriva a WhatsApp** (11-4857-7777). Refuerza la tesis del
-    proyecto: WhatsApp como canal resiliente cuando el funnel web se cae.
+  - El cotizador es **frágil**: falló el cálculo cada vez que lo intenté (3 de 3,
+    "Algo salió mal") y, al fallar, **deriva a WhatsApp** (11-4857-7777). Refuerza la
+    tesis del proyecto: WhatsApp como canal resiliente cuando el funnel web se cae.
 - **Trade-off:** los valores de los factores son ilustrativos (no las tarifas
   reales), así que el número es orientativo. Intenté anclarlos a precios reales del
   cotizador, pero su backend de cotización estaba caído; el **anclaje en pesos
   queda pendiente** de un punto de precio real. Se mitiga siendo explícito en el
   chat ("rango orientativo, el asesor confirma el final") y dejando los factores
   tuneables y aislados para calibrarlos cuando haya un número real.
+
+### Decisión 11: conectar el bot donde ya se gasta la plata (el embudo pago)
+
+- **Criterio:** el bot no vale por existir, vale por dónde se enchufa. El lugar de
+  mayor impacto es donde la conversión ya se está pagando y perdiendo.
+- **Dato que la respalda (relevado en vivo):** entré por un aviso de Google Ads al
+  landing "Elegí el mejor seguro" de La Caja (con teléfono de campaña propio, o sea
+  tráfico pago). El análisis del embudo:
+  - El aviso pago aterriza en un **hub de seis productos + un carrusel**, no en una
+    intención única: sin coincidencia de mensaje ni CTA único, la persona tiene que
+    volver a elegir.
+  - Todos los CTA de auto caen en el **mismo cotizador que falló (3 de 3)** y que
+    exige e-mail + teléfono + reCAPTCHA antes de mostrar precio: se paga adquisición
+    para estrellarla contra un backend caído y de alta fricción.
+  - **No hay canal de baja fricción** en el landing pago (ni WhatsApp, ni cotización
+    express, ni formulario corto), a diferencia del sitio institucional que sí tiene
+    botón de WhatsApp.
+- **Por qué (la elección):** posiciono el bot como la **capa de captura sobre el
+  tráfico pago**. Un CTA "Cotizá por WhatsApp" en ese landing da una sola acción de
+  baja fricción, captura el lead en el canal (sin repetir el muro de contacto) y
+  sigue en pie cuando el cotizador web se cae. Convierte clics pagos en
+  conversaciones en vez de perderlos.
+- **Trade-off:** medir la atribución (qué lead vino del bot vs del cotizador) exige
+  instrumentar bien el origen; se cubre con los eventos del funnel (sección 6) y un
+  parámetro de origen en el link del CTA.
 
 ## 6. Cómo mediría el éxito
 
