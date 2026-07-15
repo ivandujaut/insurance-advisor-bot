@@ -243,11 +243,11 @@ qué dato, y qué resigné.
 - **Anclaje real (logrado):** el cotizador de **auto** falló varias veces (backend
   intermitente), pero al reintentar devolvió los tres precios de un mismo caso
   (Toyota Corolla 2020, usado, sin GNC, CABA): Terceros Completo $160.165, con
-  Granizo $202.443, Todo Riesgo $247.847 por mes. Con eso **anclé las bases del
-  tarifador de auto** (estaban ~7× bajas). **Limitación honesta:** el precio real
-  escala con el **valor del auto** (la suma asegurada, ~$27M en este caso, que la
-  web deriva de año/marca/modelo), y el modelo no lo captura: la base queda anclada
-  a un auto de gama media y la antigüedad es un proxy grueso del valor.
+  Granizo $202.443, Todo Riesgo $247.847 por mes. Con eso **anclé el tarifador de
+  auto** (estaba ~7× bajo). El precio real escala con el **valor del auto** (la suma
+  asegurada, ~$27M en este caso, que la web deriva de año/marca/modelo); esa
+  dependencia, que al principio el modelo no capturaba, se resolvió **derivando** el
+  valor de modelo/año en vez de preguntarlo (ver Decisión 15).
 - **Anclaje real (hogar):** el cotizador de **hogar sí devolvió precios** de arranque.
   Relevé dos puntos del mismo caso (168M de incendio → $11.760/mes, 252M →
   $16.683/mes) y con esa regresión **calibré el tarifador de hogar** (tasa
@@ -391,6 +391,30 @@ qué dato, y qué resigné.
 - **Trade-off:** modelar por valor declarado extrapola fuera del rango de las tres
   tarifas relevadas; el número es orientativo y el asesor confirma la cuota final.
 
+### Decisión 15: capturar el valor del auto sin preguntarlo (derivar, no preguntar)
+
+- **Criterio:** la métrica es conversión y minimizar abandono, así que cada pregunta
+  extra es fricción a evitar. Mejor relación UX/info: sacar el máximo dato de lo que
+  ya se pregunta.
+- **El problema:** el precio de auto **escala con el valor asegurado** del vehículo
+  (el quote real dio ~0,6-0,9% de $27,3M según plan), y el modelo no lo capturaba:
+  estimaba igual para un Gol que para una Hilux.
+- **Opciones y por qué (trade-off):**
+  - *Preguntar el valor:* "¿cuánto vale tu auto?" es una pregunta que **mucha gente
+    no sabe responder**; o abandona o adivina. Es un punto clásico de drop-off, y La
+    Caja **nunca la pregunta**.
+  - *Derivar de una tabla (elegida):* el valor sale de **marca/modelo/año**, datos
+    que el flujo **ya pide** para el lead. Cero preguntas nuevas, cero fricción, y es
+    exactamente cómo lo hace el cotizador real (deriva de una guía de valores tipo
+    Infoauto).
+- **La elección:** el tarifador de auto pasó a `prima = valorAsegurado(modelo, año)
+  × tasa_por_plan × zona × GNC`. La tabla de valores es ilustrativa (sembrada con el
+  valor real del Corolla y una curva de depreciación) y vive detrás del mismo puerto:
+  mañana se enchufa la guía real. Con esto el Gol cotiza más barato que la Hilux, sin
+  sumar una sola pregunta.
+- **Trade-off:** hay que mantener la tabla de valores; se aísla en un solo lugar para
+  reemplazarla por la guía real de un plumazo.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -437,8 +461,8 @@ métricas que instrumentaría:
    Postgres. (Pendiente: notificar automáticamente a un asesor.)
 3. ~~Anclar los tarifadores a precios reales de los cotizadores.~~ **Hecho para
    auto, hogar y bici:** los tres tienen sus bases/tasas calibradas a precios reales
-   relevados (auto y bici, catálogo directo; hogar, por regresión). Ver Decisión 10.
-   Pendiente: mapear el auto a su valor asegurado (hoy es una limitación conocida).
+   relevados. Auto pasó a derivar el **valor asegurado** de modelo/año (Decisión 15),
+   así que ya diferencia por vehículo sin preguntar el valor. Ver Decisión 10.
 4. ~~Instrumentar las métricas de la sección 6.~~ **Hecho:** log de eventos del
    funnel y reporte `pnpm funnel` (activación, drop-off, mix de plan).
 5. ~~Conectar la API oficial de Meta para pruebas en WhatsApp real.~~ **Hecho:**

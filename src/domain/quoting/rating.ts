@@ -9,13 +9,18 @@
  * hoy este modelo local, mañana la API del tarifador de La Caja, detrás del
  * mismo puerto y sin tocar el dominio.
  *
- * IMPORTANTE: los factores son supuestos ILUSTRATIVOS y tuneables, no las
- * tarifas reales de La Caja. La estructura (base por plan, ajuste por zona,
- * antigüedad, condición y GNC) sí replica cómo se piensa una prima.
+ * Auto se tarifa como lo hace una aseguradora: una tasa sobre el VALOR asegurado
+ * del vehículo (que sale de una guía de valores tipo Infoauto), ajustada por plan,
+ * zona y GNC. El valor se DERIVA de marca/modelo/año (datos que el flujo ya pide),
+ * así no hay que preguntar el valor: es la mejor relación UX/info para no sumar
+ * fricción. La tabla de valores es ilustrativa (sembrada con un valor real) y
+ * detrás del mismo puerto: mañana se enchufa la guía real.
  */
 
 export interface AutoQuoteInput {
   anio: string;
+  marca: string;
+  modelo: string;
   /** "0km" o "usado". */
   condicion: string;
   gnc: boolean;
@@ -32,34 +37,41 @@ export interface QuoteEstimate {
   moneda: "ARS";
 }
 
-// Prima base mensual por plan (ARS). Anclada a un quote real del cotizador de La
-// Caja: Toyota Corolla 2020, usado, sin GNC, CABA (factor zona 1,25) ->
-// Terceros Completo $160.165, con Granizo $202.443, Todo Riesgo $247.847 por mes.
-// Cada base es ese precio dividido por el factor de zona (real / 1,25).
-// LIMITACIÓN: el precio real escala con el VALOR del auto (la suma asegurada, que
-// la web deriva de año/marca/modelo); el modelo no lo captura, así que la base
-// queda anclada a un auto de gama media y factorAntiguedad es un proxy grueso.
-const BASE_POR_PLAN: Record<string, number> = {
-  "Terceros Completo": 128000,
-  "Terceros Completo con Granizo": 162000,
-  "Todo Riesgo con Franquicia": 198000,
-};
-const BASE_DEFAULT = 128000;
-
 const CURRENT_YEAR = new Date().getFullYear();
 
-/** Vehículo más nuevo = mayor suma asegurada = más prima. */
-function factorAntiguedad(anio: number): number {
-  const edad = CURRENT_YEAR - anio;
-  if (edad <= 0) return 1.2;
-  if (edad <= 5) return 1.1;
-  if (edad <= 12) return 1.0;
-  return 0.9;
-}
+// Valor 0km de referencia por modelo (ARS 2026). Ilustrativo salvo "corolla", que
+// está anclado a un quote real. En producción, esto lo reemplaza la guía de valores
+// real (Infoauto/ACARA) detrás del mismo puerto.
+const VALORES_0KM: Record<string, number> = {
+  corolla: 42200000, // anclado: Corolla 2020 usado -> suma $27.285.000
+  gol: 28000000,
+  cronos: 30000000,
+  onix: 32000000,
+  ka: 26000000,
+  hilux: 65000000,
+  amarok: 68000000,
+};
+const VALOR_0KM_DEFAULT = 33000000;
 
-/** Un 0km asegura un valor mayor que el mismo modelo usado. */
-function factorCondicion(condicion: string): number {
-  return condicion === "0km" ? 1.15 : 1.0;
+// Retención de valor por año de antigüedad (un auto pierde ~7% por año).
+const RETENCION_ANUAL = 0.93;
+
+// Tasa mensual sobre el valor asegurado, por plan (derivada del quote real de La
+// Caja: Terceros Completo 0,470%, con Granizo 0,594%, Todo Riesgo 0,727% de la
+// suma, ya sin el factor de zona).
+const TASA_POR_PLAN: Record<string, number> = {
+  "Terceros Completo": 0.0047,
+  "Terceros Completo con Granizo": 0.00594,
+  "Todo Riesgo con Franquicia": 0.00727,
+};
+const TASA_DEFAULT = 0.0047;
+
+/** Deriva el valor asegurado de modelo/año, depreciando desde el 0km. Un 0km vale
+ * como nuevo aunque sea de un año anterior (stock sin patentar). */
+function valorAsegurado(modelo: string, anio: number, condicion: string): number {
+  const base = VALORES_0KM[modelo.trim().toLowerCase()] ?? VALOR_0KM_DEFAULT;
+  const edad = condicion === "0km" ? 0 : Math.max(0, CURRENT_YEAR - anio);
+  return base * RETENCION_ANUAL ** edad;
 }
 
 /** Riesgo por zona a partir del CP (robo/siniestralidad). AMBA más caro. */
@@ -82,18 +94,16 @@ function redondear(monto: number): number {
 }
 
 /**
- * Estima el rango de prima mensual. Determinístico: mismos datos, mismo rango.
- * El ± del rango refleja que es una orientación, no una cotización en firme.
+ * Estima el rango de prima mensual: una tasa (por plan) sobre el valor asegurado
+ * del auto, ajustada por zona y GNC. El valor se deriva de modelo/año, así que la
+ * antigüedad y la gama del vehículo entran por la suma, no por factores sueltos.
+ * Determinístico. El ± del rango refleja que es una orientación, no una cotización.
  */
 export function estimarPrima(input: AutoQuoteInput): QuoteEstimate {
-  const base = BASE_POR_PLAN[input.plan] ?? BASE_DEFAULT;
   const anio = Number(input.anio.replace(/\D/g, "")) || CURRENT_YEAR;
-  const prima =
-    base *
-    factorAntiguedad(anio) *
-    factorCondicion(input.condicion) *
-    factorZona(input.cp) *
-    factorGnc(input.gnc);
+  const suma = valorAsegurado(input.modelo, anio, input.condicion);
+  const tasa = TASA_POR_PLAN[input.plan] ?? TASA_DEFAULT;
+  const prima = suma * tasa * factorZona(input.cp) * factorGnc(input.gnc);
   return {
     plan: input.plan,
     desde: redondear(prima * 0.9),
