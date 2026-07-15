@@ -1,0 +1,60 @@
+# Deploy: dejar la demo online (sin ngrok)
+
+El objetivo es una URL pública y estable que cualquiera (en particular La Caja)
+pueda abrir y probar en el navegador, sin instalar nada. La demo web usa el mismo
+motor que WhatsApp; solo cambia el canal.
+
+## Plataforma: Render
+
+Se elige **Render** por menor fricción: conectás el repo de GitHub, lee el
+`Dockerfile` y el `render.yaml`, y levanta el servicio. Sin CLI ni tarjeta para el
+plan free.
+
+Trade-off del plan free: el servicio **se duerme** tras ~15 min de inactividad, y
+la primera visita después tarda ~30-50s en despertar. Para una demo que estás
+mostrando activamente, conviene el plan **Starter (~US$7/mes)**, que la mantiene
+siempre caliente. Se puede empezar en free y subir después con un clic.
+
+## La demo no necesita secretos
+
+Con `MESSAGING_PROVIDER=cli` el server arranca sin tokens de Meta ni API key. Los
+flujos de menú y cotización son determinísticos (no llaman al LLM). Así que la
+demo web sube con cero secretos: solo las tres variables no sensibles del
+`render.yaml`.
+
+## Paso a paso
+
+1. Asegurate de que `render.yaml` esté en `main` (ya está en el repo).
+2. Entrá a https://render.com y creá una cuenta (o logueate con GitHub).
+3. **New > Blueprint**. Autorizá el acceso al repo `lacaja-whatsapp-bot` y
+   seleccionalo. Render detecta el `render.yaml` y muestra el servicio
+   `lacaja-whatsapp-bot`.
+4. **Apply**. Render construye la imagen desde el `Dockerfile` y despliega. El
+   primer build tarda unos minutos.
+5. Cuando termina, quedás con una URL tipo
+   `https://lacaja-whatsapp-bot.onrender.com`. Abrila: es la demo. Esa es la URL
+   para compartir.
+
+Verificá el health check: `https://<tu-url>/health` debe responder
+`lacaja-whatsapp-bot OK`.
+
+## Opcional: servir también el webhook de WhatsApp desde acá
+
+Si querés que este mismo deploy reemplace a ngrok como webhook de WhatsApp (no
+solo la demo web):
+
+1. En el dashboard de Render, servicio > **Environment**, cambiá
+   `MESSAGING_PROVIDER` a `meta` y cargá las variables `META_ACCESS_TOKEN`,
+   `META_PHONE_NUMBER_ID`, `META_VERIFY_TOKEN`, `META_APP_SECRET` y
+   `META_RECIPIENT_OVERRIDES` (los mismos valores del `.env` local).
+2. Guardá: Render redeploya solo.
+3. En Meta (developers.facebook.com), configuración del webhook de WhatsApp,
+   cambiá la Callback URL a `https://<tu-url>/webhook` y el Verify Token al mismo
+   `META_VERIFY_TOKEN`. Verificá y suscribí el campo `messages`.
+
+Con eso, ngrok queda de más: la demo web y el webhook viven en la misma URL.
+
+## Redeploys
+
+Con `autoDeploy: true`, cada push a `main` redeploya solo. No hace falta tocar
+nada en Render después del primer Apply.

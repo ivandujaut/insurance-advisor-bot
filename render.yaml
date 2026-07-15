@@ -1,0 +1,40 @@
+# Blueprint de Render: define el servicio para desplegar con un clic.
+# Render lee este archivo al conectar el repo (New > Blueprint) y crea el
+# servicio web a partir del Dockerfile. Ver docs/deploy.md para el paso a paso.
+services:
+  - type: web
+    name: lacaja-whatsapp-bot
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # free: sin costo pero se duerme tras inactividad (cold start ~30-50s).
+    # starter: ~US$7/mes, siempre caliente (recomendado para una demo activa).
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true # redeploya solo en cada push a la branch conectada
+    envVars:
+      # El canal web (la demo) no necesita Meta. Con "cli" el server arranca
+      # sin pedir tokens de WhatsApp: ideal para la demo pública.
+      # Para servir también el webhook de WhatsApp, cambiar a "meta" y cargar
+      # las META_* de abajo (marcadas sync:false) en el dashboard de Render.
+      - key: MESSAGING_PROVIDER
+        value: cli
+      - key: PERSISTENCE
+        value: jsonl
+      - key: SESSION_STORE
+        value: memory
+      # PORT lo inyecta Render automáticamente; el server lo lee de process.env.
+      # --- Secretos (solo si MESSAGING_PROVIDER=meta). Se cargan a mano en el
+      # dashboard, nunca en el repo. sync:false = Render no los versiona. ---
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_PHONE_NUMBER_ID
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_RECIPIENT_OVERRIDES
+        sync: false
+      # Opcional: habilita las respuestas del LLM a preguntas abiertas.
+      - key: ANTHROPIC_API_KEY
+        sync: false
