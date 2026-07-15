@@ -50,6 +50,24 @@ test("un plan desconocido cae a la base y no rompe", () => {
   assert.ok(q.desde > 0 && q.hasta > q.desde);
 });
 
+test("auto: el rango contiene los precios reales de La Caja (Corolla 2020, CABA)", () => {
+  // Toyota Corolla 2020, usado, sin GNC, CABA (CP 1425). Reales por mes:
+  // Terceros Completo $160.165 ; con Granizo $202.443 ; Todo Riesgo $247.847.
+  const caso = { anio: "2020", condicion: "usado", gnc: false, cp: "1425" };
+  const anclajes = [
+    { plan: "Terceros Completo", precio: 160165 },
+    { plan: "Terceros Completo con Granizo", precio: 202443 },
+    { plan: "Todo Riesgo con Franquicia", precio: 247847 },
+  ];
+  for (const a of anclajes) {
+    const q = estimarPrima({ ...caso, plan: a.plan });
+    assert.ok(
+      q.desde <= a.precio && a.precio <= q.hasta,
+      `${a.plan}: ${a.precio} dentro de [${q.desde}, ${q.hasta}]`,
+    );
+  }
+});
+
 const baseHogar = {
   tipoResidente: "inquilino",
   tipoHogar: "departamento",
