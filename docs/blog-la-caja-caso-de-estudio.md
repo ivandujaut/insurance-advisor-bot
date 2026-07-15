@@ -171,9 +171,35 @@ argumento a favor del bot. Antes de mostrarte un solo precio, la web te pide
 e-mail, teléfono, código postal y resolver un reCAPTCHA. O sea: tenés que entregar
 tu contacto para ver un número. El bot no necesita nada de eso, porque el canal ya
 es tu WhatsApp: da la orientación de precio sin un segundo formulario. Y hay un
-detalle que lo remata: intentando cotizar, la web falló dos veces ("Algo salió
+detalle que lo remata: intentando cotizar, la web falló una y otra vez ("Algo salió
 mal") y, cuando falla, te deriva a un WhatsApp. La propia La Caja usa WhatsApp como
 red de contención cuando su funnel se cae. Este bot vive justo ahí.
+
+## El embudo pago: pagar por clics que rebotan
+
+Seguí el hilo un paso más y miré cómo La Caja recibe el tráfico que paga. Entré por
+un aviso de Google Ads a su landing "Elegí el mejor seguro" (con teléfono de
+campaña propio, así que es plata invertida en cada clic). Lo que encontré, con lente
+de conversión:
+
+- **El aviso paga un clic y lo tira a un menú, no a una intención.** El landing es
+  un hub de seis productos más un carrusel de tres ofertas. Buenas prácticas de
+  tráfico pago piden coincidencia de mensaje y un solo CTA; acá la persona tiene que
+  volver a elegir.
+- **La fuga grande: el clic pago cae en el funnel roto.** Todos los CTA de auto van
+  al mismo cotizador que, en mis pruebas, falló y que además pide e-mail, teléfono y
+  reCAPTCHA antes de dar un precio. Es pagar por adquisición para estrellarla contra
+  un backend caído y de alta fricción.
+- **Sin captura de baja fricción en el landing pago.** No hay WhatsApp, ni una
+  cotización express, ni un formulario corto. La única salida es el cotizador
+  pesado. (Curioso: el sitio institucional sí tiene botón de WhatsApp; el landing
+  que paga tráfico, no.)
+
+La lectura es directa: hoy se paga por clics que rebotan. Un CTA "Cotizá por
+WhatsApp" en ese mismo landing daría una sola acción de baja fricción, capturaría el
+lead en el canal sin el muro de contacto, y seguiría en pie cuando el cotizador web
+se cae. El bot no es un juguete de chat: es la pieza que le falta al embudo donde la
+plata ya se está gastando.
 
 ## Cómo sabría si funciona
 
