@@ -189,14 +189,16 @@ cambió: sumar hogar fue agregar un flujo y un tarifador detrás de los mismos
 puertos, con el lead distinguiendo auto de hogar por su tipo. Esa es la prueba de
 que la arquitectura escala: un producto nuevo toca los bordes, no el corazón.
 
-Y hay una tercera línea que lo remata: accidentes personales. La Caja no lo vende
-con un cotizador, sino como un catálogo de planes con precio publicado (elegís
-modalidad y plan, y el precio ya está). Así que el bot ahí no estima nada: lee el
-catálogo y te da el número exacto. Son tres formas de precio distintas conviviendo
-en el mismo motor: auto estima por factores, hogar estima anclado a precios reales,
-y accidentes es catálogo puro. El bot se adapta al modelo de cada producto en vez de
-imponer uno. Eso es lo que separa un prototipo de un diseño que un equipo de
-producto puede hacer crecer.
+Y hay más líneas que lo rematan. Accidentes personales: La Caja no lo vende con un
+cotizador, sino como un catálogo de planes con precio publicado (elegís modalidad y
+plan, y el precio ya está), así que el bot ahí no estima nada, lee el catálogo y te
+da el número exacto. Bici y monopatín: el precio es una tasa sobre el valor de tu
+rodado (relevé que ronda el 1,85% mensual), así que el bot te pregunta cuánto vale y
+estima sobre eso. Son cuatro formas de precio distintas conviviendo en el mismo
+motor: auto estima por factores, hogar estima anclado a precios reales, accidentes es
+catálogo puro y bici es una tasa sobre el valor declarado. El bot se adapta al modelo
+de cada producto en vez de imponer uno. Eso es lo que separa un prototipo de un
+diseño que un equipo de producto puede hacer crecer.
 
 Seguí el hilo un paso más y miré cómo La Caja recibe el tráfico que paga. Entré por
 un aviso de Google Ads a su landing "Elegí el mejor seguro" (con teléfono de
