@@ -14,20 +14,18 @@ export function createPgPool(connectionString: string = config.persistence.datab
 
 /** Crea las tablas si no existen. Se corre una vez al arrancar. */
 export async function ensureSchema(pool: Pool): Promise<void> {
+  // Esquema por producto: columnas comunes + `detalle` jsonb con los campos
+  // específicos (auto: anio/marca/...; hogar: tipoResidente/vivienda/...). Escala
+  // a nuevos productos sin migrar columnas.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS leads (
       id        SERIAL PRIMARY KEY,
       ts        TIMESTAMPTZ NOT NULL DEFAULT now(),
       user_id   TEXT NOT NULL,
       name      TEXT,
-      anio      TEXT NOT NULL,
-      marca     TEXT NOT NULL,
-      modelo    TEXT NOT NULL,
-      version   TEXT,
-      gnc       BOOLEAN NOT NULL,
-      cp        TEXT NOT NULL,
-      condicion TEXT NOT NULL,
-      plan      TEXT NOT NULL
+      producto  TEXT NOT NULL,
+      plan      TEXT NOT NULL,
+      detalle   JSONB NOT NULL
     );
     CREATE TABLE IF NOT EXISTS events (
       id      SERIAL PRIMARY KEY,
@@ -43,21 +41,12 @@ export function createPostgresLeadRepository(pool: Pool): LeadRepository {
   return {
     async save(lead) {
       try {
+        // Campos comunes en columnas; el resto (específico del producto) va a jsonb.
+        const { userId, name, producto, plan, ...detalle } = lead;
         await pool.query(
-          `INSERT INTO leads (user_id, name, anio, marca, modelo, version, gnc, cp, condicion, plan)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-          [
-            lead.userId,
-            lead.name ?? null,
-            lead.anio,
-            lead.marca,
-            lead.modelo,
-            lead.version ?? null,
-            lead.gnc,
-            lead.cp,
-            lead.condicion,
-            lead.plan,
-          ],
+          `INSERT INTO leads (user_id, name, producto, plan, detalle)
+           VALUES ($1, $2, $3, $4, $5::jsonb)`,
+          [userId, name ?? null, producto, plan, JSON.stringify(detalle)],
         );
       } catch (err) {
         console.error("No se pudo guardar el lead en Postgres:", err);

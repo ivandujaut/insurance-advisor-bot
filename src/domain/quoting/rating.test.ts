@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { estimarPrima } from "./rating.js";
+import { estimarPrima, estimarPrimaHogar } from "./rating.js";
 
 const base = {
   anio: "2018",
@@ -48,4 +48,31 @@ test("es determinístico: mismos datos, mismo rango", () => {
 test("un plan desconocido cae a la base y no rompe", () => {
   const q = estimarPrima({ ...base, plan: "Plan inexistente" });
   assert.ok(q.desde > 0 && q.hasta > q.desde);
+});
+
+const baseHogar = {
+  tipoResidente: "inquilino",
+  vivienda: "departamento",
+  cp: "5000", // interior
+  sumaContenido: 2000000,
+};
+
+test("hogar: rango positivo y proporcional a la suma del contenido", () => {
+  const q = estimarPrimaHogar(baseHogar);
+  assert.ok(q.desde > 0 && q.hasta > q.desde);
+  assert.equal(q.plan, "Seguro de Hogar");
+  const doble = estimarPrimaHogar({ ...baseHogar, sumaContenido: 4000000 });
+  assert.ok(doble.hasta > q.hasta);
+});
+
+test("hogar: propietario cuesta más que inquilino (asegura el edificio)", () => {
+  const inq = estimarPrimaHogar({ ...baseHogar, tipoResidente: "inquilino" });
+  const prop = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario" });
+  assert.ok(prop.hasta > inq.hasta);
+});
+
+test("hogar: una casa cuesta más que un departamento", () => {
+  const depto = estimarPrimaHogar({ ...baseHogar, vivienda: "departamento" });
+  const casa = estimarPrimaHogar({ ...baseHogar, vivienda: "casa" });
+  assert.ok(casa.hasta > depto.hasta);
 });

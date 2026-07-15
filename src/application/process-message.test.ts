@@ -42,6 +42,12 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
     knowledge: { load: async () => "conocimiento de prueba" },
     quoting: {
       quote: async (input) => ({ plan: input.plan, desde: 10000, hasta: 15000, moneda: "ARS" }),
+      quoteHogar: async () => ({
+        plan: "Seguro de Hogar",
+        desde: 8000,
+        hasta: 12000,
+        moneda: "ARS",
+      }),
     },
     ...over,
   };
@@ -87,9 +93,12 @@ test("completar la cotización guarda el lead vía el repositorio inyectado", as
     await processMessage({ from: "u-lead", text, name: "Caro" }, deps);
   }
   assert.equal(savedLeads.length, 1);
-  assert.equal(savedLeads[0]?.plan, "Terceros Completo con Granizo");
-  assert.equal(savedLeads[0]?.marca, "Toyota");
-  assert.equal(savedLeads[0]?.cp, "3011");
+  const lead = savedLeads[0];
+  assert.equal(lead?.producto, "auto");
+  if (lead?.producto !== "auto") throw new Error("esperaba un lead de auto");
+  assert.equal(lead.plan, "Terceros Completo con Granizo");
+  assert.equal(lead.marca, "Toyota");
+  assert.equal(lead.cp, "3011");
 });
 
 test("el funnel registra el evento lead_captured", async () => {

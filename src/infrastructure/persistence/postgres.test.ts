@@ -20,6 +20,7 @@ test("Postgres LeadRepository persiste el lead", { skip: !url }, async () => {
   await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
 
   await repo.save({
+    producto: "auto",
     userId,
     name: "Test",
     anio: "2020",
@@ -34,10 +35,39 @@ test("Postgres LeadRepository persiste el lead", { skip: !url }, async () => {
 
   const { rows } = await pool.query("SELECT * FROM leads WHERE user_id = $1", [userId]);
   assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.producto, "auto");
   assert.equal(rows[0]?.plan, "Terceros Completo");
-  assert.equal(rows[0]?.marca, "Toyota");
-  assert.equal(rows[0]?.gnc, true);
+  assert.equal(rows[0]?.detalle?.marca, "Toyota");
+  assert.equal(rows[0]?.detalle?.gnc, true);
   assert.ok(rows[0]?.ts, "la fila tiene timestamp");
+
+  await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
+  await pool.end();
+});
+
+test("Postgres persiste un lead de hogar en detalle jsonb", { skip: !url }, async () => {
+  const pool = createPgPool(url);
+  await ensureSchema(pool);
+  const repo = createPostgresLeadRepository(pool);
+  const userId = "pg-hogar-test";
+  await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
+
+  await repo.save({
+    producto: "hogar",
+    userId,
+    name: "Test",
+    tipoResidente: "propietario",
+    vivienda: "casa",
+    cp: "1425",
+    sumaContenido: 3000000,
+    plan: "Seguro de Hogar",
+  });
+
+  const { rows } = await pool.query("SELECT * FROM leads WHERE user_id = $1", [userId]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.producto, "hogar");
+  assert.equal(rows[0]?.detalle?.tipoResidente, "propietario");
+  assert.equal(rows[0]?.detalle?.sumaContenido, 3000000);
 
   await pool.query("DELETE FROM leads WHERE user_id = $1", [userId]);
   await pool.end();
