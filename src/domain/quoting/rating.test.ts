@@ -59,18 +59,40 @@ const baseHogar = {
   sumaContenido: 2000000,
 };
 
-test("hogar: rango positivo y proporcional a la suma del contenido", () => {
+test("hogar: rango positivo y creciente con la suma del contenido (inquilino)", () => {
   const q = estimarPrimaHogar(baseHogar);
   assert.ok(q.desde > 0 && q.hasta > q.desde);
   assert.equal(q.plan, "Seguro de Hogar");
-  const doble = estimarPrimaHogar({ ...baseHogar, sumaContenido: 4000000 });
-  assert.ok(doble.hasta > q.hasta);
+  const masContenido = estimarPrimaHogar({ ...baseHogar, sumaContenido: 8000000 });
+  assert.ok(masContenido.hasta > q.hasta);
 });
 
 test("hogar: propietario con edificio cuesta más que inquilino", () => {
   const inq = estimarPrimaHogar({ ...baseHogar, tipoResidente: "inquilino", m2: 0 });
   const prop = estimarPrimaHogar({ ...baseHogar, tipoResidente: "propietario", m2: 100 });
   assert.ok(prop.hasta > inq.hasta);
+});
+
+test("hogar: el rango contiene los precios reales de La Caja (caso relevado)", () => {
+  // Propietario, departamento, alquilo, Posadas (interior, CP 3300).
+  // Reales: 80 m² (168M de incendio) -> $11.760/mes ; 120 m² (252M) -> $16.683/mes.
+  const real = {
+    tipoResidente: "propietario",
+    tipoHogar: "departamento",
+    uso: "alquilo",
+    cp: "3300",
+    sumaContenido: 0,
+  };
+  const q80 = estimarPrimaHogar({ ...real, m2: 80 });
+  assert.ok(
+    q80.desde <= 11760 && 11760 <= q80.hasta,
+    `11760 dentro de [${q80.desde}, ${q80.hasta}]`,
+  );
+  const q120 = estimarPrimaHogar({ ...real, m2: 120 });
+  assert.ok(
+    q120.desde <= 16683 && 16683 <= q120.hasta,
+    `16683 dentro de [${q120.desde}, ${q120.hasta}]`,
+  );
 });
 
 test("hogar: más m² construidos, más prima (propietario)", () => {

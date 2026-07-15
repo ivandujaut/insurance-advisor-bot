@@ -94,8 +94,8 @@ export interface HogarLead extends LeadBase {
   /** Metros cuadrados construidos. Solo para propietario (asegura el edificio). */
   m2?: number;
   cp: string;
-  /** Suma asegurada del contenido, en pesos. */
-  sumaContenido: number;
+  /** Suma del contenido, en pesos. Solo para inquilino (no asegura el edificio). */
+  sumaContenido?: number;
 }
 
 /** Un lead capturado, discriminado por `producto`. */

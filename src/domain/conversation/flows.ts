@@ -347,70 +347,73 @@ async function handleQuotingHogar(
     return "¿En qué *código postal* está la vivienda?";
   }
 
-  // 5) Código postal (zona).
+  // 5) Código postal (zona). Al inquilino le pedimos el contenido; al propietario
+  //    no le falta nada (la suma de incendio sale de los m², como en el cotizador).
   if (!session.data.cp) {
     session.data.cp = text;
     await deps.events.log("quote_step", session.userId, { step: "cp" });
-    return "Por último: ¿cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.";
+    if (session.data.tipoResidente === "inquilino") {
+      return "Por último: ¿cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.";
+    }
   }
 
-  // 6) Suma asegurada del contenido -> estimación + lead.
-  if (!session.data.sumaContenido) {
+  // 6) Suma del contenido (solo inquilino).
+  if (session.data.tipoResidente === "inquilino" && !session.data.sumaContenido) {
     const suma = Number(text.replace(/\D/g, ""));
     if (!suma || suma < MIN_SUMA_HOGAR) {
       return `Necesito un monto aproximado del *contenido* (desde ${pesos(MIN_SUMA_HOGAR)}).`;
     }
     session.data.sumaContenido = String(suma);
     await deps.events.log("quote_step", session.userId, { step: "suma_contenido" });
-
-    const plan = "Seguro de Hogar";
-    const m2 = session.data.m2 ? Number(session.data.m2) : undefined;
-    session.stage = "idle";
-    await deps.leads.save({
-      producto: "hogar",
-      userId: session.userId,
-      name: session.name,
-      tipoResidente: session.data.tipoResidente ?? "",
-      tipoHogar: session.data.tipoHogar ?? "",
-      uso: session.data.uso ?? "",
-      m2,
-      cp: session.data.cp ?? "",
-      sumaContenido: suma,
-      plan,
-    });
-    await deps.events.log("lead_captured", session.userId, { plan });
-    const estimate = await deps.quoting.quoteHogar({
-      tipoResidente: session.data.tipoResidente ?? "",
-      tipoHogar: session.data.tipoHogar ?? "",
-      uso: session.data.uso ?? "",
-      m2: m2 ?? 0,
-      cp: session.data.cp ?? "",
-      sumaContenido: suma,
-    });
-    const hogarLabel =
-      session.data.tipoHogar === "departamento_pb_ph"
-        ? "departamento (PB o PH)"
-        : (session.data.tipoHogar ?? "");
-    const lineas = [
-      "¡Listo! Con estos datos armo tu solicitud de *seguro de hogar*:",
-      "",
-      `🏠 ${hogarLabel} · ${session.data.tipoResidente} · uso ${session.data.uso}`,
-    ];
-    if (m2) lineas.push(`📐 ${m2} m² construidos`);
-    lineas.push(
-      `📍 CP: ${session.data.cp}`,
-      `📦 Contenido asegurado: ${pesos(suma)}`,
-      `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
-      "",
-      "*Incluye:*",
-      HOGAR_INCLUYE,
-      "",
-      "Es un rango orientativo. Un asesor confirma el valor final del contenido y del edificio, y las opciones de pago (CBU o tarjeta).",
-      "",
-      "Escribí *menú* para hacer otra consulta.",
-    );
-    return lineas.join("\n");
   }
 
-  return null;
+  // 7) Ya tenemos todo -> estimación + lead.
+  const m2 = session.data.m2 ? Number(session.data.m2) : undefined;
+  const sumaContenido = session.data.sumaContenido ? Number(session.data.sumaContenido) : undefined;
+  const plan = "Seguro de Hogar";
+  session.stage = "idle";
+  await deps.leads.save({
+    producto: "hogar",
+    userId: session.userId,
+    name: session.name,
+    tipoResidente: session.data.tipoResidente ?? "",
+    tipoHogar: session.data.tipoHogar ?? "",
+    uso: session.data.uso ?? "",
+    m2,
+    cp: session.data.cp ?? "",
+    sumaContenido,
+    plan,
+  });
+  await deps.events.log("lead_captured", session.userId, { plan });
+  const estimate = await deps.quoting.quoteHogar({
+    tipoResidente: session.data.tipoResidente ?? "",
+    tipoHogar: session.data.tipoHogar ?? "",
+    uso: session.data.uso ?? "",
+    m2: m2 ?? 0,
+    cp: session.data.cp ?? "",
+    sumaContenido: sumaContenido ?? 0,
+  });
+  const hogarLabel =
+    session.data.tipoHogar === "departamento_pb_ph"
+      ? "departamento (PB o PH)"
+      : (session.data.tipoHogar ?? "");
+  const lineas = [
+    "¡Listo! Con estos datos armo tu solicitud de *seguro de hogar*:",
+    "",
+    `🏠 ${hogarLabel} · ${session.data.tipoResidente} · uso ${session.data.uso}`,
+  ];
+  if (m2) lineas.push(`📐 ${m2} m² construidos`);
+  lineas.push(`📍 CP: ${session.data.cp}`);
+  if (sumaContenido) lineas.push(`📦 Contenido asegurado: ${pesos(sumaContenido)}`);
+  lineas.push(
+    `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
+    "",
+    "*Incluye:*",
+    HOGAR_INCLUYE,
+    "",
+    "Es un rango orientativo. Un asesor confirma el valor final del contenido y del edificio, y las opciones de pago (CBU o tarjeta).",
+    "",
+    "Escribí *menú* para hacer otra consulta.",
+  );
+  return lineas.join("\n");
 }
