@@ -281,6 +281,24 @@ de fuentes públicas: hay que mantenerla al día cuando cambian los productos.
 Nada de esto invalida el ejercicio. Al contrario: saber qué queda afuera es
 parte de tener criterio.
 
+## Probalo vos mismo (es una web app, no un video)
+
+Todo esto no es un mockup ni una captura: el bot está **desplegado y andando**. Y
+acá hubo una decisión de producto más. Para que cualquiera pueda probarlo (en
+particular, alguien de La Caja) el acceso no podía tener fricción: WhatsApp solo
+responde a números habilitados en una lista blanca, y no quería que la demo
+dependiera de que yo tuviera la máquina prendida. Así que expuse el **mismo motor**
+por un segundo canal: una **web app** de chat con la estética de WhatsApp, en una URL
+pública. Es la misma conversación (menús, cotización, respuestas de IA); lo único que
+cambia es el canal por el que entra el mensaje.
+
+**Probala acá: [lacaja-whatsapp-bot.onrender.com](https://lacaja-whatsapp-bot.onrender.com)**
+
+Escribí "hola" y arranca el menú, igual que en WhatsApp. Está en un plan gratuito, así
+que la primera carga después de un rato de inactividad puede tardar unos segundos en
+despertar. Que se pueda probar en un clic, sin instalar nada ni pedir permiso, es la
+diferencia entre contar el proyecto y mostrarlo funcionando.
+
 ## Qué me llevo
 
 Lo que más me interesa de este caso no es el bot. Es el método: mirar el
