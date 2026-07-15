@@ -99,6 +99,26 @@ test("hogar: el rango contiene los precios reales de La Caja (caso relevado)", (
     qCaba.desde <= 11502 && 11502 <= qCaba.hasta,
     `11502 dentro de [${qCaba.desde}, ${qCaba.hasta}]`,
   );
+  // Mismo caso pero PERMANENTE (habitada) en CABA, 80 m² -> $22.062/mes (real):
+  // asegura el contenido (robo, TV), casi el doble que alquilada.
+  const qPerm = estimarPrimaHogar({ ...real, cp: "1425", m2: 80, uso: "permanente" });
+  assert.ok(
+    qPerm.desde <= 22062 && 22062 <= qPerm.hasta,
+    `22062 dentro de [${qPerm.desde}, ${qPerm.hasta}]`,
+  );
+});
+
+test("hogar: habitada (permanente) cuesta más que alquilada (asegura el contenido)", () => {
+  const base = {
+    tipoResidente: "propietario",
+    tipoHogar: "departamento",
+    m2: 80,
+    cp: "1425",
+    sumaContenido: 0,
+  };
+  const alquilo = estimarPrimaHogar({ ...base, uso: "alquilo" });
+  const permanente = estimarPrimaHogar({ ...base, uso: "permanente" });
+  assert.ok(permanente.desde > alquilo.hasta, "permanente supera con holgura a alquilo");
 });
 
 test("hogar: la zona es casi plana (CABA no es más cara que el interior)", () => {
@@ -127,7 +147,14 @@ test("hogar: una casa cuesta más que un departamento", () => {
 });
 
 test("hogar: uso temporal cuesta más que permanente", () => {
-  const perm = estimarPrimaHogar({ ...baseHogar, uso: "permanente" });
-  const temp = estimarPrimaHogar({ ...baseHogar, uso: "temporal" });
+  const base = {
+    tipoResidente: "propietario",
+    tipoHogar: "departamento",
+    m2: 100,
+    cp: "3300",
+    sumaContenido: 0,
+  };
+  const perm = estimarPrimaHogar({ ...base, uso: "permanente" });
+  const temp = estimarPrimaHogar({ ...base, uso: "temporal" });
   assert.ok(temp.hasta > perm.hasta);
 });

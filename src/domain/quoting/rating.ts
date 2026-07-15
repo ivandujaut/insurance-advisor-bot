@@ -116,14 +116,14 @@ export interface HogarQuoteInput {
   sumaContenido: number;
 }
 
-// Calibrado con DOS precios reales del cotizador de La Caja (caso: propietario,
-// departamento, alquilo, Posadas): 168M de incendio -> $11.760/mes y 252M ->
-// $16.683/mes. De la regresión salen: tasa ~0,0051%/mes sobre la suma de incendio,
-// un cargo fijo (RC + cristales + asistencias, no escala) y costo de
+// Calibrado con precios reales del cotizador de La Caja. Base: caso "alquilada"
+// (edificio solo), propietario, departamento, Posadas: 168M de incendio ->
+// $11.760/mes y 252M -> $16.683/mes. De esa regresión salen la tasa sobre la suma
+// de incendio, el cargo fijo (RC + cristales + asistencias) y el costo de
 // reconstrucción ~$2,1M/m². Siguen siendo aproximaciones, pero ancladas a datos.
 const COSTO_RECONSTRUCCION_M2 = 2100000;
-const TASA_INCENDIO_MENSUAL = 0.000051;
-const CARGO_FIJO_MENSUAL = 1665;
+const TASA_INCENDIO_MENSUAL = 0.0000586;
+const CARGO_FIJO_MENSUAL = 1915;
 
 /** Planta baja / PH está más expuesto que un piso; una casa, más que un depto. */
 function factorTipoHogar(tipoHogar: string): number {
@@ -132,11 +132,16 @@ function factorTipoHogar(tipoHogar: string): number {
   return 1.0; // departamento en piso
 }
 
-/** Una vivienda vacía o alquilada tiene más riesgo que una habitada de forma permanente. */
+/**
+ * El uso NO es un multiplicador de riesgo: define QUÉ se cubre. Alquilada (a un
+ * tercero) asegura solo el edificio. Habitada por el dueño suma el contenido
+ * (robo, TV, mayor suma de incendio), casi el doble. Dato real: mismo caso
+ * permanente en CABA salió $22.062 vs $11.502 alquilado.
+ */
 function factorUso(uso: string): number {
-  if (uso === "temporal") return 1.2;
-  if (uso === "alquilo") return 1.15;
-  return 1.0; // permanente
+  if (uso === "temporal") return 2.0; // ilustrativo: contenido + riesgo de vacancia
+  if (uso === "permanente") return 1.91; // dato real
+  return 1.0; // alquilo (base: edificio solo)
 }
 
 /**
