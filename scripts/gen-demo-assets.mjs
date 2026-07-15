@@ -10,7 +10,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assets = resolve(root, "src/main/assets");
 
 const logoSvg = readFileSync(resolve(assets, "la-caja-logo.svg")).toString("base64");
-const fondoJpg = readFileSync(resolve(assets, "fondo.jpg")).toString("base64");
+// Tile seamless de doodles (SVG): repite sin juntas por background-repeat.
+const fondoSvg = readFileSync(resolve(assets, "fondo-tile.svg")).toString("base64");
 
 const out = `/**
  * Assets de la demo web embebidos como data URIs (autocontenido, sin hosts
@@ -18,12 +19,12 @@ const out = `/**
  * partir de src/main/assets/. Re-correr ese script si cambian los archivos.
  */
 export const LOGO_LACAJA = "data:image/svg+xml;base64,${logoSvg}";
-export const FONDO_WHATSAPP = "data:image/jpeg;base64,${fondoJpg}";
+export const FONDO_WHATSAPP = "data:image/svg+xml;base64,${fondoSvg}";
 `;
 
 writeFileSync(resolve(root, "src/main/demo-assets.ts"), out);
 console.log(
   "demo-assets.ts generado: logo %d B, fondo %d B (base64)",
   logoSvg.length,
-  fondoJpg.length,
+  fondoSvg.length,
 );

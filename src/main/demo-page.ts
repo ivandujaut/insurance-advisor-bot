@@ -27,7 +27,7 @@ export const DEMO_HTML = `<!doctype html>
   body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--wa-bg); color:var(--texto); }
   .app { max-width:640px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; background:var(--wa-bg); position:relative; overflow:hidden; }
   /* Fondo de doodles que se repite infinitamente (tile), como el chat real. */
-  .doodle-bg { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; background-color:var(--wa-bg); background-image:url("${FONDO_WHATSAPP}"); background-repeat:repeat; background-size:460px auto; }
+  .doodle-bg { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; background-color:var(--wa-bg); background-image:url("${FONDO_WHATSAPP}"); background-repeat:repeat; background-size:300px; }
   header { position:relative; z-index:2; background:var(--wa-header); color:var(--texto); padding:9px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 0 #0006; }
   header .back { color:var(--texto-sec); font-size:26px; line-height:1; margin:-2px 2px 0 -2px; }
   header .avatar { width:40px; height:40px; border-radius:50%; background:#fff; overflow:hidden; flex:0 0 auto; }
