@@ -46,6 +46,12 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
         hasta: 12000,
         moneda: "ARS",
       }),
+      quoteBici: async () => ({
+        plan: "Seguro de Bicicleta",
+        desde: 4000,
+        hasta: 5000,
+        moneda: "ARS",
+      }),
     },
   };
 }
@@ -104,11 +110,36 @@ test("el flujo de accidentes guarda el lead con el precio publicado", async () =
   assert.equal(lead.precio, 14176);
 });
 
-test("opción 4 muestra la comparación de los tres planes", async () => {
-  const s = newSession("t-comparar");
+test("opción 4 arranca la cotización de bici o monopatín", async () => {
+  const s = newSession("t-bici");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   const reply = (await handleFlow(s, "4", deps)) ?? "";
+  assert.match(reply, /bicicleta|monopat/i);
+  assert.equal(s.stage, "quoting_bici");
+});
+
+test("el flujo de bici guarda el lead con el valor y la cuota estimada", async () => {
+  const s = newSession("t-bici-full");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "4", deps); // bici
+  await handleFlow(s, "bicicleta", deps); // tipo de rodado
+  const final = (await handleFlow(s, "500000", deps)) ?? ""; // valor
+  assert.match(final, /Cuota estimada/);
+  assert.equal(s.stage, "idle");
+  const lead = deps.savedLeads[0];
+  assert.equal(lead?.producto, "bici");
+  if (lead?.producto !== "bici") throw new Error("esperaba un lead de bici");
+  assert.equal(lead.tipoRodado, "bicicleta");
+  assert.equal(lead.valor, 500000);
+});
+
+test("opción 5 muestra la comparación de los tres planes", async () => {
+  const s = newSession("t-comparar");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  const reply = (await handleFlow(s, "5", deps)) ?? "";
   assert.match(reply, /Terceros Completo/);
   assert.match(reply, /Terceros Completo con Granizo/);
   assert.match(reply, /Todo Riesgo con Franquicia/);

@@ -4,7 +4,13 @@
  * con un adapter en memoria en session/memory.ts. Este archivo no guarda estado.
  */
 
-export type Stage = "idle" | "main_menu" | "quoting_auto" | "quoting_hogar" | "quoting_accidentes";
+export type Stage =
+  | "idle"
+  | "main_menu"
+  | "quoting_auto"
+  | "quoting_hogar"
+  | "quoting_accidentes"
+  | "quoting_bici";
 
 /** Planes de auto de La Caja, de menor a mayor cobertura. */
 export const AUTO_PLANS = [

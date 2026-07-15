@@ -7,7 +7,7 @@
  * por config. El dominio y el flujo no cambian.
  */
 import type { QuotingProvider } from "../../application/ports.js";
-import { estimarPrima, estimarPrimaHogar } from "../../domain/quoting/rating.js";
+import { estimarPrima, estimarPrimaBici, estimarPrimaHogar } from "../../domain/quoting/rating.js";
 
 export function createLocalQuotingProvider(): QuotingProvider {
   return {
@@ -16,6 +16,9 @@ export function createLocalQuotingProvider(): QuotingProvider {
     },
     async quoteHogar(input) {
       return estimarPrimaHogar(input);
+    },
+    async quoteBici(input) {
+      return estimarPrimaBici(input);
     },
   };
 }

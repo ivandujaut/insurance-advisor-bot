@@ -186,3 +186,30 @@ export function estimarPrimaHogar(input: HogarQuoteInput): QuoteEstimate {
     moneda: "ARS",
   };
 }
+
+// --- Bici / Monopatín ---
+// Un cuarto shape de precio: una tasa sobre el VALOR declarado del rodado (la
+// suma asegurada). Derivada de tres tarifas reales del cotizador de bici, muy
+// consistentes: $370.800 -> $6.894, $539.400 -> $9.959, $1.012.000 -> $18.549
+// (1,83% a 1,86% mensual). El bot pide el valor del rodado y estima con esa tasa.
+
+export interface BiciQuoteInput {
+  /** "bicicleta" o "monopatin". */
+  tipoRodado: string;
+  /** Valor asegurado del rodado, en pesos. */
+  valor: number;
+}
+
+const TASA_BICI_MIN = 0.0183;
+const TASA_BICI_MAX = 0.0186;
+
+/** Estima la cuota mensual del seguro de bici/monopatín: una tasa sobre el valor. */
+export function estimarPrimaBici(input: BiciQuoteInput): QuoteEstimate {
+  const r = (x: number) => Math.round(x / 100) * 100;
+  return {
+    plan: input.tipoRodado === "monopatin" ? "Seguro de Monopatín" : "Seguro de Bicicleta",
+    desde: r(input.valor * TASA_BICI_MIN),
+    hasta: r(input.valor * TASA_BICI_MAX),
+    moneda: "ARS",
+  };
+}

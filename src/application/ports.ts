@@ -8,7 +8,12 @@
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
 import type { Session } from "../domain/conversation/session.js";
-import type { AutoQuoteInput, HogarQuoteInput, QuoteEstimate } from "../domain/quoting/rating.js";
+import type {
+  AutoQuoteInput,
+  BiciQuoteInput,
+  HogarQuoteInput,
+  QuoteEstimate,
+} from "../domain/quoting/rating.js";
 
 // --- Mensajería ---
 
@@ -107,11 +112,24 @@ export interface AccidentesLead extends LeadBase {
   precio: number;
 }
 
+/** Lead de un seguro de bici/monopatín (tasa sobre el valor declarado). */
+export interface BiciLead extends LeadBase {
+  producto: "bici";
+  /** "bicicleta" o "monopatin". */
+  tipoRodado: string;
+  /** Valor asegurado del rodado, en pesos. */
+  valor: number;
+}
+
 /** Un lead capturado, discriminado por `producto`. */
-export type Lead = AutoLead | HogarLead | AccidentesLead;
+export type Lead = AutoLead | HogarLead | AccidentesLead | BiciLead;
 
 /** Un lead antes de persistirse (el adapter le pone el timestamp). */
-export type LeadInput = Omit<AutoLead, "ts"> | Omit<HogarLead, "ts"> | Omit<AccidentesLead, "ts">;
+export type LeadInput =
+  | Omit<AutoLead, "ts">
+  | Omit<HogarLead, "ts">
+  | Omit<AccidentesLead, "ts">
+  | Omit<BiciLead, "ts">;
 
 /** Repositorio de leads. Hoy JSONL, mañana un CRM o una base de datos. */
 export interface LeadRepository {
@@ -145,6 +163,7 @@ export interface LlmPort {
 export interface QuotingProvider {
   quote(input: AutoQuoteInput): Promise<QuoteEstimate>;
   quoteHogar(input: HogarQuoteInput): Promise<QuoteEstimate>;
+  quoteBici(input: BiciQuoteInput): Promise<QuoteEstimate>;
 }
 
 /** El adapter de LLM no tiene credenciales configuradas (caso típico en dev). */
