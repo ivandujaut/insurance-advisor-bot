@@ -146,7 +146,8 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > accidente). ¿Cuál te interesa: 1, 2 o 3?
 > **Yo:** 2
 > **Bot:** Listo. Con estos datos armo tu solicitud: Toyota Corolla 2020, usado,
-> plan Terceros Completo con Granizo. Un asesor te contacta con el precio final.
+> plan Terceros Completo con Granizo. Estimación orientativa: $27.000 a $34.500 por
+> mes. Un asesor te confirma el precio final.
 
 Los datos que pide (año, condición, marca, modelo, versión, GNC) son los mismos que el
 cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
@@ -155,6 +156,15 @@ comparación de planes) pasa dentro del chat, que es donde se juega la venta
 asesorada. Si en cualquier punto pregunto algo abierto, como "¿qué es la
 franquicia?", ahí toma el modelo de lenguaje y responde con la información real,
 sin romper el flujo. Ese reparto de tareas es la Decisión 3 funcionando en vivo.
+
+Ese "$27.000 a $34.500 por mes" no lo saqué scrapeando la web ni lo inventé con un
+número fijo. Una aseguradora no mira su propio sitio: corre un tarifador que arma
+la prima por factores de riesgo (base por plan, antigüedad, 0km o usado, zona por
+código postal, GNC). Modelé eso como una función determinística que devuelve un
+rango orientativo, no una cotización en firme. Y lo dejé detrás de un puerto: hoy
+lo resuelve ese modelo local, mañana la API del tarifador real de La Caja entra en
+el mismo lugar sin tocar el resto. Es la Decisión 10: no adivinar el número, sino
+dejar preparada la costura donde enchufa el motor de precios real.
 
 ## Cómo sabría si funciona
 

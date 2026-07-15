@@ -195,6 +195,34 @@ qué dato, y qué resigné.
   cambio de un lead mucho más rico y correcto. Se mitiga con preguntas cortas y el
   softener de versión, y se mide con el drop-off por paso (sección 6).
 
+### Decisión 10: precio orientativo con un motor de factores, no scraping
+
+- **Criterio:** dar una orientación de precio dentro del chat (que es lo que la
+  persona quiere saber) sin prometer un número en firme, y modelarlo como lo hace
+  una aseguradora: por factores de riesgo.
+- **Opciones que evalué:**
+  - *Rango fijo local:* simple, pero no enseña nada del negocio.
+  - *Scraping del cotizador web:* trae el número real, pero es frágil (rompe si
+    cambian el form), lento, con riesgo de ToS, y no explica el mecanismo. Encima,
+    scrapear el sitio de La Caja para después mostrarle el proyecto a La Caja es
+    exactamente el gesto que no quiero hacer.
+  - *Mock del tarifador (elegida):* un modelo de factores que replica cómo se
+    arma una prima.
+- **Por qué (la elección):** una aseguradora no "mira su web", corre un
+  **tarifador** que compone la prima con factores de riesgo (base por plan,
+  antigüedad, condición 0km/usado, zona por CP, GNC). Modelé eso como una función
+  de dominio pura y determinística, y devuelvo un **rango** ("desde X hasta Y por
+  mes"), no un valor puntual, para no simular una cotización en firme.
+- **La costura de integración:** el modelo vive detrás de un puerto
+  `QuotingProvider`. Hoy lo implementa un adapter local; mañana la **API del
+  tarifador real de La Caja** entra en el mismo puerto sin tocar el dominio ni el
+  flujo. Eso es lo que un equipo de La Caja reconoce: no adiviné un número ni copié
+  la web, dejé el lugar donde enchufa su rating engine.
+- **Trade-off:** los valores de los factores son ilustrativos (no las tarifas
+  reales), así que el número es orientativo. Se mitiga siendo explícito en el chat
+  ("rango orientativo, el asesor confirma el final") y dejando los factores
+  tuneables y aislados para calibrarlos con datos reales.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las

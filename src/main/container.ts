@@ -27,6 +27,7 @@ import {
   ensureSchema,
 } from "../infrastructure/persistence/postgres.js";
 import { createRedisSessionStore } from "../infrastructure/persistence/redis-sessions.js";
+import { createLocalQuotingProvider } from "../infrastructure/quoting/local-rating.js";
 
 /** Arma las dependencias concretas del núcleo. Se llama una vez por proceso. */
 export async function buildDependencies(): Promise<Dependencies> {
@@ -58,6 +59,9 @@ export async function buildDependencies(): Promise<Dependencies> {
     sessions,
     llm: createAnthropicLlm(),
     knowledge: createFilesystemKnowledge(),
+    // Hoy el modelo local de factores; mañana la API del tarifador real detrás
+    // del mismo puerto (ver infrastructure/quoting).
+    quoting: createLocalQuotingProvider(),
   };
 }
 

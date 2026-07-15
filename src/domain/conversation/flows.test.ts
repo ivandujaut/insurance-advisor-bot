@@ -38,6 +38,9 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
     // handleFlow tampoco toca el store de sesiones (recibe la sesión directa); stub.
     sessions: { get: async () => undefined, save: async () => {} },
     knowledge: { load: async () => "" },
+    quoting: {
+      quote: async (input) => ({ plan: input.plan, desde: 10000, hasta: 15000, moneda: "ARS" }),
+    },
   };
 }
 

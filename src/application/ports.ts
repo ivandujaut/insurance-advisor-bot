@@ -8,6 +8,7 @@
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
 import type { Session } from "../domain/conversation/session.js";
+import type { QuoteEstimate, QuoteInput } from "../domain/quoting/rating.js";
 
 // --- Mensajería ---
 
@@ -69,7 +70,7 @@ export interface Lead {
   version?: string;
   gnc: boolean;
   cp: string;
-  /** Derivada del año: "0km" o "usado". */
+  /** "0km" o "usado" (se pregunta explícita, no se deriva del año). */
   condicion: string;
   plan: string;
 }
@@ -97,6 +98,17 @@ export interface LlmRequest {
 /** Puerto del modelo de lenguaje. Hoy Anthropic, mañana el AI Gateway u otro. */
 export interface LlmPort {
   generate(request: LlmRequest): Promise<string>;
+}
+
+// --- Cotización (tarifador) ---
+
+/**
+ * Proveedor de cotización: estima la prima. El núcleo no sabe si detrás hay un
+ * modelo local de factores o la API del tarifador real de La Caja. Async a
+ * propósito: un tarifador remoto hace I/O.
+ */
+export interface QuotingProvider {
+  quote(input: QuoteInput): Promise<QuoteEstimate>;
 }
 
 /** El adapter de LLM no tiene credenciales configuradas (caso típico en dev). */
@@ -134,4 +146,5 @@ export interface Dependencies {
   llm: LlmPort;
   sessions: SessionStore;
   knowledge: KnowledgeSource;
+  quoting: QuotingProvider;
 }
