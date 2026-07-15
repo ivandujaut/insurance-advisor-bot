@@ -275,25 +275,38 @@ qué dato, y qué resigné.
   niveles fijos.
 - **Dato que la respalda (cotizador real de hogar):** el primer paso pregunta
   **propietario o inquilino** (define si se asegura el edificio o solo el
-  contenido), el paso 2 es **"Personalizá tu plan"** (no hay tres tiers como en
-  auto, la variable central es la suma asegurada), y el plan **incluye asistencias**
-  concretas (mascota, plomería/electricidad/cerrajería/gasista, alimentos por corte
-  de luz, mudanza/limpieza).
-- **Por qué (el flujo):** propietario/inquilino → casa/departamento → CP → **suma
-  asegurada del contenido**, y devuelvo la estimación con las asistencias reales
-  incluidas. No invento tiers que La Caja no vende: el "plan" es el producto y la
-  variable es la suma. La **valuación fina del edificio se difiere al asesor** (mismo
-  criterio que edad/DNI en auto): es un número difícil de estimar en un chat.
+  contenido). Recorriendo el paso "Datos del hogar" con propietario aparecen los
+  campos reales: **tipo de hogar** (casa / departamento / departamento en PB o PH),
+  **vivo en barrio privado**, **tipo de uso** (permanente / temporal / alquilo),
+  **m² construidos** (25-300), CP y una atestación de seguridad. El paso 2 es
+  **"Personalizá tu plan"** (no hay tres tiers como en auto, la variable central es
+  la suma asegurada), y el plan **incluye asistencias** concretas (mascota,
+  plomería/electricidad/cerrajería/gasista, alimentos por corte de luz,
+  mudanza/limpieza).
+- **Por qué (el flujo, y qué resigné):** capturo propietario/inquilino → tipo de
+  hogar (3 opciones) → uso → **m² (solo a propietario)** → CP → **suma del
+  contenido**, y devuelvo la estimación con las asistencias reales. Prioricé por
+  señal sobre fricción:
+  - **Sumé los m²**: eran el gran faltante, definen la suma del *edificio*. Los pido
+    **solo a propietario** (el inquilino no asegura el edificio): fidelidad sin
+    fricción de más.
+  - **Sumé uso y tipo de hogar a 3 opciones**: factores reales de una sola pregunta
+    (una vivienda vacía o en PB tiene más riesgo).
+  - **Diferí barrio privado/country** (buen modificador de robo, pero para no estirar
+    el flujo queda como factor futuro) y dejé la **atestación de seguridad implícita**
+    (como el "buen estado" de auto).
+  - No invento tiers que La Caja no vende: el "plan" es el producto y la variable es
+    la suma.
 - **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
   una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
   ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
   `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
   producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
   hexagonal.
-- **Trade-off:** los factores del hogar (tasa sobre el contenido, recargo de
-  propietario y de casa) son ilustrativos y tuneables, igual que en auto; el anclaje
-  a tarifas reales queda pendiente (el cotizador de hogar tiene el mismo reCAPTCHA y
-  muro de contacto que el de auto).
+- **Trade-off:** los factores del hogar (tasas sobre contenido y edificio, costo de
+  reconstrucción por m², factores por tipo de hogar y uso) son ilustrativos y
+  tuneables, igual que en auto; el anclaje a tarifas reales queda pendiente (el
+  cotizador de hogar tiene el mismo reCAPTCHA y muro de contacto que el de auto).
 
 ## 6. Cómo mediría el éxito
 
