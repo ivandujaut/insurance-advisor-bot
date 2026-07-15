@@ -32,13 +32,19 @@ export interface QuoteEstimate {
   moneda: "ARS";
 }
 
-// Prima base mensual por plan (ARS, ilustrativa 2026). Ordena por cobertura.
+// Prima base mensual por plan (ARS). Anclada a un quote real del cotizador de La
+// Caja: Toyota Corolla 2020, usado, sin GNC, CABA (factor zona 1,25) ->
+// Terceros Completo $160.165, con Granizo $202.443, Todo Riesgo $247.847 por mes.
+// Cada base es ese precio dividido por el factor de zona (real / 1,25).
+// LIMITACIÓN: el precio real escala con el VALOR del auto (la suma asegurada, que
+// la web deriva de año/marca/modelo); el modelo no lo captura, así que la base
+// queda anclada a un auto de gama media y factorAntiguedad es un proxy grueso.
 const BASE_POR_PLAN: Record<string, number> = {
-  "Terceros Completo": 18000,
-  "Terceros Completo con Granizo": 24000,
-  "Todo Riesgo con Franquicia": 42000,
+  "Terceros Completo": 128000,
+  "Terceros Completo con Granizo": 162000,
+  "Todo Riesgo con Franquicia": 198000,
 };
-const BASE_DEFAULT = 18000;
+const BASE_DEFAULT = 128000;
 
 const CURRENT_YEAR = new Date().getFullYear();
 

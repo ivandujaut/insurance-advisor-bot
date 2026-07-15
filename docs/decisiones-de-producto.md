@@ -240,12 +240,19 @@ qué dato, y qué resigné.
   orientativo. Se mitiga siendo explícito en el chat ("rango orientativo, el asesor
   confirma el final") y dejando los factores tuneables y aislados para calibrarlos
   con datos reales.
-- **Anclaje real (parcial, logrado):** el cotizador de **auto** falló al calcular
-  (backend caído), así que su tarifa sigue sin anclar. Pero el de **hogar sí
-  devolvió precios**: relevé dos puntos del mismo caso (168M de incendio →
-  $11.760/mes, 252M → $16.683/mes) y con esa regresión **calibré el tarifador de
-  hogar** (tasa ~0,0051%/mes, cargo fijo ~$1.665, costo de reconstrucción ~$2,1M/m²).
-  El modelo ahora reproduce ambos precios reales. Ver Decisión 12.
+- **Anclaje real (logrado):** el cotizador de **auto** falló varias veces (backend
+  intermitente), pero al reintentar devolvió los tres precios de un mismo caso
+  (Toyota Corolla 2020, usado, sin GNC, CABA): Terceros Completo $160.165, con
+  Granizo $202.443, Todo Riesgo $247.847 por mes. Con eso **anclé las bases del
+  tarifador de auto** (estaban ~7× bajas). **Limitación honesta:** el precio real
+  escala con el **valor del auto** (la suma asegurada, ~$27M en este caso, que la
+  web deriva de año/marca/modelo), y el modelo no lo captura: la base queda anclada
+  a un auto de gama media y la antigüedad es un proxy grueso del valor.
+- **Anclaje real (hogar):** el cotizador de **hogar sí devolvió precios** de arranque.
+  Relevé dos puntos del mismo caso (168M de incendio → $11.760/mes, 252M →
+  $16.683/mes) y con esa regresión **calibré el tarifador de hogar** (tasa
+  ~0,0051%/mes, cargo fijo ~$1.665, costo de reconstrucción ~$2,1M/m²). El modelo
+  reproduce ambos precios reales. Ver Decisión 12.
 
 ### Decisión 11: conectar el bot donde ya se gasta la plata (el embudo pago)
 
@@ -428,9 +435,10 @@ métricas que instrumentaría:
    10 líneas para personas están cargadas con contenido real.
 2. ~~Persistir los leads.~~ **Hecho:** repositorio de leads con adapters JSONL o
    Postgres. (Pendiente: notificar automáticamente a un asesor.)
-3. Integrar precios reales vía los cotizadores existentes. (Intentado: el
-   cotizador de La Caja tiene reCAPTCHA y su backend falló en las pruebas; el
-   anclaje en pesos queda pendiente de un punto de precio real. Ver Decisión 10.)
+3. ~~Anclar los tarifadores a precios reales de los cotizadores.~~ **Hecho para
+   auto, hogar y bici:** los tres tienen sus bases/tasas calibradas a precios reales
+   relevados (auto y bici, catálogo directo; hogar, por regresión). Ver Decisión 10.
+   Pendiente: mapear el auto a su valor asegurado (hoy es una limitación conocida).
 4. ~~Instrumentar las métricas de la sección 6.~~ **Hecho:** log de eventos del
    funnel y reporte `pnpm funnel` (activación, drop-off, mix de plan).
 5. ~~Conectar la API oficial de Meta para pruebas en WhatsApp real.~~ **Hecho:**
