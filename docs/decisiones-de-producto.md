@@ -315,16 +315,25 @@ qué dato, y qué resigné.
   auto era un error: agregué un `factorZonaHogar` propio (CABA 0,98, resto 1,0). El
   worksheet `casos-cotizacion-hogar.md` enumera las combinaciones para seguir
   relevando y afinando.
+- **El uso no es un multiplicador de riesgo, es un bundle de cobertura (hallazgo):**
+  coticé el mismo caso "permanente" (habitada por el dueño) y salió **$22.062/mes**,
+  casi el **doble** que "alquilada" ($11.502). El motivo no es riesgo: cuando vivís
+  ahí, el plan **suma tu contenido** (robo, TV/audio, mayor suma de incendio); cuando
+  la alquilás, cubre **solo el edificio**. Mi factor estaba **al revés** (asumía que
+  alquilar era más caro). Lo corregí y anclé: alquilo 1,0 (base), permanente 1,91
+  (dato real), temporal ~2,0 (ilustrativo). Lección de producto: no asumir la
+  dirección de un factor sin el dato; a veces la variable cambia *qué* se cubre, no
+  solo cuánto se cobra.
 - **Por qué (la arquitectura, lo que demuestra el ejercicio):** el lead pasó a ser
   una **unión discriminada** (`AutoLead | HogarLead` por `producto`), el tarifador
   ganó un `estimarPrimaHogar` en el dominio y un `quoteHogar` en el puerto
   `QuotingProvider`, y Postgres pasó a columnas comunes + `detalle` jsonb. Sumar un
   producto tocó bordes acotados, no el motor: eso es lo que compra la arquitectura
   hexagonal.
-- **Trade-off:** el nivel y la zona quedaron anclados a precios reales, pero los
-  factores de **tipo de hogar y uso** siguen siendo ilustrativos: afinarlos necesita
-  cotizar el mismo caso variando esas dimensiones (el worksheet ya deja esas filas
-  listas para completar).
+- **Trade-off:** nivel, zona y uso ya están anclados a precios reales; queda
+  ilustrativo el factor de **tipo de hogar** (casa vs depto vs PB/PH) y el de
+  temporal, que necesitan cotizar el mismo caso variando esas dimensiones (el
+  worksheet ya deja esas filas listas para completar).
 
 ## 6. Cómo mediría el éxito
 
