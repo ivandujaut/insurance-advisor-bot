@@ -12,7 +12,7 @@ Generado con `scripts/gen-casos-hogar.mjs` (regenerar tras tocar los factores).
 | Dimensión | Valores | Impacto en el precio |
 |---|---|---|
 | Residente | propietario / inquilino | El propietario asegura el edificio (suma de incendio derivada de m²); el inquilino, solo el contenido. |
-| Tipo de hogar | casa / departamento / depto PB o PH | Factor de exposición (casa > PB/PH > depto). |
+| Tipo de hogar | casa / departamento / depto PB o PH | Una casa se reconstruye más cara por m² (~$2,4M vs ~$2,1M): estructura propia, no compartida. Dato real: casa ~1,19x depto. |
 | Uso | permanente / temporal / alquilo | No es un multiplicador de riesgo: es el bundle de cobertura. Habitada (permanente/temporal) asegura el contenido (~2x); alquilada, solo el edificio. Dato real. |
 | m² construidos | 25 a 300 | Solo propietario: define la suma de incendio (~$2,1M/m²). |
 | Suma de contenido | desde $500.000 | Solo inquilino: su suma asegurada. |
