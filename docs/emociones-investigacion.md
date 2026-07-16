@@ -90,6 +90,25 @@ fine-grained sin definiciones ni ejemplos; la brecha se cierra con calibración
 5. **Decidir LLM vs clasificador con datos**, no por intuición.
 6. **Escalación por intensidad/valencia**, no binaria.
 
+### Resultado medido (baseline v1 -> v2)
+
+El loop evaluation-first (medir -> diagnosticar -> calibrar -> re-medir) dio, sobre
+el set de 62 mensajes:
+
+| Prompt | Macro-F1 | Accuracy |
+|---|---|---|
+| v1 (base, sin definiciones) | 0.724 | 72.6% |
+| v2 (definiciones + few-shot, **en producción**) | **0.909** | **90.3%** |
+
+Las dos confusiones del baseline se cerraron: `interes` recall 33% -> 100% (dejó de
+irse a `satisfaccion`) y `ansiedad` recall 62% -> 100% (dejó de caer a `neutral`).
+La guía calibrada vive en `src/domain/emotion.ts` (`EMOTION_GUIDE`), compartida por
+el asistente y el eval. Reproducir: `pnpm eval:emotions`.
+
+Nota metodológica: hubo varianza entre corridas del baseline (0.666 y 0.724 en dos
+runs), por la no-determinación del modelo; la comparación v1 vs v2 es válida porque
+se mide en la MISMA corrida y condiciones.
+
 ## Referencias
 
 - Ekman, P. (1992). *An argument for basic emotions.* Cognition & Emotion.
