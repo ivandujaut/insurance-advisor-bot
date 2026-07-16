@@ -208,8 +208,10 @@ async function handleQuotingAuto(
   // 6) GNC (sí/no)
   if (!session.data.gnc) {
     const t = normalize(text);
-    const esSi = /^s[ií]/.test(t) || t.includes("tiene");
+    // La negación se evalúa primero: "no tiene" empieza con "no" y NO debe
+    // matchear el "tiene" del sí (si no, invierte el GNC y el precio).
     const esNo = /^no/.test(t);
+    const esSi = !esNo && (/^s[ií]/.test(t) || t.includes("tiene"));
     if (!esSi && !esNo) {
       return "No te entendí. ¿Tiene *GNC*? Respondé *sí* o *no*.";
     }
