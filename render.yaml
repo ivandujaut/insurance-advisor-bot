@@ -1,6 +1,14 @@
 # Blueprint de Render: define el servicio para desplegar con un clic.
 # Render lee este archivo al conectar el repo (New > Blueprint) y crea el
 # servicio web a partir del Dockerfile. Ver docs/deploy.md para el paso a paso.
+
+# Base Postgres para persistir leads y eventos (los usa el dashboard /funnel).
+# free: sin costo pero se elimina a los ~30 días; para durar, pasar a un plan pago.
+databases:
+  - name: lacaja-db
+    plan: free
+    region: oregon
+
 services:
   - type: web
     name: lacaja-whatsapp-bot
@@ -18,8 +26,14 @@ services:
       # las META_* de abajo (marcadas sync:false) en el dashboard de Render.
       - key: MESSAGING_PROVIDER
         value: cli
+      # Persistencia en Postgres: los leads/eventos sobreviven al redeploy y al
+      # spin-down (con jsonl el disco de Render es efímero y se borran).
       - key: PERSISTENCE
-        value: jsonl
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lacaja-db
+          property: connectionString
       - key: SESSION_STORE
         value: memory
       # PORT lo inyecta Render automáticamente; el server lo lee de process.env.

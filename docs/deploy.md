@@ -38,6 +38,20 @@ demo web sube con cero secretos: solo las tres variables no sensibles del
 Verificá el health check: `https://<tu-url>/health` debe responder
 `lacaja-whatsapp-bot OK`.
 
+## Persistencia y métricas (Postgres + /funnel)
+
+El `render.yaml` declara una base **Postgres** (`lacaja-db`) y setea
+`PERSISTENCE=postgres` con `DATABASE_URL` cableada desde esa base. Al aplicar el
+blueprint, Render crea el Postgres e inyecta la URL solo; el server crea las
+tablas al arrancar. Con esto, los leads y eventos **sobreviven** al redeploy y al
+spin-down (con `jsonl` el disco de Render es efímero).
+
+El dashboard del embudo queda en `https://<tu-url>/funnel`: activación, drop-off
+por paso y mix de plan, en vivo.
+
+Nota: el Postgres **free** de Render se elimina a los ~30 días. Para que los datos
+duren, pasar la base a un plan pago desde el dashboard.
+
 ## Opcional: servir también el webhook de WhatsApp desde acá
 
 Si querés que este mismo deploy reemplace a ngrok como webhook de WhatsApp (no
