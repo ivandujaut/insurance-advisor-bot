@@ -128,6 +128,19 @@ positivos**. La pérdida está en distinciones sin consecuencia (algún `neutral
 etiquetado como interés/confusión). A cambio: ~3-5x más rápido y barato, sin ser
 lastre de latencia. Decisión: Haiku por default (`EMOTION_MODEL` lo overridea).
 
+### Por qué acá va F1 y no ROC/AUC
+
+El FAQ router se calibra con una curva ROC y su AUC (ver `docs/decisiones-de-producto.md`,
+Decisión 17), y es tentador aplicar lo mismo acá. No corresponde: ROC/AUC es para un
+clasificador **binario con un score continuo** que se corta por umbral. La detección de
+emoción es **multiclase (7 clases) y devuelve una etiqueta discreta**, sin score de
+probabilidad por clase. Sin score no hay umbral que barrer, así que no hay una curva ROC
+única. Lo correcto es lo que se usa: **macro-F1** (promedia el F1 por clase, sin premiar
+la clase mayoritaria) y la **matriz de confusión** (muestra qué se confunde con qué, que
+es justo lo que importó para decidir Haiku). Forzar un ROC único acá sería incorrecto; si
+se quisiera, la vía sería un one-vs-rest por clase, otro análisis. Saber dónde aplica cada
+métrica es parte del rigor: el número lindo no siempre es la métrica correcta.
+
 ## Referencias
 
 - Ekman, P. (1992). *An argument for basic emotions.* Cognition & Emotion.

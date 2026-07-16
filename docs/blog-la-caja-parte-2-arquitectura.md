@@ -66,11 +66,17 @@ export interface Dependencies {
   leads: LeadRepository;
   events: EventSink;
   llm: LlmPort;
+  emotion: EmotionClassifier;
+  faq: FaqMatcher;
   sessions: SessionStore;
   knowledge: KnowledgeSource;
   quoting: QuotingProvider;
 }
 ```
+
+Ese objeto fue creciendo con cada capacidad nueva (`emotion` y `faq` son los dos
+últimos bordes que entraron, ver más abajo), sin que el motor de conversación se
+enterara: para el núcleo, sumar una capacidad es sumar un puerto.
 
 La regla que sostiene todo es simple: **el núcleo (`domain/` y `application/`) no
 importa de `infrastructure/`**. Las dependencias apuntan hacia adentro. Y como
@@ -169,6 +175,59 @@ vez de una columna por atributo, quedaron las comunes (`producto`, `plan`) más 
 fue agregar un flujo y, si estima, un tarifador detrás del mismo puerto. Cero
 cambios en el núcleo, cero migraciones de columnas. Los bordes crecieron; el
 corazón quedó intacto.
+
+## Una duda conocida no necesita al LLM
+
+La capacidad más nueva puso a prueba el patrón de la forma más clara: dos puertos de
+una. La mayoría de las consultas abiertas son las mismas pocas dudas, y pagar una
+generación de LLM por cada repetición es tirar plata. Antes de generar, la consulta pasa
+por un **router semántico** que revisa si es una duda ya conocida.
+
+Entraron dos bordes nuevos:
+
+```ts
+export interface EmbeddingsProvider {
+  embed(texts: string[]): Promise<number[][]>;
+}
+export interface FaqMatcher {
+  match(question: string): Promise<FaqMatch | null>;
+}
+```
+
+El `EmbeddingsProvider` (adapter de OpenAI, `text-embedding-3-small`) convierte texto en
+vectores. El `FaqMatcher` embede el corpus de dudas al arrancar y, en cada consulta,
+busca el más parecido. Y acá se ve la regla en acción: la **matemática vive en el
+dominio**, no en el adapter. La similitud coseno es una función pura en `domain/faq/`:
+
+```ts
+export function cosineSimilarity(a: number[], b: number[]): number { ... }
+```
+
+El adapter hace I/O (llama a OpenAI); el dominio decide qué tan parecidos son dos
+significados. Si el mejor match supera el umbral, `processMessage` corta antes del LLM,
+emite el evento `faq_hit` y responde la canónica:
+
+```ts
+const hit = await deps.faq.match(incoming.text);
+if (hit) return hit.respuesta;       // sin llamar al LLM
+reply = await answer(session, deps); // si no, cae al asistente
+```
+
+El umbral no se puso a ojo: sale de un eval con método leave-one-out y una **curva ROC**
+(AUC 0.92); la calibración está en la nota de producto (`docs/decisiones-de-producto.md`,
+Decisión 17). El proveedor de embeddings es intercambiable: hoy OpenAI, mañana otro modelo
+o un vector store, sin tocar el núcleo.
+
+Al lado del router entró otro puerto con un fin distinto: un **clasificador de emoción**
+(`EmotionClassifier`), que corre **en paralelo** a la respuesta y, si detecta enojo o
+frustración, hace que el bot ofrezca un asesor. Es un puerto aparte del `LlmPort` a
+propósito: otra tarea, otro prompt, otro modelo (Haiku, más rápido y barato). Cambiarle el
+modelo no toca la generación.
+
+Un detalle de empaquetado que pagó este borde: el router necesita el benchmark de dudas en
+runtime, así que el `Dockerfile` lo copia explícitamente y el `.dockerignore` lo deja pasar
+(`docs/*` con una excepción). Lección: un build que compila local puede romper en la imagen
+si el contexto de Docker no incluye lo que el runtime necesita.
 
 ## Un canal más, el mismo núcleo
 
