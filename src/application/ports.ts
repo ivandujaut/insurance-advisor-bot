@@ -50,7 +50,8 @@ export type EventType =
   | "lead_captured"
   | "advisor_requested"
   | "open_question"
-  | "emotion_detected";
+  | "emotion_detected"
+  | "faq_hit";
 
 export interface AnalyticsEvent {
   ts: string;
@@ -175,6 +176,28 @@ export interface EmotionClassifier {
   classify(message: string): Promise<Emotion>;
 }
 
+/** Proveedor de embeddings: convierte textos en vectores para búsqueda semántica. */
+export interface EmbeddingsProvider {
+  embed(texts: string[]): Promise<number[][]>;
+}
+
+/** Resultado de un match del FAQ router. */
+export interface FaqMatch {
+  id: string;
+  respuesta: string;
+  score: number;
+}
+
+/**
+ * Router semántico de dudas frecuentes: si la pregunta se parece a una conocida
+ * (por encima de un umbral), devuelve la respuesta guardada SIN llamar al LLM. Si
+ * no, devuelve null y la consulta cae al asistente. Es la palanca de costo: las
+ * dudas repetidas se resuelven a costo casi cero. Best-effort: ante falla, null.
+ */
+export interface FaqMatcher {
+  match(question: string): Promise<FaqMatch | null>;
+}
+
 // --- Cotización (tarifador) ---
 
 /**
@@ -222,6 +245,7 @@ export interface Dependencies {
   events: EventSink;
   llm: LlmPort;
   emotion: EmotionClassifier;
+  faq: FaqMatcher;
   sessions: SessionStore;
   knowledge: KnowledgeSource;
   quoting: QuotingProvider;

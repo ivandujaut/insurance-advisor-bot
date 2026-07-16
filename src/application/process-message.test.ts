@@ -39,6 +39,7 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
     },
     llm: { generate: async () => "respuesta simulada del asistente" },
     emotion: { classify: async () => "neutral" },
+    faq: { match: async () => null },
     sessions: memorySessions(),
     knowledge: { load: async () => "conocimiento de prueba" },
     quoting: {
@@ -135,6 +136,27 @@ test("emoción negativa ofrece un asesor y registra emotion_detected", async () 
   assert.match(reply, /asesor/);
   const emo = logged.find((e) => e.type === "emotion_detected");
   assert.equal(emo?.props?.emocion, "enojo");
+});
+
+test("una duda conocida la responde el FAQ router sin llamar al LLM", async () => {
+  let llmCalls = 0;
+  const { deps, logged } = fakeDeps({
+    llm: {
+      generate: async () => {
+        llmCalls++;
+        return "respuesta cara del LLM";
+      },
+    },
+    faq: {
+      match: async () => ({ id: "franquicia", respuesta: "La franquicia es...", score: 0.91 }),
+    },
+  });
+  await processMessage({ from: "u-faq", text: "hola" }, deps);
+  const reply = await processMessage({ from: "u-faq", text: "¿qué es la franquicia?" }, deps);
+  assert.match(reply, /La franquicia es/);
+  assert.equal(llmCalls, 0); // no se llamó al LLM de generación
+  const hit = logged.find((e) => e.type === "faq_hit");
+  assert.equal(hit?.props?.id, "franquicia");
 });
 
 test("las sesiones de distintos usuarios no se mezclan", async () => {

@@ -59,6 +59,10 @@ services:
       # Opcional: habilita las respuestas del LLM a preguntas abiertas.
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Opcional: habilita el FAQ router (embeddings). Sin esta clave, las dudas
+      # frecuentes las responde el LLM igual (más caro). Se carga a mano en el dashboard.
+      - key: OPENAI_API_KEY
+        sync: false
 
   # Key Value (Redis) para el store de sesiones. free: 25 MB, suficiente para la
   # demo. ipAllowList vacío = solo conexiones internas (el web service, misma

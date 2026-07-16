@@ -25,16 +25,25 @@ export async function processMessage(
   // 1) Primero intentan resolver los flujos determinísticos (menús).
   let reply = await handleFlow(session, incoming.text, deps);
 
-  // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
+  // 2) Si ningún flujo aplica, es una consulta abierta.
   if (reply === null) {
     await deps.events.log("open_question", incoming.from);
-    // Generar la respuesta y clasificar la emoción en paralelo: son tareas
-    // independientes, así la clasificación no agrega latencia.
-    const [generated, emocion] = await Promise.all([
-      answer(session, deps),
-      deps.emotion.classify(incoming.text),
-    ]);
-    reply = generated;
+    // La emoción se clasifica siempre y en paralelo (tarea barata e independiente):
+    // así el aviso de asesor funciona igual con respuesta del FAQ o del asistente.
+    const emotionPromise = deps.emotion.classify(incoming.text);
+
+    // FAQ router primero: si la duda es conocida, respondemos con la respuesta
+    // canónica SIN llamar al LLM de generación (la palanca de costo). Si no, cae
+    // al asistente.
+    const hit = await deps.faq.match(incoming.text);
+    if (hit) {
+      reply = hit.respuesta;
+      await deps.events.log("faq_hit", incoming.from, { id: hit.id, score: hit.score.toFixed(3) });
+    } else {
+      reply = await answer(session, deps);
+    }
+
+    const emocion = await emotionPromise;
     await deps.events.log("emotion_detected", incoming.from, { emocion });
     // Regla accionable: ante enojo/frustración, ofrecer un humano.
     if (NEGATIVE_EMOTIONS.includes(emocion)) {
