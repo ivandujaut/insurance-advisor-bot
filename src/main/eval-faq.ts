@@ -1,11 +1,14 @@
 /**
  * Eval harness del FAQ router: calibra el umbral de similitud (FAQ_THRESHOLD).
  *
- * Monta el corpus con la PREGUNTA canónica de cada duda y prueba con las VARIANTES
- * (paráfrasis reales) como consultas held-out: una variante debería matchear su
- * propia duda. Suma un set de distractores (mensajes fuera de tema) para medir
- * falsos positivos. Barre varios umbrales y reporta, por cada uno:
- *   - cobertura: % de variantes que resuelve el router (hits sin LLM = ahorro)
+ * Método leave-one-out (LOO), que refleja producción: el router embede pregunta +
+ * TODAS las variantes de cada duda. Para medir generalización sin trampa de
+ * self-match, cada formulación se prueba contra el corpus completo MENOS ella
+ * misma; sus hermanas (otras variantes de la misma duda) deberían rescatarla.
+ * Así, agregar variantes sube la cobertura de forma legítima (no por copiar la
+ * consulta dentro del corpus). Suma distractores fuera de tema para medir falsos
+ * positivos. Barre umbrales y reporta, por cada uno:
+ *   - cobertura: % de formulaciones que resuelve el router (hits sin LLM = ahorro)
  *   - aciertos:  de esos hits, % con la duda correcta (precisión del contenido)
  *   - falsos+:   distractores que matchean por error (ruido a evitar)
  *
@@ -38,56 +41,61 @@ const DISTRACTORES = [
 
 const embeddings = createOpenAiEmbeddings();
 
-// Corpus: una pregunta canónica por duda. Las variantes quedan como consultas.
-const corpusTextos = bench.faq.map((f) => f.pregunta);
-const queries = bench.faq.flatMap((f) =>
-  (f.variantes ?? []).map((v) => ({ texto: v, gold: f.id })),
+// Corpus como en producción: una entrada por (duda, texto), con pregunta + variantes.
+const corpus = bench.faq.flatMap((f) =>
+  [f.pregunta, ...(f.variantes ?? [])].map((texto) => ({
+    id: f.id,
+    texto,
+    respuesta: f.respuesta,
+  })),
 );
 
 console.log(
-  `Corpus: ${corpusTextos.length} dudas. Consultas: ${queries.length} variantes + ${DISTRACTORES.length} distractores.`,
+  `Corpus (leave-one-out): ${bench.faq.length} dudas, ${corpus.length} formulaciones + ${DISTRACTORES.length} distractores.`,
 );
 
-const corpusVectors = await embeddings.embed(corpusTextos);
+const corpusVectors = await embeddings.embed(corpus.map((c) => c.texto));
 const docs: FaqDoc[] = corpusVectors.map((vector, i) => ({
-  id: bench.faq[i]?.id ?? "",
-  respuesta: bench.faq[i]?.respuesta ?? "",
+  id: corpus[i]?.id ?? "",
+  respuesta: corpus[i]?.respuesta ?? "",
   vector,
 }));
 
-const queryVectors = await embeddings.embed(queries.map((q) => q.texto));
-const distractorVectors = await embeddings.embed(DISTRACTORES);
-
-// Mejor match (sin umbral) de cada consulta: lo evaluamos contra cada umbral en memoria.
-const queryMatches = queryVectors.map((vec, i) => ({
-  gold: queries[i]?.gold ?? "",
-  match: bestMatch(vec, docs),
+// Leave-one-out: cada formulación se busca contra el corpus menos sí misma.
+const queryMatches = docs.map((doc, i) => ({
+  texto: corpus[i]?.texto ?? "",
+  gold: doc.id,
+  match: bestMatch(
+    doc.vector,
+    docs.filter((_, j) => j !== i),
+  ),
 }));
+
+const distractorVectors = await embeddings.embed(DISTRACTORES);
 const distractorMatches = distractorVectors.map((vec) => bestMatch(vec, docs));
 
 const pct = (part: number, total: number) =>
   total === 0 ? "-" : `${Math.round((part / total) * 100)}%`;
 
-console.log("\nUmbral  Cobertura      Aciertos       Falsos+");
-console.log("------  -------------  -------------  -------------");
+console.log("\nUmbral  Cobertura        Aciertos         Falsos+");
+console.log("------  ---------------  ---------------  -------------");
 for (const th of [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85]) {
   const hits = queryMatches.filter((q) => (q.match?.score ?? 0) >= th);
   const aciertos = hits.filter((q) => q.match?.id === q.gold);
   const falsos = distractorMatches.filter((m) => (m?.score ?? 0) >= th);
   console.log(
-    `${th.toFixed(2)}    ${`${hits.length}/${queries.length} (${pct(hits.length, queries.length)})`.padEnd(13)}  ${`${aciertos.length}/${hits.length} (${pct(aciertos.length, hits.length)})`.padEnd(13)}  ${`${falsos.length}/${DISTRACTORES.length}`.padEnd(13)}`,
+    `${th.toFixed(2)}    ${`${hits.length}/${docs.length} (${pct(hits.length, docs.length)})`.padEnd(15)}  ${`${aciertos.length}/${hits.length} (${pct(aciertos.length, hits.length)})`.padEnd(15)}  ${`${falsos.length}/${DISTRACTORES.length}`.padEnd(13)}`,
   );
 }
 
-// Detalle: variantes que ni siquiera con umbral bajo caen en su propia duda (señal
-// de que falta cubrir esa formulación o la respuesta canónica).
+// Formulaciones cuyo vecino LOO más cercano es OTRA duda: señal de solapamiento
+// entre entradas o de una formulación que conviene mover/reescribir.
 const fallan = queryMatches.filter((q) => q.match?.id !== q.gold);
 if (fallan.length > 0) {
-  console.log(`\n⚠️  ${fallan.length} variantes cuyo mejor match NO es su propia duda:`);
+  console.log(`\n⚠️  ${fallan.length} formulaciones cuyo vecino más cercano NO es su propia duda:`);
   for (const q of fallan) {
-    const query = queries[queryMatches.indexOf(q)];
     console.log(
-      `  "${query?.texto}" -> ${q.match?.id ?? "?"} (esperaba ${q.gold}, score ${q.match?.score.toFixed(3)})`,
+      `  "${q.texto}" -> ${q.match?.id ?? "?"} (esperaba ${q.gold}, score ${q.match?.score.toFixed(3)})`,
     );
   }
 }
