@@ -46,6 +46,17 @@ function assertConfig(): void {
   }
 }
 
+// Callbacks para cerrar recursos (pool de Postgres, cliente de Redis) en un
+// shutdown ordenado. Los llena buildDependencies y los corre shutdown().
+const cleanups: Array<() => Promise<void>> = [];
+
+/** Cierra los recursos abiertos (conexiones) de forma ordenada. */
+export async function shutdown(): Promise<void> {
+  for (const close of cleanups.splice(0)) {
+    await close().catch((err) => console.error("Error cerrando recurso:", err));
+  }
+}
+
 /** Arma las dependencias concretas del núcleo. Se llama una vez por proceso. */
 export async function buildDependencies(): Promise<Dependencies> {
   assertConfig();
@@ -54,6 +65,7 @@ export async function buildDependencies(): Promise<Dependencies> {
   let events: EventSink;
   if (config.persistence.driver === "postgres") {
     const pool = createPgPool();
+    cleanups.push(() => pool.end());
     await ensureSchema(pool);
     leads = createPostgresLeadRepository(pool);
     events = createPostgresEventSink(pool);
@@ -67,9 +79,12 @@ export async function buildDependencies(): Promise<Dependencies> {
     const client = createClient({ url: config.session.redisUrl });
     client.on("error", (err) => console.error("Error de Redis:", err));
     await client.connect();
+    cleanups.push(async () => {
+      await client.quit();
+    });
     sessions = createRedisSessionStore(client, config.session.ttlSeconds);
   } else {
-    sessions = createInMemorySessionStore();
+    sessions = createInMemorySessionStore(config.session.ttlSeconds);
   }
 
   return {

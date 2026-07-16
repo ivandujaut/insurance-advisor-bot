@@ -195,6 +195,26 @@ test('GNC: responder "no tiene" queda como sin GNC (no se invierte)', async () =
   assert.equal(lead.gnc, false, '"no tiene" debe ser gnc=false');
 });
 
+test("si falla el guardado del lead, NO confirma la solicitud", async () => {
+  const s = newSession("t-savefail");
+  const deps = fakeDeps();
+  deps.leads.save = async () => {
+    throw new Error("base caída");
+  };
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  await handleFlow(s, "2020", deps);
+  await handleFlow(s, "usado", deps);
+  await handleFlow(s, "Toyota", deps);
+  await handleFlow(s, "Corolla", deps);
+  await handleFlow(s, "no sé", deps);
+  await handleFlow(s, "no", deps);
+  await handleFlow(s, "3011", deps);
+  const final = (await handleFlow(s, "1", deps)) ?? "";
+  assert.match(final, /problema para registrar/);
+  assert.doesNotMatch(final, /solicitud de cotización/);
+});
+
 test("auto usado dispara la nota de inspección online", async () => {
   const s = newSession("t-usado");
   const deps = fakeDeps();

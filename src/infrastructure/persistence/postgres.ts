@@ -56,17 +56,14 @@ export async function ensureSchema(pool: Pool): Promise<void> {
 export function createPostgresLeadRepository(pool: Pool): LeadRepository {
   return {
     async save(lead) {
-      try {
-        // Campos comunes en columnas; el resto (específico del producto) va a jsonb.
-        const { userId, name, producto, plan, ...detalle } = lead;
-        await pool.query(
-          `INSERT INTO leads (user_id, name, producto, plan, detalle)
-           VALUES ($1, $2, $3, $4, $5::jsonb)`,
-          [userId, name ?? null, producto, plan, JSON.stringify(detalle)],
-        );
-      } catch (err) {
-        console.error("No se pudo guardar el lead en Postgres:", err);
-      }
+      // El error se PROPAGA a propósito: un lead es el valor del producto; si el
+      // insert falla, el flujo debe enterarse y no confirmarle "listo" al usuario.
+      const { userId, name, producto, plan, ...detalle } = lead;
+      await pool.query(
+        `INSERT INTO leads (user_id, name, producto, plan, detalle)
+         VALUES ($1, $2, $3, $4, $5::jsonb)`,
+        [userId, name ?? null, producto, plan, JSON.stringify(detalle)],
+      );
     },
   };
 }

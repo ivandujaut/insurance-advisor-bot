@@ -23,13 +23,11 @@ function systemPrompt(knowledge: string): string {
   ].join("\n");
 }
 
-export async function answer(
-  session: Session,
-  userText: string,
-  deps: Dependencies,
-): Promise<string> {
+export async function answer(session: Session, deps: Dependencies): Promise<string> {
+  // El turno actual del usuario ya fue registrado en session.history por
+  // processMessage, así que se arma desde ahí (sin volver a pushearlo: duplicaba
+  // el último mensaje en el request al LLM).
   const messages = session.history.map((t) => ({ role: t.role, content: t.content }));
-  messages.push({ role: "user" as const, content: userText });
 
   try {
     const knowledge = await deps.knowledge.load();
