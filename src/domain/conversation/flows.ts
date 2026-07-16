@@ -10,6 +10,7 @@
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
 import type { Dependencies, LeadInput } from "../../application/ports.js";
+import { NEGATIVE_EMOTIONS } from "../emotion.js";
 import { ACCIDENTES_MODALIDADES, ACCIDENTES_PLANES, AUTO_PLANS, type Session } from "./session.js";
 
 // Mensaje cuando no se pudo persistir el lead: mejor avisar que fingir éxito.
@@ -99,6 +100,45 @@ const PLAN_COMPARISON = [
 
 function normalize(text: string): string {
   return text.trim().toLowerCase();
+}
+
+// Reintentos en un mismo paso antes de ofrecer una salida, aunque no haya enojo.
+const MAX_STEP_FAILS = 2;
+
+// Salida genérica cuando el usuario se traba en un paso que no tiene un default
+// seguro: no lo dejamos en un loop, le ofrecemos una persona o volver a empezar.
+const STUCK_EXIT =
+  "Perdón por tanta vuelta. 🙂 Si preferís, escribí *asesor* y te paso con una persona que te ayuda con esto, o *menú* para empezar de nuevo.";
+
+/**
+ * Se llama cuando un input NO matchea lo esperado en un paso del flujo. En vez de
+ * repetir la pregunta a lo tonto (el loop que expulsa al cliente), decide si hay
+ * que ofrecer una salida: corre la detección de emoción sobre ese mensaje (que NO
+ * corría dentro de los flujos) y escapa ante enojo/frustración, o tras reintentos
+ * repetidos. El contador es por paso: al avanzar a otro paso se resetea solo.
+ * Devuelve true si el flujo debe dar una salida; false para re-preguntar normal.
+ */
+async function shouldEscape(
+  session: Session,
+  input: string,
+  deps: Dependencies,
+  paso: string,
+): Promise<boolean> {
+  const fails = session.data.stuckStep === paso ? (Number(session.data.fails) || 0) + 1 : 1;
+  session.data.stuckStep = paso;
+  session.data.fails = String(fails);
+  const emocion = await deps.emotion.classify(input);
+  if (NEGATIVE_EMOTIONS.includes(emocion) || fails >= MAX_STEP_FAILS) {
+    await deps.events.log("flow_stuck", session.userId, {
+      paso,
+      intentos: String(fails),
+      emocion,
+    });
+    session.data.stuckStep = "";
+    session.data.fails = "0";
+    return true;
+  }
+  return false;
 }
 
 export async function handleFlow(
@@ -283,6 +323,7 @@ async function handleQuotingAuto(
     const es0km = /0\s*km|cero|nuev/.test(t);
     const esUsado = /usad|segunda|used/.test(t);
     if (!es0km && !esUsado) {
+      if (await shouldEscape(session, text, deps, "condicion")) return STUCK_EXIT;
       return "No te entendí. ¿El auto es *0km* o *usado*?";
     }
     session.data.condicion = es0km ? "0km" : "usado";
@@ -320,6 +361,13 @@ async function handleQuotingAuto(
     const esNo = /^no/.test(t);
     const esSi = !esNo && (/^s[ií]/.test(t) || t.includes("tiene"));
     if (!esSi && !esNo) {
+      if (await shouldEscape(session, text, deps, "gnc")) {
+        // Default seguro para destrabar (la mayoría no tiene GNC); el asesor lo
+        // confirma. Mejor mantenerlo en el embudo que perderlo en un loop.
+        session.data.gnc = "no";
+        await deps.events.log("quote_step", session.userId, { step: "gnc" });
+        return "Tranqui, no te compliques. 🙂 Como la mayoría no tiene GNC, pongo que *no* (el asesor lo confirma). Último dato: ¿en qué *código postal* se guarda el auto?";
+      }
       return "No te entendí. ¿Tiene *GNC*? Respondé *sí* o *no*.";
     }
     session.data.gnc = esSi ? "si" : "no";
@@ -342,6 +390,7 @@ async function handleQuotingAuto(
     const index = Number(text) - 1;
     const plan = AUTO_PLANS[index];
     if (!plan) {
+      if (await shouldEscape(session, text, deps, "plan_auto")) return STUCK_EXIT;
       return "No te entendí el plan. Respondé *1* (Terceros Completo), *2* (con Granizo) o *3* (Todo Riesgo).";
     }
     const version =
@@ -421,6 +470,7 @@ async function handleQuotingHogar(
     const esProp = /propiet|dueñ|dueno/.test(t);
     const esInq = /inquil|alquil|arriend/.test(t);
     if (!esProp && !esInq) {
+      if (await shouldEscape(session, text, deps, "residente")) return STUCK_EXIT;
       return "No te entendí. ¿Sos *propietario* o *inquilino*?";
     }
     session.data.tipoResidente = esProp ? "propietario" : "inquilino";
@@ -438,6 +488,7 @@ async function handleQuotingHogar(
     } else if (/depto|departa|dpto|piso|monoamb/.test(t)) {
       session.data.tipoHogar = "departamento";
     } else {
+      if (await shouldEscape(session, text, deps, "tipo_hogar")) return STUCK_EXIT;
       return "No te entendí. ¿Es una *casa*, un *departamento* o un *departamento en PB o PH*?";
     }
     await deps.events.log("quote_step", session.userId, { step: "tipo_hogar" });
@@ -454,6 +505,7 @@ async function handleQuotingHogar(
     } else if (/permanen|vivo|siempre/.test(t)) {
       session.data.uso = "permanente";
     } else {
+      if (await shouldEscape(session, text, deps, "uso")) return STUCK_EXIT;
       return "No te entendí. ¿El uso es *permanente*, *temporal* o *alquilada*?";
     }
     await deps.events.log("quote_step", session.userId, { step: "uso" });
@@ -577,6 +629,7 @@ async function handleAccidentes(
       modalidad = "trabajo-independiente";
     else if (t === "3" || /dom[eé]stic|emplead|casera/.test(t)) modalidad = "personal-domestico";
     if (!modalidad) {
+      if (await shouldEscape(session, text, deps, "modalidad")) return STUCK_EXIT;
       return "No te entendí. Respondé *1* (protección familiar), *2* (trabajo independiente) o *3* (personal doméstico).";
     }
     session.data.modalidad = modalidad;
@@ -594,6 +647,7 @@ async function handleAccidentes(
     const planes = ACCIDENTES_PLANES[modalidad] ?? [];
     const plan = planes[Number(text) - 1];
     if (!plan) {
+      if (await shouldEscape(session, text, deps, "plan_ap")) return STUCK_EXIT;
       return "No te entendí el plan. Respondé el *número* del plan de la lista.";
     }
     const saved = await persistLead(deps, {
@@ -654,7 +708,10 @@ async function handleBici(
     const t = normalize(text);
     if (/monopat|scooter/.test(t)) session.data.tipoRodado = "monopatin";
     else if (/bici|bicicleta|rodado/.test(t)) session.data.tipoRodado = "bicicleta";
-    else return "No te entendí. ¿Es una *bicicleta* o un *monopatín eléctrico*?";
+    else {
+      if (await shouldEscape(session, text, deps, "rodado")) return STUCK_EXIT;
+      return "No te entendí. ¿Es una *bicicleta* o un *monopatín eléctrico*?";
+    }
     await deps.events.log("quote_step", session.userId, { step: "tipo_rodado" });
     return "¿Cuánto vale tu rodado? Un valor aproximado en pesos (es la suma que se asegura ante robo).";
   }

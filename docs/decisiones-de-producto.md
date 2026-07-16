@@ -493,6 +493,13 @@ qué dato, y qué resigné.
 - **Trade-off:** una llamada de clasificación por consulta abierta. Es best-effort: ante
   falla o timeout devuelve "neutral" y la conversación sigue, nunca se rompe por una
   emoción mal leída.
+- **También adentro de los flujos:** la detección no corría dentro de la cotización, que
+  es justo donde el usuario se traba y se calienta. Ahora, cuando un input no matchea un
+  paso, en vez de repetir la pregunta a lo tonto (el loop que expulsa al cliente) se
+  clasifica la emoción de ese mensaje y, ante frustración o reintentos repetidos, se
+  ofrece una salida: un default seguro para destrabar y seguir (ej: GNC → "no", que el
+  asesor confirma) o una persona. Se registra el evento `flow_stuck` (paso + intentos)
+  para ver dónde se traba la gente. Antes esa fuga era invisible y terminaba en abandono.
 
 ### Decisión 19: cerrar el embudo después de cotizar (no volver al menú frío)
 
