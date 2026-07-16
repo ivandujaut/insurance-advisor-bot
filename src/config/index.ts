@@ -34,6 +34,10 @@ export const config = {
   llm: {
     apiKey: process.env.ANTHROPIC_API_KEY ?? "",
     model: process.env.AI_MODEL ?? "claude-sonnet-5",
+    // Modelo del clasificador de emoción (llamada aparte, en paralelo). Default: el
+    // mismo que genera (donde el eval midió 0.909). Para bajar costo se puede apuntar
+    // a un modelo más barato (EMOTION_MODEL=claude-haiku-...) y re-correr el eval.
+    emotionModel: process.env.EMOTION_MODEL ?? process.env.AI_MODEL ?? "claude-sonnet-5",
   },
   messaging: {
     provider: (process.env.MESSAGING_PROVIDER ?? "cli") as MessagingProviderName,

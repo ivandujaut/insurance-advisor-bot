@@ -8,6 +8,7 @@
  * Ver docs/adr/0001-arquitectura-hexagonal.md.
  */
 import type { Session } from "../domain/conversation/session.js";
+import type { Emotion } from "../domain/emotion.js";
 import type {
   AutoQuoteInput,
   BiciQuoteInput,
@@ -164,6 +165,16 @@ export interface LlmPort {
   generate(request: LlmRequest): Promise<string>;
 }
 
+/**
+ * Clasificador de emoción del mensaje del usuario. Separado del LlmPort (que
+ * genera respuestas) porque es otra tarea, con su propio prompt y su propio modelo
+ * (más barato). Es best-effort: nunca lanza; ante falla o sin clave, devuelve
+ * "neutral" para no romper la conversación.
+ */
+export interface EmotionClassifier {
+  classify(message: string): Promise<Emotion>;
+}
+
 // --- Cotización (tarifador) ---
 
 /**
@@ -210,6 +221,7 @@ export interface Dependencies {
   leads: LeadRepository;
   events: EventSink;
   llm: LlmPort;
+  emotion: EmotionClassifier;
   sessions: SessionStore;
   knowledge: KnowledgeSource;
   quoting: QuotingProvider;

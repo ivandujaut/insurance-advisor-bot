@@ -19,6 +19,7 @@ function deps(llmReturn: () => Promise<string>): Dependencies {
     leads: { save: async () => {} },
     events: { log: async () => {} },
     llm: { generate: llmReturn },
+    emotion: { classify: async () => "neutral" },
     sessions: { get: async () => undefined, save: async () => {} },
     knowledge: { load: async () => "base de conocimiento" },
     quoting: {
@@ -29,38 +30,24 @@ function deps(llmReturn: () => Promise<string>): Dependencies {
   };
 }
 
-test("parsea la respuesta y la emoción del JSON del modelo", async () => {
-  const d = deps(async () => '{"respuesta": "La franquicia es...", "emocion": "confusion"}');
-  const r = await answer(sessionWith("no entiendo la franquicia"), d);
-  assert.equal(r.reply, "La franquicia es...");
-  assert.equal(r.emocion, "confusion");
+test("devuelve la respuesta del modelo (texto plano, sin JSON)", async () => {
+  const d = deps(async () => "  La franquicia es un monto a tu cargo.  ");
+  const reply = await answer(sessionWith("¿qué es la franquicia?"), d);
+  assert.equal(reply, "La franquicia es un monto a tu cargo."); // trim
 });
 
-test("tolera fences/texto alrededor del JSON", async () => {
-  const d = deps(async () => 'Claro:\n```json\n{"respuesta":"Hola","emocion":"neutral"}\n```');
-  const r = await answer(sessionWith("hola"), d);
-  assert.equal(r.reply, "Hola");
-  assert.equal(r.emocion, "neutral");
-});
-
-test("si el modelo no devuelve JSON, usa el texto crudo con emoción neutral", async () => {
-  const d = deps(async () => "Respuesta en texto plano sin json");
-  const r = await answer(sessionWith("hola"), d);
-  assert.equal(r.reply, "Respuesta en texto plano sin json");
-  assert.equal(r.emocion, "neutral");
-});
-
-test("emoción inválida del modelo cae a neutral", async () => {
-  const d = deps(async () => '{"respuesta":"ok","emocion":"euforia"}');
-  const r = await answer(sessionWith("hola"), d);
-  assert.equal(r.emocion, "neutral");
-});
-
-test("sin LLM configurado, devuelve el fallback y emoción neutral", async () => {
+test("sin LLM configurado, devuelve el fallback", async () => {
   const d = deps(async () => {
     throw new LlmNotConfiguredError();
   });
-  const r = await answer(sessionWith("hola"), d);
-  assert.match(r.reply, /ANTHROPIC_API_KEY/);
-  assert.equal(r.emocion, "neutral");
+  const reply = await answer(sessionWith("hola"), d);
+  assert.match(reply, /ANTHROPIC_API_KEY/);
+});
+
+test("ante un error del LLM, devuelve un mensaje de reintento", async () => {
+  const d = deps(async () => {
+    throw new Error("boom");
+  });
+  const reply = await answer(sessionWith("hola"), d);
+  assert.match(reply, /problema para procesar/);
 });

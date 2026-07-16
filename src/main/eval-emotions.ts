@@ -9,10 +9,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { type EvalMetrics, evaluateEmotions } from "../domain/analytics/emotion-eval.js";
-import { EMOTION_GUIDE, EMOTIONS, parseEmotion } from "../domain/emotion.js";
+import { EMOTIONS, emotionClassificationPrompt, parseEmotion } from "../domain/emotion.js";
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
-const model = process.env.AI_MODEL ?? "claude-sonnet-5";
+// Mismo modelo que el clasificador de producción, para medir lo que corre.
+const model = process.env.EMOTION_MODEL ?? process.env.AI_MODEL ?? "claude-sonnet-5";
 if (!apiKey) {
   console.error("Falta ANTHROPIC_API_KEY. Corré: ANTHROPIC_API_KEY=sk-... pnpm eval:emotions");
   process.exit(1);
@@ -30,20 +31,9 @@ const SYSTEM_V1 = [
   `Respondé SOLO con una de estas palabras, sin nada más: ${EMOTIONS.join(", ")}.`,
 ].join("\n");
 
-// v2: definiciones ancladas en appraisal + few-shot (ejemplos nuevos, no del set,
-// para no filtrar) + regla anti-neutral. Ataca las confusiones del baseline:
-// interés vs satisfacción, y ansiedad/frustración cayendo a neutral.
-const SYSTEM_V2 = [
-  "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
-  EMOTION_GUIDE, // misma guía calibrada que usa producción (assistant.ts)
-  "Ejemplos:",
-  '"listo, lo quiero, como pago?" -> interes',
-  '"mil gracias, buenisimo todo" -> satisfaccion',
-  '"me cubren si choco de noche?" -> ansiedad',
-  '"otra vez el mismo error, no da mas" -> frustracion',
-  '"son una verguenza, me estafaron" -> enojo',
-  `Respondé SOLO con una de estas palabras: ${EMOTIONS.join(", ")}.`,
-].join("\n");
+// v2: EXACTAMENTE el prompt del clasificador de producción (definiciones ancladas
+// en appraisal + few-shot + regla anti-neutral). Así el A/B mide lo que corre.
+const SYSTEM_V2 = emotionClassificationPrompt();
 
 const VARIANTS = [
   { name: "v1 (base)", system: SYSTEM_V1 },
