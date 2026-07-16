@@ -28,29 +28,90 @@ export function createPgPool(connectionString: string = config.persistence.datab
   });
 }
 
-/** Crea las tablas si no existen. Se corre una vez al arrancar. */
-export async function ensureSchema(pool: Pool): Promise<void> {
+// Errores de conexión que son transitorios al arrancar: la base free puede estar
+// dormida o inaccesible por unos segundos (spin-down, blip de red, DNS todavía sin
+// resolver). Reintentar tiene sentido. Un error de credenciales o de SQL, no: falla
+// rápido para no enmascarar un problema real detrás de 30s de reintentos.
+const TRANSIENT_CONN_CODES = new Set(["ETIMEDOUT", "ECONNREFUSED", "ECONNRESET", "EAI_AGAIN"]);
+
+/** True si el error es una falla de conexión transitoria (vale la pena reintentar). */
+export function isTransientConnError(err: unknown): boolean {
+  const code = (err as { code?: unknown })?.code;
+  return typeof code === "string" && TRANSIENT_CONN_CODES.has(code);
+}
+
+interface RetryOptions {
+  attempts?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  /** Inyectable para testear sin esperas reales. */
+  sleep?: (ms: number) => Promise<void>;
+  onRetry?: (attempt: number, delayMs: number, err: unknown) => void;
+}
+
+/**
+ * Corre `fn` reintentando SOLO fallas de conexión transitorias, con backoff
+ * exponencial acotado. Cualquier otro error (o agotar los intentos) se propaga.
+ */
+export async function retryTransient<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
+  const attempts = opts.attempts ?? 6;
+  const base = opts.baseDelayMs ?? 1000;
+  const max = opts.maxDelayMs ?? 16000;
+  const sleep = opts.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (!isTransientConnError(err) || attempt === attempts) throw err;
+      const delayMs = Math.min(base * 2 ** (attempt - 1), max);
+      opts.onRetry?.(attempt, delayMs, err);
+      await sleep(delayMs);
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * Crea las tablas si no existen. Se corre una vez al arrancar y es el primer toque
+ * a la base, así que reintenta si Postgres todavía no está accesible: sin esto, un
+ * blip transitorio al bootear tira el deploy (visto en Render free: connect ETIMEDOUT).
+ */
+export async function ensureSchema(pool: Pool, retry: RetryOptions = {}): Promise<void> {
   // Esquema por producto: columnas comunes + `detalle` jsonb con los campos
   // específicos (auto: anio/marca/...; hogar: tipoResidente/vivienda/...). Escala
-  // a nuevos productos sin migrar columnas.
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS leads (
-      id        SERIAL PRIMARY KEY,
-      ts        TIMESTAMPTZ NOT NULL DEFAULT now(),
-      user_id   TEXT NOT NULL,
-      name      TEXT,
-      producto  TEXT NOT NULL,
-      plan      TEXT NOT NULL,
-      detalle   JSONB NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS events (
-      id      SERIAL PRIMARY KEY,
-      ts      TIMESTAMPTZ NOT NULL DEFAULT now(),
-      type    TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      props   JSONB
-    );
-  `);
+  // a nuevos productos sin migrar columnas. El CREATE ... IF NOT EXISTS es
+  // idempotente, así que reintentarlo es seguro.
+  await retryTransient(
+    () =>
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS leads (
+          id        SERIAL PRIMARY KEY,
+          ts        TIMESTAMPTZ NOT NULL DEFAULT now(),
+          user_id   TEXT NOT NULL,
+          name      TEXT,
+          producto  TEXT NOT NULL,
+          plan      TEXT NOT NULL,
+          detalle   JSONB NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS events (
+          id      SERIAL PRIMARY KEY,
+          ts      TIMESTAMPTZ NOT NULL DEFAULT now(),
+          type    TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          props   JSONB
+        );
+      `),
+    {
+      onRetry: (attempt, delayMs, err) =>
+        console.warn(
+          `Postgres no accesible al arrancar (intento ${attempt}: ${(err as Error).message}). Reintento en ${delayMs}ms...`,
+        ),
+      ...retry,
+    },
+  );
 }
 
 export function createPostgresLeadRepository(pool: Pool): LeadRepository {
