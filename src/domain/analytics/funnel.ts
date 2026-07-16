@@ -30,6 +30,10 @@ export interface FunnelReport {
   arrancanTasa: string;
   completan: number;
   completanTasa: string;
+  /** Usuarios que, tras cotizar, eligieron avanzar (asesor u online): el cierre. */
+  aceptan: number;
+  /** % de los que cotizaron que aceptaron avanzar (conversión del tramo final). */
+  aceptanTasa: string;
   pasos: FunnelStep[];
   mixPlan: PlanMix[];
   emociones: EmotionCount[];
@@ -59,6 +63,7 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
   const saludan = uniqueUsers(events, "conversation_started");
   const arrancan = uniqueUsers(events, "quote_started");
   const completan = uniqueUsers(events, "lead_captured");
+  const aceptan = uniqueUsers(events, "quote_accepted");
 
   const pasos: FunnelStep[] = PASOS_AUTO.map((paso) => ({
     paso,
@@ -94,6 +99,8 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
     arrancanTasa: pct(arrancan, saludan),
     completan,
     completanTasa: pct(completan, arrancan),
+    aceptan,
+    aceptanTasa: pct(aceptan, completan),
     pasos,
     mixPlan,
     emociones,

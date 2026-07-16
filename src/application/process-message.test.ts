@@ -159,6 +159,41 @@ test("una duda conocida la responde el FAQ router sin llamar al LLM", async () =
   assert.equal(hit?.props?.id, "franquicia");
 });
 
+const AUTO_QUOTE = ["hola", "1", "2020", "usado", "Toyota", "Corolla", "XEI", "no", "3011", "2"];
+
+test("tras cotizar, el cierre ofrece avanzar (no vuelve al menú frío)", async () => {
+  const { deps } = fakeDeps();
+  let reply = "";
+  for (const text of AUTO_QUOTE) {
+    reply = await processMessage({ from: "u-cta", text }, deps);
+  }
+  // La última respuesta (post-cotización) ofrece avanzar, no "escribí menú".
+  assert.match(reply, /¿Avanzamos\?/);
+  assert.match(reply, /me llame un asesor/i);
+  assert.match(reply, /online/i);
+});
+
+test("aceptar con asesor captura el contacto y registra el handoff", async () => {
+  const { deps, logged } = fakeDeps();
+  for (const text of AUTO_QUOTE) await processMessage({ from: "u-close", text }, deps);
+  const r1 = await processMessage({ from: "u-close", text: "1" }, deps);
+  assert.match(r1, /nombre.*tel[eé]fono/i);
+  const accepted = logged.find((e) => e.type === "quote_accepted");
+  assert.equal(accepted?.props?.via, "asesor");
+  const r2 = await processMessage({ from: "u-close", text: "Ana, 11 5555 5555, tardes" }, deps);
+  assert.match(r2, /asesor de La Caja te va a contactar/i);
+  assert.ok(logged.some((e) => e.type === "handoff_requested"));
+});
+
+test("contratar online registra quote_accepted con canal online", async () => {
+  const { deps, logged } = fakeDeps();
+  for (const text of AUTO_QUOTE) await processMessage({ from: "u-online", text }, deps);
+  const r = await processMessage({ from: "u-online", text: "2" }, deps);
+  assert.match(r, /online/i);
+  const accepted = logged.find((e) => e.type === "quote_accepted");
+  assert.equal(accepted?.props?.via, "online");
+});
+
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
   // A queda a mitad de una cotización (año + condición + marca cargados).

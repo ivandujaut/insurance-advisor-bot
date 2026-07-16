@@ -94,6 +94,7 @@ ${
     ${etapa("Saludan", r.saludan, r.saludan, "-")}
     ${etapa("Arrancan a cotizar", r.arrancan, r.saludan, r.arrancanTasa)}
     ${etapa("Completan (lead)", r.completan, r.saludan, r.completanTasa)}
+    ${etapa("Aceptan (asesor/online)", r.aceptan, r.saludan, r.aceptanTasa)}
   </div>
 
   <div class="card">

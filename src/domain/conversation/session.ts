@@ -10,7 +10,12 @@ export type Stage =
   | "quoting_auto"
   | "quoting_hogar"
   | "quoting_accidentes"
-  | "quoting_bici";
+  | "quoting_bici"
+  // Tras una cotización: se ofrece avanzar (asesor / online) en vez de volver al
+  // menú frío. Es el cierre del embudo, donde la intención de compra es máxima.
+  | "post_quote"
+  // Capturando el contacto para que un asesor llame con la cotización a mano.
+  | "capturing_contact";
 
 /** Planes de auto de La Caja, de menor a mayor cobertura. */
 export const AUTO_PLANS = [
