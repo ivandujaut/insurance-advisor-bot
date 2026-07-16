@@ -610,6 +610,13 @@ métricas que instrumentaría:
 12. ~~Cerrar el embudo después de cotizar (que el usuario pueda avanzar).~~ **Hecho:**
     cierre post-cotización con CTA (asesor con captura de contacto / online), y eventos
     `quote_accepted` y `handoff_requested` para medir el tramo final. Ver Decisión 19.
+13. ~~Que un usuario trabado en un paso no quede en un loop.~~ **Hecho:** detección de
+    emoción dentro de los flujos + contador de reintentos + default seguro para destrabar
+    (o derivación a una persona). Evento `flow_stuck` para medir dónde se traba. Ver
+    Decisión 18.
+14. ~~Endurecer el deploy para que un fallo transitorio no lo tire.~~ **Hecho:** reintento
+    con backoff de la conexión a Postgres al arrancar, y smoke test de `docker build` en
+    CI (que atrapa fallas de empaquetado antes del deploy).
 
 ## 9. Qué demuestra este ejercicio
 

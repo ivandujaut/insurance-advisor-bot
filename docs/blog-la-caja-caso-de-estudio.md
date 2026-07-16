@@ -147,7 +147,8 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Yo:** 2
 > **Bot:** Listo. Con estos datos armo tu solicitud: Toyota Corolla 2020, usado,
 > plan Terceros Completo con Granizo. Estimación orientativa: $146.000 a $186.500 por
-> mes. Un asesor te confirma el precio final.
+> mes. El precio final lo confirma un asesor. ¿Avanzamos? 1 Que me llame un asesor ·
+> 2 Contratar online · 3 Comparar otro plan.
 
 Los datos que pide (año, condición, marca, modelo, versión, GNC) son los mismos que el
 cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
@@ -187,6 +188,14 @@ responder, lee el tono del mensaje: si detecta enojo o frustración, deja de ins
 texto y ofrece pasar a una persona. No reemplaza al asesor, lo llama en el momento justo,
 que es cuando el cliente está por abandonar.
 
+Y eso vale sobre todo **dentro de la cotización**, que es donde más se traba y se calienta
+la gente. Si en un paso contesta cualquier cosa ("no sé el modelo, basta de preguntas"),
+el bot ya no repite la misma pregunta hasta el infinito: lee el tono y, ante frustración o
+si se traba dos veces, ofrece una salida. Donde puede, pone un default seguro para no
+frenar el envión ("la mayoría no tiene GNC: pongo que no y el asesor lo confirma"); si no,
+deriva a una persona. El peor momento, el usuario trabado y caliente, pasa de ser una
+fuga a una recuperación.
+
 ## Un precio orientativo, no un número inventado
 
 Ese "$146.000 a $186.500 por mes" no lo saqué scrapeando la web ni lo inventé con un
@@ -197,6 +206,20 @@ rango orientativo, no una cotización en firme. Y lo dejé detrás de un puerto:
 lo resuelve ese modelo local, mañana la API del tarifador real de La Caja entra en
 el mismo lugar sin tocar el resto. Es la Decisión 10: no adivinar el número, sino
 dejar preparada la costura donde enchufa el motor de precios real.
+
+## El siguiente paso: que pueda avanzar
+
+Ese precio es el momento de mayor intención de compra, y hasta hace poco el bot lo
+desperdiciaba: mostraba el número y te devolvía al menú. Un callejón sin salida en el
+mejor momento. Ahora el cierre empuja hacia adelante: *que me llame un asesor / contratar
+online (con descuento por CBU) / comparar otro plan*. Si elegís asesor, captura tu
+contacto y le pasa la cotización lista, así te llama una persona con todo a mano en vez de
+arrancar de cero.
+
+Hasta ahí llega el bot, y a propósito: no cierra la póliza (el precio en firme y la
+emisión salen del tarifador oficial, con requisitos regulatorios), pero deja el lead
+calificado y tibio, listo para cerrar. Su métrica no es "vender en el chat", es cuántos
+leads así entrega con la menor fricción posible.
 
 ## El muro de contacto: el mejor argumento a favor del bot
 
