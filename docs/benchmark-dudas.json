@@ -70,7 +70,7 @@
       "id": "cobertura-desde",
       "tema": "auto/poliza",
       "pregunta": "¿Desde cuando estoy cubierto?",
-      "variantes": ["cuando arranca la cobertura", "desde cuando tengo cobertura", "a partir de cuando estoy asegurado", "cuando empieza a valer el seguro", "cada cuanto se renueva la poliza"],
+      "variantes": ["cuando arranca la cobertura", "desde cuando tengo cobertura", "a partir de cuando estoy asegurado", "cuando empieza a valer el seguro", "a que hora del dia empieza la cobertura"],
       "respuesta": "La cobertura arranca a las 12:00 hs del dia de inicio y es mensual con renovacion automatica."
     },
     {
@@ -91,7 +91,7 @@
       "id": "documentacion",
       "tema": "auto/proceso",
       "pregunta": "¿Que papeles necesito para circular?",
-      "variantes": ["que documentacion tengo que llevar", "papeles del auto"],
+      "variantes": ["que papeles llevo en el auto para circular", "documentacion para manejar asegurado", "que me pide la policia si me para", "que tengo que llevar arriba del auto"],
       "respuesta": "Tarjeta de seguro, cupon de pago y certificado o poliza vigentes; ademas licencia, DNI, cedula verde, patente paga, VTV y, si tiene GNC, oblea y cedula."
     },
     {
@@ -126,14 +126,14 @@
       "id": "datos-cotizar",
       "tema": "cotizacion",
       "pregunta": "¿Que datos necesitas para cotizarme el auto?",
-      "variantes": ["que informacion te tengo que dar", "que preguntas para cotizar", "que datos del auto necesitas", "que tengo que pasarte para cotizar auto"],
+      "variantes": ["que datos necesitas para cotizarme el auto", "que informacion pedis para darme el precio", "que me preguntas para cotizar auto", "que datos del auto tengo que pasarte para el presupuesto"],
       "respuesta": "Para auto: año, si es 0km o usado, marca, modelo, version (opcional), si tiene GNC y el codigo postal donde se guarda."
     },
     {
       "id": "hogar-que-cubre",
       "tema": "hogar",
       "pregunta": "¿Que cubre el seguro de hogar?",
-      "variantes": ["cobertura de la casa", "que incluye hogar"],
+      "variantes": ["que riesgos cubre el seguro de hogar", "el hogar cubre incendio y robo", "que eventos me cubre en casa", "contra que me protege el seguro de casa"],
       "respuesta": "Incendio del edificio y del contenido, robo de contenido y servicios de asistencia (plomeria, electricidad, cerrajeria, gasista), con beneficios como cuidado de mascotas."
     },
     {
@@ -147,7 +147,7 @@
       "id": "hogar-suma",
       "tema": "hogar",
       "pregunta": "¿Que es la suma asegurada del contenido?",
-      "variantes": ["cuanto declaro de contenido", "que monto declaro de mis cosas", "cuanto vale mi contenido para el seguro", "suma asegurada del contenido de la casa", "por cuanto aseguro mis muebles y electro"],
+      "variantes": ["que monto declaro de contenido", "que valor le pongo a mis cosas para el seguro", "por cuanto aseguro mis muebles y electro", "que suma asegurada de contenido declaro", "cuanto sale reponer mis bienes"],
       "respuesta": "Es cuanto costaria reponer tus bienes (muebles, electrodomesticos, etc.). Define el monto maximo que te indemnizan y el precio del seguro."
     },
     {
@@ -168,7 +168,7 @@
       "id": "moto",
       "tema": "moto",
       "pregunta": "¿Tienen seguro de moto?",
-      "variantes": ["aseguran motos", "cobertura para moto"],
+      "variantes": ["aseguran motos", "quiero asegurar mi moto", "seguro para mi motocicleta", "poliza de moto contra robo", "cotizar seguro de moto", "cobertura para una moto"],
       "respuesta": "Si, hay seguro de moto con cobertura ante robo, incendio y daño. Se cotiza en moto.lacaja.com.ar."
     },
     {
@@ -217,7 +217,7 @@
       "id": "letizia",
       "tema": "canales",
       "pregunta": "¿Que es Letizia?",
-      "variantes": ["quien es letizia", "el asistente de whatsapp de la caja", "autogestion de clientes por whatsapp", "el bot de whatsapp para modificar mi poliza", "que hace letizia"],
+      "variantes": ["quien es letizia", "el asistente de whatsapp de la caja", "autogestion de clientes por whatsapp", "el chatbot de whatsapp de la caja", "que hace letizia"],
       "respuesta": "Letizia es el asistente de WhatsApp de La Caja para autogestion de clientes (modificar poliza, bajas, documentacion): 11-4857-7777. Yo te ayudo con la pre-venta: comparar y cotizar."
     },
     {
