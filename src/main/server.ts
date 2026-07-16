@@ -14,7 +14,12 @@ import { processMessage } from "../application/process-message.js";
 import { config } from "../config/index.js";
 import { computeFunnel } from "../domain/analytics/funnel.js";
 import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
-import { buildAnalyticsReader, buildDependencies, buildMessagingProvider } from "./container.js";
+import {
+  buildAnalyticsReader,
+  buildDependencies,
+  buildMessagingProvider,
+  shutdown,
+} from "./container.js";
 import { DEMO_HTML } from "./demo-page.js";
 import { renderFunnelHtml } from "./funnel-page.js";
 import { createRateLimiter } from "./rate-limit.js";
@@ -36,8 +41,11 @@ function clientIp(c: { req: { header: (n: string) => string | undefined } }): st
   return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
+// Con Meta, la firma del webhook es obligatoria: sin ella, cualquiera puede
+// mandar un webhook falso y hacer que el bot envíe desde el número de La Caja.
+// Se falla al arrancar en vez de aceptar requests sin verificar.
 if (provider.name === "meta" && !config.meta.appSecret) {
-  console.warn("⚠️  META_APP_SECRET no está seteado: no se verifica la firma del webhook.");
+  throw new Error("MESSAGING_PROVIDER=meta requiere META_APP_SECRET (firma del webhook).");
 }
 
 // Canal web: la demo pública. La página de chat y su endpoint.
@@ -114,7 +122,19 @@ app.post("/webhook", async (c) => {
   return c.text("EVENT_RECEIVED", 200);
 });
 
-serve({ fetch: app.fetch, port: config.server.port }, (info) => {
+const server = serve({ fetch: app.fetch, port: config.server.port }, (info) => {
   console.log(`🚀 Server escuchando en http://localhost:${info.port}`);
   console.log(`   Proveedor de mensajería: ${provider.name}`);
 });
+
+// Shutdown ordenado: en los redeploys/spin-downs de Render (SIGTERM) cerramos el
+// server y las conexiones (pool de Postgres, Redis) en vez de cortarlas de cuajo.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    console.log(`↴ ${signal} recibido, cerrando...`);
+    server.close();
+    shutdown()
+      .catch((err) => console.error("Error en shutdown:", err))
+      .finally(() => process.exit(0));
+  });
+}
