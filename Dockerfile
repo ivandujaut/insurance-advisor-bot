@@ -14,10 +14,12 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# Compilar (tsc + copia de los assets .md a dist).
+# Compilar (tsc + copia de los assets a dist). docs/ trae el benchmark del FAQ
+# router, que copy-assets.mjs copia a dist/ para el runtime; sin él, el build falla.
 COPY tsconfig.json ./
 COPY src ./src
 COPY scripts ./scripts
+COPY docs ./docs
 RUN pnpm build
 
 # --- Stage 2: runtime ---
