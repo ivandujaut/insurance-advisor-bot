@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { type EvalMetrics, evaluateEmotions } from "../domain/analytics/emotion-eval.js";
-import { EMOTIONS, parseEmotion } from "../domain/emotion.js";
+import { EMOTION_GUIDE, EMOTIONS, parseEmotion } from "../domain/emotion.js";
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 const model = process.env.AI_MODEL ?? "claude-sonnet-5";
@@ -35,15 +35,7 @@ const SYSTEM_V1 = [
 // interés vs satisfacción, y ansiedad/frustración cayendo a neutral.
 const SYSTEM_V2 = [
   "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
-  'Elegí la etiqueta que mejor aplique. NO uses "neutral" si hay carga emocional, aunque sea leve o venga como pregunta.',
-  "Definiciones:",
-  "- neutral: consulta informativa sin carga afectiva.",
-  "- interes: quiere AVANZAR, contratar o comprar (mira hacia adelante), aunque use palabras positivas.",
-  "- satisfaccion: agradece o queda conforme por algo YA resuelto (mira hacia atras).",
-  "- confusion: no entiende o esta perdido.",
-  "- frustracion: meta bloqueada o cansancio por no poder lograrlo.",
-  "- enojo: enojo dirigido; se siente estafado o maltratado.",
-  "- ansiedad: preocupacion o miedo sobre un resultado incierto, AUNQUE venga como pregunta.",
+  EMOTION_GUIDE, // misma guía calibrada que usa producción (assistant.ts)
   "Ejemplos:",
   '"listo, lo quiero, como pago?" -> interes',
   '"mil gracias, buenisimo todo" -> satisfaccion',

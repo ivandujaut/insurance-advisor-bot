@@ -10,7 +10,7 @@
  */
 
 import type { Session } from "../domain/conversation/session.js";
-import { EMOTIONS, type Emotion, parseEmotion } from "../domain/emotion.js";
+import { EMOTION_GUIDE, EMOTIONS, type Emotion, parseEmotion } from "../domain/emotion.js";
 import type { Dependencies } from "./ports.js";
 import { LlmNotConfiguredError } from "./ports.js";
 
@@ -30,6 +30,7 @@ function systemPrompt(knowledge: string): string {
     "Respondé SIEMPRE con este JSON exacto y NADA de texto fuera del JSON:",
     `{"respuesta": "<tu respuesta al usuario>", "emocion": "<una de: ${EMOTIONS.join(", ")}>"}`,
     'La "emocion" es la que percibís en el ÚLTIMO mensaje del usuario (no en el tuyo).',
+    EMOTION_GUIDE,
     "",
     "=== BASE DE CONOCIMIENTO ===",
     knowledge,
