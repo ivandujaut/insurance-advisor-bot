@@ -10,7 +10,11 @@ import { type Emotion, emotionClassificationPrompt, parseEmotion } from "../../d
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
-const TIMEOUT_MS = 8000;
+// Se lo espera antes de responder (para decidir el aviso de asesor), así que su
+// cola es latencia del usuario: cap ajustado. Haiku clasifica en ~1s; si a los 6s
+// no contestó, cae a "neutral" y seguimos. Sin reintento a propósito: es
+// best-effort y bloquea la respuesta, reintentar solo la alargaría.
+const TIMEOUT_MS = 6000;
 
 export function createAnthropicEmotionClassifier(): EmotionClassifier {
   const { apiKey, emotionModel } = config.llm;
