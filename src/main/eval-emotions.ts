@@ -1,12 +1,10 @@
 /**
  * Eval harness de la detección de emociones. Corre el clasificador sobre el set
  * etiquetado del benchmark y reporta accuracy, macro-F1, métricas por clase y la
- * matriz de confusión. Es la vara para medir la v1 y comparar mejoras (A/B).
+ * matriz de confusión. Compara dos prompts (v1 base vs v2 con definiciones +
+ * few-shot) en una sola corrida, para el A/B.
  *
  *   ANTHROPIC_API_KEY=sk-... pnpm eval:emotions
- *
- * Usa un prompt de clasificación "v1" (sin definiciones de etiquetas), para medir
- * la línea de base. El siguiente paso agrega definiciones + few-shot y re-mide.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -26,11 +24,41 @@ const bench = JSON.parse(readFileSync(benchPath, "utf8")) as {
 };
 const items = bench.emociones;
 
-async function classify(mensaje: string): Promise<string> {
-  const system = [
-    "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
-    `Respondé SOLO con una de estas palabras, sin nada más: ${EMOTIONS.join(", ")}.`,
-  ].join("\n");
+// v1: prompt base, sin definiciones (la línea de base).
+const SYSTEM_V1 = [
+  "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
+  `Respondé SOLO con una de estas palabras, sin nada más: ${EMOTIONS.join(", ")}.`,
+].join("\n");
+
+// v2: definiciones ancladas en appraisal + few-shot (ejemplos nuevos, no del set,
+// para no filtrar) + regla anti-neutral. Ataca las confusiones del baseline:
+// interés vs satisfacción, y ansiedad/frustración cayendo a neutral.
+const SYSTEM_V2 = [
+  "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
+  'Elegí la etiqueta que mejor aplique. NO uses "neutral" si hay carga emocional, aunque sea leve o venga como pregunta.',
+  "Definiciones:",
+  "- neutral: consulta informativa sin carga afectiva.",
+  "- interes: quiere AVANZAR, contratar o comprar (mira hacia adelante), aunque use palabras positivas.",
+  "- satisfaccion: agradece o queda conforme por algo YA resuelto (mira hacia atras).",
+  "- confusion: no entiende o esta perdido.",
+  "- frustracion: meta bloqueada o cansancio por no poder lograrlo.",
+  "- enojo: enojo dirigido; se siente estafado o maltratado.",
+  "- ansiedad: preocupacion o miedo sobre un resultado incierto, AUNQUE venga como pregunta.",
+  "Ejemplos:",
+  '"listo, lo quiero, como pago?" -> interes',
+  '"mil gracias, buenisimo todo" -> satisfaccion',
+  '"me cubren si choco de noche?" -> ansiedad',
+  '"otra vez el mismo error, no da mas" -> frustracion',
+  '"son una verguenza, me estafaron" -> enojo',
+  `Respondé SOLO con una de estas palabras: ${EMOTIONS.join(", ")}.`,
+].join("\n");
+
+const VARIANTS = [
+  { name: "v1 (base)", system: SYSTEM_V1 },
+  { name: "v2 (definiciones + few-shot)", system: SYSTEM_V2 },
+];
+
+async function classify(mensaje: string, system: string): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -54,8 +82,11 @@ async function classify(mensaje: string): Promise<string> {
   return parseEmotion(text);
 }
 
-/** Ejecuta las clasificaciones con concurrencia acotada, preservando el orden. */
-async function classifyAll(concurrency = 5): Promise<Array<{ gold: string; pred: string }>> {
+/** Clasifica todo el set con un prompt, con concurrencia acotada y orden preservado. */
+async function classifyAll(
+  system: string,
+  concurrency = 5,
+): Promise<Array<{ gold: string; pred: string }>> {
   const out: Array<{ gold: string; pred: string }> = new Array(items.length);
   let next = 0;
   async function worker() {
@@ -63,7 +94,7 @@ async function classifyAll(concurrency = 5): Promise<Array<{ gold: string; pred:
       const i = next++;
       const item = items[i];
       if (!item) continue;
-      const pred = await classify(item.mensaje).catch(() => "neutral");
+      const pred = await classify(item.mensaje, system).catch(() => "neutral");
       out[i] = { gold: item.emocion, pred };
       process.stdout.write(pred === item.emocion ? "." : "x");
     }
@@ -73,14 +104,11 @@ async function classifyAll(concurrency = 5): Promise<Array<{ gold: string; pred:
   return out;
 }
 
-function pct(x: number): string {
-  return `${(x * 100).toFixed(1)}%`;
-}
+const pct = (x: number): string => `${(x * 100).toFixed(1)}%`;
 
-function printReport(m: EvalMetrics): void {
-  console.log(`\n📊 Eval de emociones (${m.total} mensajes, modelo ${model})\n`);
+function printReport(name: string, m: EvalMetrics): void {
+  console.log(`\n📊 ${name} (${m.total} mensajes, modelo ${model})`);
   console.log(`Accuracy: ${pct(m.accuracy)}   Macro-F1: ${m.macroF1.toFixed(3)}\n`);
-
   console.log("Clase           Prec.   Recall  F1      n");
   console.log("--------------  ------  ------  ------  --");
   for (const c of m.perClass) {
@@ -88,7 +116,6 @@ function printReport(m: EvalMetrics): void {
       `${c.clase.padEnd(14)}  ${pct(c.precision).padEnd(6)}  ${pct(c.recall).padEnd(6)}  ${c.f1.toFixed(3)}   ${c.support}`,
     );
   }
-
   console.log("\nMatriz de confusión (fila = real, columna = predicho):");
   const abbr = m.confusion.labels.map((l) => l.slice(0, 4));
   console.log(`${"".padEnd(14)}${abbr.map((a) => a.padStart(6)).join("")}`);
@@ -96,8 +123,20 @@ function printReport(m: EvalMetrics): void {
     const label = m.confusion.labels[i] ?? "";
     console.log(`${label.padEnd(14)}${row.map((v) => String(v).padStart(6)).join("")}`);
   });
-  console.log("");
 }
 
-const pares = await classifyAll();
-printReport(evaluateEmotions(pares, [...EMOTIONS]));
+const results: Array<{ name: string; m: EvalMetrics }> = [];
+for (const v of VARIANTS) {
+  console.log(`\n=== ${v.name} ===`);
+  const pares = await classifyAll(v.system);
+  const m = evaluateEmotions(pares, [...EMOTIONS]);
+  printReport(v.name, m);
+  results.push({ name: v.name, m });
+}
+
+console.log("\n=== Comparación ===");
+for (const r of results) {
+  console.log(
+    `${r.name.padEnd(30)} macro-F1 ${r.m.macroF1.toFixed(3)}   accuracy ${pct(r.m.accuracy)}`,
+  );
+}
