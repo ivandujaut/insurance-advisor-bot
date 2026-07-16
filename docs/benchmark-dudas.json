@@ -161,7 +161,7 @@
       "id": "bici",
       "tema": "bici",
       "pregunta": "¿Aseguran bicicletas?",
-      "variantes": ["seguro para bici o monopatin", "cubren rodados"],
+      "variantes": ["asegurar mi bicicleta", "seguro para mi bici", "cubren el monopatin electrico", "poliza de bicicleta contra robo", "seguro para bici o monopatin", "aseguran rodados como bici o monopatin"],
       "respuesta": "Si, bicicleta y monopatin electrico: robo, accidentes y responsabilidad civil, con asistencia y traslado. El precio es una tasa sobre el valor declarado del rodado."
     },
     {

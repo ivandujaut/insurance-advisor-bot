@@ -71,12 +71,11 @@ export const config = {
   },
   faq: {
     // Umbral de similitud coseno para dar por buena una duda conocida. Calibrado
-    // con `pnpm eval:faq` (text-embedding-3-small): 0.70 es el corte más bajo con
-    // contenido 100% correcto y cero falsos positivos sobre paráfrasis no vistas.
-    // Por debajo empieza a devolver la respuesta canónica equivocada; preferimos
-    // que esas caigan al LLM. Producción embede pregunta + variantes, así que la
-    // cobertura real es mayor que la del eval (que deja las variantes fuera).
-    threshold: Number(process.env.FAQ_THRESHOLD ?? 0.7),
+    // con `pnpm eval:faq` (text-embedding-3-small, método leave-one-out sobre el
+    // corpus real): 0.65 da ~64% de cobertura con ~99-100% de aciertos y cero
+    // falsos positivos, tras enriquecer y desambiguar el benchmark. Por debajo la
+    // precisión cae; lo que no supera el umbral cae al LLM (la red de seguridad).
+    threshold: Number(process.env.FAQ_THRESHOLD ?? 0.65),
   },
   session: {
     // Adapter de sesiones. Default en memoria.
