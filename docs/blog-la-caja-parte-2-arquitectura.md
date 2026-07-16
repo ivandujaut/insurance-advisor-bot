@@ -269,6 +269,14 @@ La arquitectura sola no alcanza. Alrededor hay una red de seguridad:
   commit, y un hook de pre-push corre los chequeos pesados antes de compartir.
 - **Docker** multi-stage y un `docker compose up` que levanta el bot con Postgres y
   Redis. Node 20 LTS pineado para que dev, CI y prod hablen el mismo idioma.
+- **Smoke test de Docker en CI**: cada PR buildea la imagen completa. Un `pnpm build`
+  local puede pasar y romperse igual en el contexto de Docker (me pasó: `docs/` quedaba
+  fuera de la imagen y el build fallaba en el deploy, no antes). Ahora ese fallo se
+  atrapa en el PR, no en producción.
+- **Resiliencia de arranque**: la conexión inicial a Postgres reintenta con backoff
+  acotado ante un blip transitorio. En free tier la base puede tardar unos segundos en
+  aceptar conexiones al bootear; sin esto, un hipo de red tiraba un deploy de código
+  sano (solo reintenta errores de conexión transitorios, no credenciales).
 
 ## Lo que NO hice (a propósito)
 
