@@ -1,36 +1,15 @@
 /**
- * Reporte de funnel a partir de los eventos registrados.
- * Lee data/events.jsonl y data/leads.jsonl y arma las métricas del caso de
- * estudio: activación, drop-off por paso y mix de plan.
+ * Reporte de funnel por consola, a partir de los eventos y leads registrados.
+ * Usa la misma lógica pura (`computeFunnel`) que el dashboard web (GET /funnel);
+ * acá solo cambia la presentación (texto en vez de HTML).
  *
  *   pnpm funnel
  */
-import { existsSync, readFileSync } from "node:fs";
-import type { AnalyticsEvent, Lead } from "../application/ports.js";
-import { eventsFile } from "../infrastructure/persistence/jsonl-events.js";
-import { leadsFile } from "../infrastructure/persistence/jsonl-leads.js";
+import { computeFunnel } from "../domain/analytics/funnel.js";
+import { createJsonlAnalyticsReader } from "../infrastructure/persistence/jsonl-analytics.js";
 
-function readJsonl<T>(path: string): T[] {
-  if (!existsSync(path)) return [];
-  return readFileSync(path, "utf8")
-    .split("\n")
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as T);
-}
-
-/** Usuarios únicos que dispararon un tipo de evento. */
-function uniqueUsers(events: AnalyticsEvent[], type: AnalyticsEvent["type"]): number {
-  const users = new Set(events.filter((e) => e.type === type).map((e) => e.userId));
-  return users.size;
-}
-
-function pct(part: number, total: number): string {
-  if (total === 0) return "-";
-  return `${Math.round((part / total) * 100)}%`;
-}
-
-const events = readJsonl<AnalyticsEvent>(eventsFile);
-const leads = readJsonl<Lead>(leadsFile);
+const analytics = createJsonlAnalyticsReader();
+const [events, leads] = await Promise.all([analytics.readEvents(), analytics.readLeads()]);
 
 if (events.length === 0) {
   console.log(
@@ -39,43 +18,28 @@ if (events.length === 0) {
   process.exit(0);
 }
 
-const started = uniqueUsers(events, "conversation_started");
-const quoting = uniqueUsers(events, "quote_started");
-const leadUsers = uniqueUsers(events, "lead_captured");
+const r = computeFunnel(events, leads);
 
 console.log("\n📊 Funnel del bot\n");
 console.log("Etapa                     Usuarios   Tasa");
 console.log("------------------------  --------   ----");
-console.log(`Saludan                   ${String(started).padEnd(8)}   -`);
-console.log(`Arrancan a cotizar        ${String(quoting).padEnd(8)}   ${pct(quoting, started)}`);
-console.log(
-  `Completan (lead)          ${String(leadUsers).padEnd(8)}   ${pct(leadUsers, quoting)}`,
-);
+console.log(`Saludan                   ${String(r.saludan).padEnd(8)}   -`);
+console.log(`Arrancan a cotizar        ${String(r.arrancan).padEnd(8)}   ${r.arrancanTasa}`);
+console.log(`Completan (lead)          ${String(r.completan).padEnd(8)}   ${r.completanTasa}`);
 
-// Drop-off por paso de la cotización.
-const steps = ["anio", "condicion", "marca", "modelo", "version", "gnc", "cp"] as const;
 console.log("\n🔎 Pasos de la cotización (eventos)");
-for (const step of steps) {
-  const count = events.filter((e) => e.type === "quote_step" && e.props?.step === step).length;
-  console.log(`  ${step.padEnd(12)} ${count}`);
+for (const paso of r.pasos) {
+  console.log(`  ${paso.paso.padEnd(12)} ${paso.count}`);
 }
 
-// Mix de plan a partir de los leads.
-if (leads.length > 0) {
+if (r.mixPlan.length > 0) {
   console.log("\n🛡️  Mix de plan (leads)");
-  const byPlan = new Map<string, number>();
-  for (const lead of leads) {
-    byPlan.set(lead.plan, (byPlan.get(lead.plan) ?? 0) + 1);
-  }
-  for (const [plan, count] of byPlan) {
-    console.log(`  ${plan.padEnd(32)} ${count} (${pct(count, leads.length)})`);
+  for (const m of r.mixPlan) {
+    console.log(`  ${m.plan.padEnd(32)} ${m.count} (${m.tasa})`);
   }
 }
 
-// Otras señales.
-const openQuestions = events.filter((e) => e.type === "open_question").length;
-const advisor = events.filter((e) => e.type === "advisor_requested").length;
 console.log("\n💬 Otras señales");
-console.log(`  Consultas abiertas (LLM)  ${openQuestions}`);
-console.log(`  Pedidos de asesor         ${advisor}`);
+console.log(`  Consultas abiertas (LLM)  ${r.consultasAbiertas}`);
+console.log(`  Pedidos de asesor         ${r.pedidosAsesor}`);
 console.log("");

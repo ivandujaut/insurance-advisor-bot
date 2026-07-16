@@ -3,6 +3,7 @@
  *
  * - GET  /         -> demo web (página de chat, para que cualquiera lo pruebe).
  * - POST /chat     -> mensaje del canal web; responde el texto directo.
+ * - GET  /funnel   -> dashboard de métricas del embudo (activación, drop-off, mix).
  * - GET  /webhook  -> verificación del webhook de WhatsApp (handshake con Meta).
  * - POST /webhook  -> recepción de mensajes de WhatsApp.
  * - GET  /health   -> health check.
@@ -11,13 +12,16 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { processMessage } from "../application/process-message.js";
 import { config } from "../config/index.js";
+import { computeFunnel } from "../domain/analytics/funnel.js";
 import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
-import { buildDependencies, buildMessagingProvider } from "./container.js";
+import { buildAnalyticsReader, buildDependencies, buildMessagingProvider } from "./container.js";
 import { DEMO_HTML } from "./demo-page.js";
+import { renderFunnelHtml } from "./funnel-page.js";
 
 const app = new Hono();
 const deps = await buildDependencies();
 const provider = buildMessagingProvider();
+const analytics = buildAnalyticsReader();
 
 if (provider.name === "meta" && !config.meta.appSecret) {
   console.warn("⚠️  META_APP_SECRET no está seteado: no se verifica la firma del webhook.");
@@ -26,6 +30,12 @@ if (provider.name === "meta" && !config.meta.appSecret) {
 // Canal web: la demo pública. La página de chat y su endpoint.
 app.get("/", (c) => c.html(DEMO_HTML));
 app.get("/health", (c) => c.text("lacaja-whatsapp-bot OK"));
+
+// Dashboard del funnel: activación, drop-off por paso y mix de plan, en vivo.
+app.get("/funnel", async (c) => {
+  const [events, leads] = await Promise.all([analytics.readEvents(), analytics.readLeads()]);
+  return c.html(renderFunnelHtml(computeFunnel(events, leads)));
+});
 
 app.post("/chat", async (c) => {
   let body: { userId?: string; text?: string; name?: string };

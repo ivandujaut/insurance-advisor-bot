@@ -62,6 +62,16 @@ export interface EventSink {
   log(type: EventType, userId: string, props?: Record<string, string>): Promise<void>;
 }
 
+/**
+ * Lado de lectura de eventos y leads, para el reporte de funnel. Separado del
+ * EventSink/LeadRepository (que solo escriben) porque leer es otra
+ * responsabilidad. Hoy JSONL o Postgres, detrás del mismo puerto.
+ */
+export interface AnalyticsReader {
+  readEvents(): Promise<AnalyticsEvent[]>;
+  readLeads(): Promise<Lead[]>;
+}
+
 // --- Leads ---
 
 /** Campos comunes a todo lead, sin importar el producto. */
