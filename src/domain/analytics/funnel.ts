@@ -17,6 +17,12 @@ export interface PlanMix {
   tasa: string;
 }
 
+export interface EmotionCount {
+  emocion: string;
+  count: number;
+  tasa: string;
+}
+
 export interface FunnelReport {
   totalEventos: number;
   saludan: number;
@@ -26,6 +32,7 @@ export interface FunnelReport {
   completanTasa: string;
   pasos: FunnelStep[];
   mixPlan: PlanMix[];
+  emociones: EmotionCount[];
   consultasAbiertas: number;
   pedidosAsesor: number;
 }
@@ -62,6 +69,17 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
     .map(([plan, count]) => ({ plan, count, tasa: pct(count, leads.length) }))
     .sort((a, b) => b.count - a.count);
 
+  // Emociones detectadas en las respuestas abiertas (evento emotion_detected).
+  const emotionEvents = events.filter((e) => e.type === "emotion_detected");
+  const byEmotion = new Map<string, number>();
+  for (const e of emotionEvents) {
+    const emocion = e.props?.emocion ?? "neutral";
+    byEmotion.set(emocion, (byEmotion.get(emocion) ?? 0) + 1);
+  }
+  const emociones: EmotionCount[] = [...byEmotion.entries()]
+    .map(([emocion, count]) => ({ emocion, count, tasa: pct(count, emotionEvents.length) }))
+    .sort((a, b) => b.count - a.count);
+
   return {
     totalEventos: events.length,
     saludan,
@@ -71,6 +89,7 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
     completanTasa: pct(completan, arrancan),
     pasos,
     mixPlan,
+    emociones,
     consultasAbiertas: events.filter((e) => e.type === "open_question").length,
     pedidosAsesor: events.filter((e) => e.type === "advisor_requested").length,
   };

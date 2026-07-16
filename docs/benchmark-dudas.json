@@ -1,0 +1,275 @@
+{
+  "descripcion": "Benchmark de dudas frecuentes y de emociones para el bot de La Caja. Doble uso: (1) seed del FAQ router semantico (Fase 2), donde cada duda con sus variantes y su respuesta canonica alimenta las respuestas sin LLM; (2) set de evaluacion para medir cobertura, precision y ahorro de costo. El bloque 'emociones' evalua la deteccion de emociones (Fase 1). Respuestas ancladas a la base de conocimiento (src/infrastructure/knowledge/productos, relevado 2026-07).",
+  "emociones_enum": [
+    "neutral",
+    "interes",
+    "confusion",
+    "frustracion",
+    "enojo",
+    "ansiedad",
+    "satisfaccion"
+  ],
+  "faq": [
+    {
+      "id": "franquicia",
+      "tema": "auto/cobertura",
+      "pregunta": "¿Que es la franquicia?",
+      "variantes": ["¿que es el deducible?", "¿cuanto pago yo si choco?", "que significa franquicia a cargo del cliente"],
+      "respuesta": "La franquicia es el importe que pagas vos para reparar daños parciales: un porcentaje de la suma asegurada. Ej: suma $10M, franquicia 1%, reparacion $1M, vos pagas $100 mil y La Caja el resto. Aplica al plan Todo Riesgo con Franquicia."
+    },
+    {
+      "id": "granizo",
+      "tema": "auto/cobertura",
+      "pregunta": "¿El seguro cubre granizo?",
+      "variantes": ["¿me pagan si me cae piedra?", "cobertura de granizo", "si graniza y se abolla el auto"],
+      "respuesta": "El granizo, sin tope ni limites, lo cubren los planes Terceros Completo con Granizo y Todo Riesgo con Franquicia (el Terceros Completo simple no)."
+    },
+    {
+      "id": "planes-diferencia",
+      "tema": "auto/planes",
+      "pregunta": "¿Que diferencia hay entre los planes de auto?",
+      "variantes": ["¿cual plan me conviene?", "diferencias entre las coberturas de auto"],
+      "respuesta": "Tres niveles: Terceros Completo (RC, robo, incendio, cristales laterales, asistencia con limite); Terceros Completo con Granizo (suma granizo, luneta/parabrisas, auto sustituto y asistencia sin limite); Todo Riesgo con Franquicia (suma daños parciales por accidente, con una franquicia a tu cargo)."
+    },
+    {
+      "id": "terceros-que-cubre",
+      "tema": "auto/cobertura",
+      "pregunta": "¿Que cubre Terceros Completo?",
+      "variantes": ["que incluye el plan mas basico", "cobertura terceros completo"],
+      "respuesta": "Responsabilidad Civil, robo y hurto, incendio, cristales laterales, cerraduras, ruedas y asistencia mecanica (con limite de eventos)."
+    },
+    {
+      "id": "todo-riesgo",
+      "tema": "auto/cobertura",
+      "pregunta": "¿Que es Todo Riesgo con Franquicia?",
+      "variantes": ["el plan mas completo", "todo riesgo que cubre"],
+      "respuesta": "Es el plan mas completo: todo lo del Terceros Completo con Granizo mas los daños parciales por accidente, con una franquicia (deducible) a tu cargo."
+    },
+    {
+      "id": "robo",
+      "tema": "auto/cobertura",
+      "pregunta": "¿Cubre el robo del auto?",
+      "variantes": ["si me roban el auto me pagan", "robo total y parcial"],
+      "respuesta": "Si, todos los planes cubren robo y hurto: robo total, daños parciales por robo y recupero del vehiculo."
+    },
+    {
+      "id": "gnc",
+      "tema": "auto/cobertura",
+      "pregunta": "¿El seguro cubre el GNC?",
+      "variantes": ["tengo equipo de gas, esta cubierto", "el gnc entra en la cobertura"],
+      "respuesta": "El auto con su equipo de GNC declarado esta cubierto. El GNC es ademas un dato que se pide al cotizar porque influye en el precio (mayor riesgo de incendio)."
+    },
+    {
+      "id": "inspeccion",
+      "tema": "auto/proceso",
+      "pregunta": "¿Tienen que revisar el auto?",
+      "variantes": ["¿inspeccionan el vehiculo?", "hay que llevar el auto a revisar"],
+      "respuesta": "El 0km no requiere inspeccion. El usado se inspecciona online cargando fotos en la web, no hace falta llevarlo."
+    },
+    {
+      "id": "cobertura-desde",
+      "tema": "auto/poliza",
+      "pregunta": "¿Desde cuando estoy cubierto?",
+      "variantes": ["cuando arranca la cobertura", "cuanto dura la poliza"],
+      "respuesta": "La cobertura arranca a las 12:00 hs del dia de inicio y es mensual con renovacion automatica."
+    },
+    {
+      "id": "reposicion-0km",
+      "tema": "auto/beneficios",
+      "pregunta": "¿Que pasa si destruyo mi 0km?",
+      "variantes": ["reposicion de 0km", "perdida total del auto nuevo"],
+      "respuesta": "Ante perdida total del 0km durante el primer año, La Caja repone otro auto similar o su valor equivalente."
+    },
+    {
+      "id": "limitrofes",
+      "tema": "auto/cobertura",
+      "pregunta": "¿Puedo viajar a Brasil o Uruguay con el seguro?",
+      "variantes": ["cobertura en el mercosur", "viajar a paises limitrofes"],
+      "respuesta": "Si, para el Mercosur (Uruguay, Paraguay, Brasil) se emite una cobertura para circular. Consultalo con el asesor antes de viajar."
+    },
+    {
+      "id": "documentacion",
+      "tema": "auto/proceso",
+      "pregunta": "¿Que papeles necesito para circular?",
+      "variantes": ["que documentacion tengo que llevar", "papeles del auto"],
+      "respuesta": "Tarjeta de seguro, cupon de pago y certificado o poliza vigentes; ademas licencia, DNI, cedula verde, patente paga, VTV y, si tiene GNC, oblea y cedula."
+    },
+    {
+      "id": "como-pago",
+      "tema": "pagos",
+      "pregunta": "¿Como pago?",
+      "variantes": ["con que medios puedo pagar", "formas de pago"],
+      "respuesta": "Contratando online: tarjeta de credito o debito por CBU (el mejor precio). Por otros canales hay medios adicionales."
+    },
+    {
+      "id": "descuento-online",
+      "tema": "pagos",
+      "pregunta": "¿Hay descuento si contrato online?",
+      "variantes": ["me conviene contratar por internet", "descuentos"],
+      "respuesta": "Si, hay descuentos por contratar online, y el debito por CBU suele tener el mejor precio."
+    },
+    {
+      "id": "cotizacion-vinculante",
+      "tema": "cotizacion",
+      "pregunta": "¿El precio que me das es el final?",
+      "variantes": ["la estimacion es el precio real", "esto es vinculante"],
+      "respuesta": "Es una estimacion orientativa segun tu perfil, no el precio en firme. El valor final lo confirma un asesor con el tarifador oficial."
+    },
+    {
+      "id": "arrepentimiento",
+      "tema": "poliza",
+      "pregunta": "Me arrepenti, ¿puedo cancelar?",
+      "variantes": ["boton de arrepentimiento", "quiero dar de baja lo que contrate recien"],
+      "respuesta": "Si contrataste online en los ultimos 10 dias, podes cancelar con el boton de arrepentimiento, sin costo."
+    },
+    {
+      "id": "datos-cotizar",
+      "tema": "cotizacion",
+      "pregunta": "¿Que datos necesitas para cotizarme el auto?",
+      "variantes": ["que informacion te tengo que dar", "que preguntas para cotizar"],
+      "respuesta": "Para auto: año, si es 0km o usado, marca, modelo, version (opcional), si tiene GNC y el codigo postal donde se guarda."
+    },
+    {
+      "id": "hogar-que-cubre",
+      "tema": "hogar",
+      "pregunta": "¿Que cubre el seguro de hogar?",
+      "variantes": ["cobertura de la casa", "que incluye hogar"],
+      "respuesta": "Incendio del edificio y del contenido, robo de contenido y servicios de asistencia (plomeria, electricidad, cerrajeria, gasista), con beneficios como cuidado de mascotas."
+    },
+    {
+      "id": "hogar-inquilino",
+      "tema": "hogar",
+      "pregunta": "Soy inquilino, ¿que me conviene?",
+      "variantes": ["alquilo, que seguro de hogar necesito", "inquilino asegura que"],
+      "respuesta": "Como inquilino no asegur as el edificio (es del dueño), sino tu contenido (muebles, electro). Se cotiza con la suma que costaria reponerlo."
+    },
+    {
+      "id": "hogar-suma",
+      "tema": "hogar",
+      "pregunta": "¿Que es la suma asegurada del contenido?",
+      "variantes": ["cuanto declaro de contenido", "suma asegurada hogar"],
+      "respuesta": "Es cuanto costaria reponer tus bienes (muebles, electrodomesticos, etc.). Define el monto maximo que te indemnizan y el precio del seguro."
+    },
+    {
+      "id": "accidentes-que-es",
+      "tema": "accidentes-personales",
+      "pregunta": "¿Que es accidentes personales?",
+      "variantes": ["seguro de accidentes", "para que sirve accidentes personales"],
+      "respuesta": "Cubre lesiones, invalidez o fallecimiento por accidente, con asistencias como telemedicina 24h y ambulancia. Hay planes para proteccion familiar, trabajo independiente y personal domestico."
+    },
+    {
+      "id": "bici",
+      "tema": "bici",
+      "pregunta": "¿Aseguran bicicletas?",
+      "variantes": ["seguro para bici o monopatin", "cubren rodados"],
+      "respuesta": "Si, bicicleta y monopatin electrico: robo, accidentes y responsabilidad civil, con asistencia y traslado. El precio es una tasa sobre el valor declarado del rodado."
+    },
+    {
+      "id": "moto",
+      "tema": "moto",
+      "pregunta": "¿Tienen seguro de moto?",
+      "variantes": ["aseguran motos", "cobertura para moto"],
+      "respuesta": "Si, hay seguro de moto con cobertura ante robo, incendio y daño. Se cotiza en moto.lacaja.com.ar."
+    },
+    {
+      "id": "salud",
+      "tema": "salud",
+      "pregunta": "¿Que es el seguro de salud?",
+      "variantes": ["cobertura de salud", "reintegros medicos"],
+      "respuesta": "Ofrece chequeos preventivos y reintegros por consultas medicas, farmacia, odontologia y optica. No es un seguro de daños."
+    },
+    {
+      "id": "mascota",
+      "tema": "hogar/beneficios",
+      "pregunta": "¿El hogar cubre a mi mascota?",
+      "variantes": ["asistencia para mascotas", "mi perro entra en el seguro de hogar"],
+      "respuesta": "El seguro de hogar incluye asistencia y beneficios para tu mascota como parte de los servicios."
+    },
+    {
+      "id": "denuncia-siniestro",
+      "tema": "siniestros",
+      "pregunta": "Tuve un choque, ¿que hago?",
+      "variantes": ["como denuncio un siniestro", "me chocaron como sigo"],
+      "respuesta": "Podes gestionar la denuncia por la App La Caja o la Linea Unica 0810-555-2252. Te puedo derivar con un asesor ahora mismo si escribis *asesor*."
+    },
+    {
+      "id": "asistencia-mecanica",
+      "tema": "auto/asistencia",
+      "pregunta": "¿Tengo grua o auxilio mecanico?",
+      "variantes": ["asistencia en la ruta", "se me rompio el auto, tengo remolque"],
+      "respuesta": "Si, todos los planes de auto incluyen asistencia mecanica y remolque (con limite de eventos; sin limite desde el plan con Granizo)."
+    },
+    {
+      "id": "telemedicina",
+      "tema": "beneficios",
+      "pregunta": "¿Que es la telemedicina 24h?",
+      "variantes": ["consultas medicas por whatsapp", "telemedicina la caja"],
+      "respuesta": "Videoconsultas clinicas y pediatricas 24h por WhatsApp, con turnos programados y cobertura para el grupo familiar, incluidas para clientes."
+    },
+    {
+      "id": "asesor",
+      "tema": "canales",
+      "pregunta": "Quiero hablar con una persona",
+      "variantes": ["me pasas con un humano", "necesito un asesor"],
+      "respuesta": "Te derivo con un asesor de La Caja. Escribi *asesor* y coordino el contacto (Linea Unica 0810-555-2252)."
+    },
+    {
+      "id": "letizia",
+      "tema": "canales",
+      "pregunta": "¿Que es Letizia?",
+      "variantes": ["el whatsapp de la caja", "quien es letizia"],
+      "respuesta": "Letizia es el asistente de WhatsApp de La Caja para autogestion de clientes (modificar poliza, bajas, documentacion): 11-4857-7777. Yo te ayudo con la pre-venta: comparar y cotizar."
+    },
+    {
+      "id": "linea-unica",
+      "tema": "canales",
+      "pregunta": "¿Cual es el telefono de La Caja?",
+      "variantes": ["numero de atencion", "como los llamo"],
+      "respuesta": "La Linea Unica de La Caja es 0810-555-2252. Tambien esta la App y el Portal Personas."
+    },
+    {
+      "id": "modificar-poliza",
+      "tema": "posventa",
+      "pregunta": "¿Como cambio algo de mi poliza?",
+      "variantes": ["modificar mi seguro", "actualizar datos de la poliza"],
+      "respuesta": "Las modificaciones de una poliza vigente se hacen por autogestion con Letizia (WhatsApp 11-4857-7777) o la App La Caja."
+    },
+    {
+      "id": "baja",
+      "tema": "posventa",
+      "pregunta": "¿Como doy de baja mi seguro?",
+      "variantes": ["quiero cancelar mi poliza", "dar de baja el seguro"],
+      "respuesta": "La baja de una poliza se gestiona por Letizia (WhatsApp) o la App. Si contrataste hace menos de 10 dias online, aplica el boton de arrepentimiento."
+    },
+    {
+      "id": "que-lineas",
+      "tema": "catalogo",
+      "pregunta": "¿Que seguros tienen?",
+      "variantes": ["que productos ofrecen", "lista de seguros"],
+      "respuesta": "Para personas: auto, moto, hogar, salud, bici/monopatin, notebook/tablet, cartera, vida, accidentes personales, cuidados mayores y auto conectado. Yo te cotizo auto, hogar, accidentes y bici."
+    },
+    {
+      "id": "es-caro",
+      "tema": "precio",
+      "pregunta": "¿Es caro?",
+      "variantes": ["sale mucho", "esta muy caro el seguro"],
+      "respuesta": "Depende del plan y tu perfil; hay opciones de menor a mayor cobertura y descuentos por contratar online. Puedo darte una estimacion orientativa ahora si me pasas los datos."
+    }
+  ],
+  "emociones": [
+    { "id": "e1", "mensaje": "no entiendo nada de esto, es un quilombo", "emocion": "frustracion" },
+    { "id": "e2", "mensaje": "me chocaron recien y estoy re nervioso, ¿que hago?", "emocion": "ansiedad" },
+    { "id": "e3", "mensaje": "hace una semana que intento cotizar y no puedo, un desastre", "emocion": "enojo" },
+    { "id": "e4", "mensaje": "buenisimo, gracias, me sirvio un monton", "emocion": "satisfaccion" },
+    { "id": "e5", "mensaje": "me interesa, ¿como sigo para contratar?", "emocion": "interes" },
+    { "id": "e6", "mensaje": "no se que plan me conviene, estoy medio perdido", "emocion": "confusion" },
+    { "id": "e7", "mensaje": "¿cuanto sale el seguro de auto?", "emocion": "neutral" },
+    { "id": "e8", "mensaje": "esto es una estafa, van tres veces que me cobran mal", "emocion": "enojo" },
+    { "id": "e9", "mensaje": "gracias por la ayuda, muy amable", "emocion": "satisfaccion" },
+    { "id": "e10", "mensaje": "tengo miedo de que no me cubran si me pasa algo", "emocion": "ansiedad" },
+    { "id": "e11", "mensaje": "dale, quiero avanzar con Todo Riesgo", "emocion": "interes" },
+    { "id": "e12", "mensaje": "no me queda claro que es la franquicia", "emocion": "confusion" },
+    { "id": "e13", "mensaje": "hola, queria consultar algo", "emocion": "neutral" },
+    { "id": "e14", "mensaje": "estoy harto de que nadie me responda nunca", "emocion": "enojo" }
+  ]
+}

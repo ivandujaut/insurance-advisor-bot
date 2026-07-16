@@ -39,6 +39,13 @@ if (r.mixPlan.length > 0) {
   }
 }
 
+if (r.emociones.length > 0) {
+  console.log("\n🙂 Emociones (consultas abiertas)");
+  for (const e of r.emociones) {
+    console.log(`  ${e.emocion.padEnd(14)} ${e.count} (${e.tasa})`);
+  }
+}
+
 console.log("\n💬 Otras señales");
 console.log(`  Consultas abiertas (LLM)  ${r.consultasAbiertas}`);
 console.log(`  Pedidos de asesor         ${r.pedidosAsesor}`);

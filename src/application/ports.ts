@@ -48,7 +48,8 @@ export type EventType =
   | "plan_comparison_viewed"
   | "lead_captured"
   | "advisor_requested"
-  | "open_question";
+  | "open_question"
+  | "emotion_detected";
 
 export interface AnalyticsEvent {
   ts: string;
