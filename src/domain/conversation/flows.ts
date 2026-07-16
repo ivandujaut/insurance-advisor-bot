@@ -9,8 +9,27 @@
  * - Devuelve string -> respuesta ya resuelta por el flujo.
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
-import type { Dependencies } from "../../application/ports.js";
+import type { Dependencies, LeadInput } from "../../application/ports.js";
 import { ACCIDENTES_MODALIDADES, ACCIDENTES_PLANES, AUTO_PLANS, type Session } from "./session.js";
+
+// Mensaje cuando no se pudo persistir el lead: mejor avisar que fingir éxito.
+const LEAD_ERROR =
+  "Uy, tuve un problema para registrar tu solicitud. 😔 Probá de nuevo en un momento, o escribí *asesor* para que te contacte una persona.";
+
+/**
+ * Guarda el lead y devuelve si se persistió. Si el repositorio falla (ej: la base
+ * caída), devuelve false para que el flujo NO le confirme "listo" al usuario por
+ * una solicitud que no quedó registrada.
+ */
+async function persistLead(deps: Dependencies, lead: LeadInput): Promise<boolean> {
+  try {
+    await deps.leads.save(lead);
+    return true;
+  } catch (err) {
+    console.error("No se pudo guardar el lead:", err);
+    return false;
+  }
+}
 
 const GREETINGS = [
   "hola",
@@ -237,13 +256,11 @@ async function handleQuotingAuto(
     if (!plan) {
       return "No te entendí el plan. Respondé *1* (Terceros Completo), *2* (con Granizo) o *3* (Todo Riesgo).";
     }
-    session.data.plan = plan;
-    session.stage = "idle";
     const version =
       session.data.version && session.data.version !== "no especificada"
         ? session.data.version
         : undefined;
-    await deps.leads.save({
+    const saved = await persistLead(deps, {
       producto: "auto",
       userId: session.userId,
       name: session.name,
@@ -256,6 +273,9 @@ async function handleQuotingAuto(
       condicion: session.data.condicion ?? "",
       plan,
     });
+    if (!saved) return LEAD_ERROR;
+    session.data.plan = plan;
+    session.stage = "idle";
     await deps.events.log("lead_captured", session.userId, { plan });
     // Estimación orientativa vía el puerto de cotización (hoy modelo local de
     // factores; mañana el tarifador real). El precio final lo cierra el asesor.
@@ -391,8 +411,7 @@ async function handleQuotingHogar(
   const m2 = session.data.m2 ? Number(session.data.m2) : undefined;
   const sumaContenido = session.data.sumaContenido ? Number(session.data.sumaContenido) : undefined;
   const plan = "Seguro de Hogar";
-  session.stage = "idle";
-  await deps.leads.save({
+  const saved = await persistLead(deps, {
     producto: "hogar",
     userId: session.userId,
     name: session.name,
@@ -404,6 +423,8 @@ async function handleQuotingHogar(
     sumaContenido,
     plan,
   });
+  if (!saved) return LEAD_ERROR;
+  session.stage = "idle";
   await deps.events.log("lead_captured", session.userId, { plan });
   const estimate = await deps.quoting.quoteHogar({
     tipoResidente: session.data.tipoResidente ?? "",
@@ -486,9 +507,7 @@ async function handleAccidentes(
     if (!plan) {
       return "No te entendí el plan. Respondé el *número* del plan de la lista.";
     }
-    session.data.plan = plan.nombre;
-    session.stage = "idle";
-    await deps.leads.save({
+    const saved = await persistLead(deps, {
       producto: "accidentes",
       userId: session.userId,
       name: session.name,
@@ -496,6 +515,9 @@ async function handleAccidentes(
       plan: plan.nombre,
       precio: plan.precio,
     });
+    if (!saved) return LEAD_ERROR;
+    session.data.plan = plan.nombre;
+    session.stage = "idle";
     await deps.events.log("lead_captured", session.userId, { plan: plan.nombre });
     return [
       "¡Listo! Con esto armo tu solicitud de *accidentes personales*:",
@@ -554,12 +576,10 @@ async function handleBici(
     if (!valor || valor < MIN_VALOR_BICI) {
       return `Necesito el *valor* aproximado del rodado (desde ${pesos(MIN_VALOR_BICI)}).`;
     }
-    session.data.valor = String(valor);
     await deps.events.log("quote_step", session.userId, { step: "valor" });
     const tipoRodado = session.data.tipoRodado ?? "bicicleta";
     const estimate = await deps.quoting.quoteBici({ tipoRodado, valor });
-    session.stage = "idle";
-    await deps.leads.save({
+    const saved = await persistLead(deps, {
       producto: "bici",
       userId: session.userId,
       name: session.name,
@@ -567,6 +587,9 @@ async function handleBici(
       valor,
       plan: estimate.plan,
     });
+    if (!saved) return LEAD_ERROR;
+    session.data.valor = String(valor);
+    session.stage = "idle";
     await deps.events.log("lead_captured", session.userId, { plan: estimate.plan });
     return [
       "¡Listo! Con esto armo tu solicitud:",
