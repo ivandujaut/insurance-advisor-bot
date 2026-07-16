@@ -45,6 +45,31 @@ const ADVISOR_KEYWORDS = ["asesor", "humano", "agente", "persona"];
 const ADVISOR_REPLY =
   "Te derivo con un asesor de La Caja. 🧑‍💼\n\n(En producción, acá se dispara la derivación al canal oficial / Línea Única 0810-555-2252.)";
 
+// Sitio público de La Caja para la contratación online (con descuento por CBU).
+const LACAJA_ONLINE_URL = "https://www.lacaja.com.ar";
+
+// Cierre post-cotización: en el momento de mayor intención de compra, en vez de
+// devolver al menú frío se ofrece avanzar. Es la palanca de conversión del tramo
+// final del embudo (ver Decisión 19 en docs/decisiones-de-producto.md).
+const POST_QUOTE_CTA = [
+  "",
+  "✅ *¿Avanzamos?*",
+  "1️⃣ Que me llame un asesor (con tu cotización lista)",
+  "2️⃣ Contratar online (descuento por CBU)",
+  "3️⃣ Comparar otro plan u otra consulta",
+].join("\n");
+
+const ONLINE_REPLY = [
+  "💻 *Contratación online*",
+  "",
+  "Los planes se pueden contratar en el sitio de La Caja, con descuento por débito por CBU:",
+  LACAJA_ONLINE_URL,
+  "",
+  "¿Preferís que te acompañe una persona? Escribí *asesor*.",
+  "",
+  "Escribí *menú* para otra consulta.",
+].join("\n");
+
 const MAIN_MENU = [
   "👋 Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y cotizar tu cobertura.",
   "",
@@ -113,9 +138,72 @@ export async function handleFlow(
       return handleAccidentes(session, text, deps);
     case "quoting_bici":
       return handleBici(session, text, deps);
+    case "post_quote":
+      return handlePostQuote(session, input, deps);
+    case "capturing_contact":
+      return handleCapturingContact(session, text, deps);
     default:
       return null;
   }
+}
+
+/**
+ * Cierre post-cotización. En vez de devolver al menú, empuja hacia adelante: un
+ * asesor con la cotización lista, contratación online, o comparar otro plan.
+ * Registra `quote_accepted` (con el canal) para cerrar el embudo. Texto libre cae
+ * al LLM.
+ */
+async function handlePostQuote(
+  session: Session,
+  input: string,
+  deps: Dependencies,
+): Promise<string | null> {
+  const plan = session.data.plan ?? "";
+  switch (input) {
+    case "1":
+      session.stage = "capturing_contact";
+      await deps.events.log("quote_accepted", session.userId, { plan, via: "asesor" });
+      return "Perfecto. 🙌 Para que un asesor te contacte con tu cotización a mano, pasame *nombre, teléfono y a qué hora te viene bien* (ej: Ana, 11 5555 5555, tardes).";
+    case "2":
+      session.stage = "idle";
+      await deps.events.log("quote_accepted", session.userId, { plan, via: "online" });
+      return ONLINE_REPLY;
+    case "3":
+      session.stage = "main_menu";
+      session.data = {};
+      return MAIN_MENU;
+    default:
+      // Cualquier otra cosa es una consulta abierta -> LLM.
+      return null;
+  }
+}
+
+/**
+ * Captura el contacto para el llamado del asesor y registra `handoff_requested`
+ * con el contexto de la cotización. El contacto crudo NO se persiste en analytics
+ * (es PII); en producción va al canal del asesor / CRM.
+ */
+async function handleCapturingContact(
+  session: Session,
+  text: string,
+  deps: Dependencies,
+): Promise<string | null> {
+  const contacto = text.trim();
+  if (contacto.length < 5) {
+    return "Necesito al menos un nombre y un teléfono para que un asesor te llame. ¿Me los pasás?";
+  }
+  session.stage = "idle";
+  await deps.events.log("handoff_requested", session.userId, {
+    plan: session.data.plan ?? "",
+    resumen: session.data.resumen ?? "",
+  });
+  return [
+    "¡Listo! 🙌 Un asesor de La Caja te va a contactar con tu cotización lista, así no repetís nada.",
+    "",
+    "(En la demo no hay un contacto real detrás; en producción, acá se agenda el llamado en el canal oficial.)",
+    "",
+    "Escribí *menú* si querés hacer otra consulta.",
+  ].join("\n");
 }
 
 async function handleMainMenu(
@@ -275,7 +363,7 @@ async function handleQuotingAuto(
     });
     if (!saved) return LEAD_ERROR;
     session.data.plan = plan;
-    session.stage = "idle";
+    session.stage = "post_quote";
     await deps.events.log("lead_captured", session.userId, { plan });
     // Estimación orientativa vía el puerto de cotización (hoy modelo local de
     // factores; mañana el tarifador real). El precio final lo cierra el asesor.
@@ -289,6 +377,7 @@ async function handleQuotingAuto(
       plan,
     });
     const autoLinea = `${session.data.marca} ${session.data.modelo} ${session.data.anio}${version ? ` (${version})` : ""}`;
+    session.data.resumen = `🚗 ${autoLinea} · ${plan} · ${pesos(estimate.desde)} a ${pesos(estimate.hasta)}/mes`;
     return [
       "¡Listo! Con estos datos armo tu solicitud de cotización:",
       "",
@@ -299,9 +388,8 @@ async function handleQuotingAuto(
       `🛡️ Plan de interés: ${plan}`,
       `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
       "",
-      "Es un rango orientativo según tu perfil. Un asesor te confirma el precio final y las opciones de pago (online: tarjeta de crédito o débito por CBU, con descuento).",
-      "",
-      "Escribí *menú* para hacer otra consulta.",
+      "Es un rango orientativo según tu perfil. El precio final lo confirma un asesor.",
+      POST_QUOTE_CTA,
     ].join("\n");
   }
 
@@ -424,7 +512,8 @@ async function handleQuotingHogar(
     plan,
   });
   if (!saved) return LEAD_ERROR;
-  session.stage = "idle";
+  session.stage = "post_quote";
+  session.data.plan = plan;
   await deps.events.log("lead_captured", session.userId, { plan });
   const estimate = await deps.quoting.quoteHogar({
     tipoResidente: session.data.tipoResidente ?? "",
@@ -446,15 +535,15 @@ async function handleQuotingHogar(
   if (m2) lineas.push(`📐 ${m2} m² construidos`);
   lineas.push(`📍 CP: ${session.data.cp}`);
   if (sumaContenido) lineas.push(`📦 Contenido asegurado: ${pesos(sumaContenido)}`);
+  session.data.resumen = `🏠 ${hogarLabel} · ${session.data.tipoResidente} · ${pesos(estimate.desde)} a ${pesos(estimate.hasta)}/mes`;
   lineas.push(
     `💰 Estimación orientativa: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
     "",
     "*Incluye:*",
     HOGAR_INCLUYE,
     "",
-    "Es un rango orientativo. Un asesor confirma el valor final del contenido y del edificio, y las opciones de pago (CBU o tarjeta).",
-    "",
-    "Escribí *menú* para hacer otra consulta.",
+    "Es un rango orientativo. El valor final lo confirma un asesor.",
+    POST_QUOTE_CTA,
   );
   return lineas.join("\n");
 }
@@ -517,7 +606,8 @@ async function handleAccidentes(
     });
     if (!saved) return LEAD_ERROR;
     session.data.plan = plan.nombre;
-    session.stage = "idle";
+    session.stage = "post_quote";
+    session.data.resumen = `🛡️ ${ACCIDENTES_MODALIDADES[modalidad] ?? modalidad}: ${plan.nombre} · ${pesos(plan.precio)}/mes`;
     await deps.events.log("lead_captured", session.userId, { plan: plan.nombre });
     return [
       "¡Listo! Con esto armo tu solicitud de *accidentes personales*:",
@@ -528,9 +618,8 @@ async function handleAccidentes(
       "*Incluye:*",
       ACCIDENTES_ASISTENCIAS,
       "",
-      "Es el precio publicado (débito automático de tarjeta). Un asesor te ayuda a contratarlo y con las opciones de pago.",
-      "",
-      "Escribí *menú* para hacer otra consulta.",
+      "Es el precio publicado (débito automático de tarjeta).",
+      POST_QUOTE_CTA,
     ].join("\n");
   }
 
@@ -589,21 +678,23 @@ async function handleBici(
     });
     if (!saved) return LEAD_ERROR;
     session.data.valor = String(valor);
-    session.stage = "idle";
+    session.data.plan = estimate.plan;
+    session.stage = "post_quote";
+    const rodadoLabel = tipoRodado === "monopatin" ? "Monopatín eléctrico" : "Bicicleta";
+    session.data.resumen = `🚲 ${rodadoLabel} · ${pesos(estimate.desde)} a ${pesos(estimate.hasta)}/mes`;
     await deps.events.log("lead_captured", session.userId, { plan: estimate.plan });
     return [
       "¡Listo! Con esto armo tu solicitud:",
       "",
-      `🚲 ${tipoRodado === "monopatin" ? "Monopatín eléctrico" : "Bicicleta"}`,
+      `🚲 ${rodadoLabel}`,
       `💵 Valor asegurado: ${pesos(valor)}`,
       `💰 Cuota estimada: ${pesos(estimate.desde)} a ${pesos(estimate.hasta)} por mes`,
       "",
       "*Incluye:*",
       BICI_INCLUYE,
       "",
-      "Es una estimación sobre el valor declarado. Un asesor confirma la cuota final y te ayuda a contratarlo.",
-      "",
-      "Escribí *menú* para hacer otra consulta.",
+      "Es una estimación sobre el valor declarado. La cuota final la confirma un asesor.",
+      POST_QUOTE_CTA,
     ].join("\n");
   }
 

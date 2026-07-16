@@ -26,6 +26,7 @@ console.log("------------------------  --------   ----");
 console.log(`Saludan                   ${String(r.saludan).padEnd(8)}   -`);
 console.log(`Arrancan a cotizar        ${String(r.arrancan).padEnd(8)}   ${r.arrancanTasa}`);
 console.log(`Completan (lead)          ${String(r.completan).padEnd(8)}   ${r.completanTasa}`);
+console.log(`Aceptan (asesor/online)   ${String(r.aceptan).padEnd(8)}   ${r.aceptanTasa}`);
 
 console.log("\n🔎 Pasos de la cotización (eventos)");
 for (const paso of r.pasos) {

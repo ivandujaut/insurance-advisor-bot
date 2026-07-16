@@ -51,7 +51,9 @@ export type EventType =
   | "advisor_requested"
   | "open_question"
   | "emotion_detected"
-  | "faq_hit";
+  | "faq_hit"
+  | "quote_accepted"
+  | "handoff_requested";
 
 export interface AnalyticsEvent {
   ts: string;

@@ -103,7 +103,7 @@ test("el flujo de accidentes guarda el lead con el precio publicado", async () =
   assert.match(planes, /14\.176/);
   const final = (await handleFlow(s, "2", deps)) ?? ""; // Plan B
   assert.match(final, /accidentes personales/i);
-  assert.equal(s.stage, "idle");
+  assert.equal(s.stage, "post_quote");
   const lead = deps.savedLeads[0];
   assert.equal(lead?.producto, "accidentes");
   if (lead?.producto !== "accidentes") throw new Error("esperaba un lead de accidentes");
@@ -129,7 +129,7 @@ test("el flujo de bici guarda el lead con el valor y la cuota estimada", async (
   await handleFlow(s, "bicicleta", deps); // tipo de rodado
   const final = (await handleFlow(s, "500000", deps)) ?? ""; // valor
   assert.match(final, /Cuota estimada/);
-  assert.equal(s.stage, "idle");
+  assert.equal(s.stage, "post_quote");
   const lead = deps.savedLeads[0];
   assert.equal(lead?.producto, "bici");
   if (lead?.producto !== "bici") throw new Error("esperaba un lead de bici");
@@ -163,7 +163,7 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   const final = (await handleFlow(s, "2", deps)) ?? "";
   assert.match(final, /solicitud de cotización/);
   assert.match(final, /Terceros Completo con Granizo/);
-  assert.equal(s.stage, "idle", "vuelve a idle al terminar");
+  assert.equal(s.stage, "post_quote", "queda en el cierre post-cotización");
   // El lead se guardó estructurado, a través del puerto inyectado (sin tocar disco).
   assert.equal(deps.savedLeads.length, 1);
   const lead = deps.savedLeads[0];
@@ -331,7 +331,7 @@ test("el flujo de hogar de propietario estima con el m² (sin pedir contenido)",
   assert.match(final, /Estimación orientativa/);
   assert.match(final, /120 m²/);
   assert.doesNotMatch(final, /Contenido asegurado/, "al propietario no le pide contenido");
-  assert.equal(s.stage, "idle", "vuelve a idle al terminar");
+  assert.equal(s.stage, "post_quote", "queda en el cierre post-cotización");
   assert.equal(deps.savedLeads.length, 1);
   const lead = deps.savedLeads[0];
   assert.equal(lead?.producto, "hogar");
@@ -356,7 +356,7 @@ test("el flujo de hogar de inquilino usa el contenido (sin m²)", async () => {
   await handleFlow(s, "1425", deps); // CP -> pide contenido
   const final = (await handleFlow(s, "2000000", deps)) ?? ""; // contenido -> estima
   assert.match(final, /Contenido asegurado/);
-  assert.equal(s.stage, "idle");
+  assert.equal(s.stage, "post_quote");
   assert.equal(deps.savedLeads.length, 1);
   const lead = deps.savedLeads[0];
   assert.equal(lead?.producto, "hogar");

@@ -494,6 +494,33 @@ qué dato, y qué resigné.
   falla o timeout devuelve "neutral" y la conversación sigue, nunca se rompe por una
   emoción mal leída.
 
+### Decisión 19: cerrar el embudo después de cotizar (no volver al menú frío)
+
+- **Criterio:** el momento de **mayor intención de compra** es justo después de ver el
+  precio. Devolver al menú ahí es la mayor fuga de conversión del bot: el usuario vio un
+  número y no tiene próximo paso.
+- **El problema:** hasta acá, tras cotizar el bot avisaba "un asesor confirma el precio" y
+  remataba con "escribí menú". Un anticlímax en el peor momento.
+- **La decisión:** reemplazar ese cierre por un CTA que empuja hacia adelante: *que me
+  llame un asesor / contratar online (descuento por CBU) / comparar otro plan*. Le da al
+  usuario los dos caminos reales de compra.
+  - Si elige **asesor**, se captura el contacto (nombre, teléfono, horario) y se registra
+    el handoff con el resumen de la cotización, así el asesor llama tibio y con contexto,
+    no de cero.
+  - Si elige **online**, se lo deriva a la contratación online de La Caja.
+- **Hasta dónde llega el bot:** es de pre-venta. NO cierra la póliza: el precio en firme y
+  la emisión salen del tarifador oficial + suscripción, con requisitos regulatorios. Su
+  techo es **entregar un lead calificado y tibio, listo para cerrar**, con la menor
+  fricción posible.
+- **Privacidad:** el contacto crudo NO se persiste en analytics (es PII); en producción va
+  al canal del asesor/CRM. El evento solo registra que hubo handoff, con el plan y el
+  resumen.
+- **Métrica:** dos eventos nuevos, `quote_accepted` (con canal: asesor u online) y
+  `handoff_requested`, que cierran el embudo: saludan → cotizan → **aceptan**. Es el tramo
+  que vale plata y que antes no se medía (ver sección 6).
+- **Trade-off:** dos etapas más de conversación y un cierre que mantener. A cambio, se
+  ataca la fuga en el punto de máxima intención.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -508,6 +535,8 @@ métricas que instrumentaría:
 
 **Conversión**
 - Leads generados (cotizaciones con datos de contacto).
+- Tasa de aceptación post-cotización (`quote_accepted` / cotizaciones), abierta por
+  canal (asesor vs online): el cierre del embudo, hoy instrumentado (Decisión 19).
 - Tasa de derivación a asesor y su resultado.
 - Contratación atribuida al canal (si se integra con el sistema de ventas).
 
@@ -571,6 +600,9 @@ métricas que instrumentaría:
 11. ~~Detectar frustración para ofrecer un asesor a tiempo.~~ **Hecho:** clasificador
     de emoción en paralelo (Haiku), que suma la oferta de asesor ante enojo/frustración.
     Ver Decisión 18 y `docs/emociones-investigacion.md`.
+12. ~~Cerrar el embudo después de cotizar (que el usuario pueda avanzar).~~ **Hecho:**
+    cierre post-cotización con CTA (asesor con captura de contacto / online), y eventos
+    `quote_accepted` y `handoff_requested` para medir el tramo final. Ver Decisión 19.
 
 ## 9. Qué demuestra este ejercicio
 

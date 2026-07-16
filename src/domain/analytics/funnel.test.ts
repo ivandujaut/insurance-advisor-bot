@@ -30,6 +30,7 @@ test("computeFunnel: activación y tasas por usuarios únicos", () => {
     ev("quote_started", "a"),
     ev("quote_started", "b"),
     ev("lead_captured", "a"),
+    ev("quote_accepted", "a"),
     // un mismo usuario no infla el conteo:
     ev("conversation_started", "a"),
   ];
@@ -39,6 +40,8 @@ test("computeFunnel: activación y tasas por usuarios únicos", () => {
   assert.equal(r.arrancanTasa, "67%"); // 2/3
   assert.equal(r.completan, 1);
   assert.equal(r.completanTasa, "50%"); // 1/2
+  assert.equal(r.aceptan, 1);
+  assert.equal(r.aceptanTasa, "100%"); // 1/1 de los que cotizaron
 });
 
 test("computeFunnel: drop-off por paso y otras señales", () => {
