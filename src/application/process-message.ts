@@ -28,11 +28,16 @@ export async function processMessage(
   // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
   if (reply === null) {
     await deps.events.log("open_question", incoming.from);
-    const result = await answer(session, deps);
-    reply = result.reply;
-    await deps.events.log("emotion_detected", incoming.from, { emocion: result.emocion });
+    // Generar la respuesta y clasificar la emoción en paralelo: son tareas
+    // independientes, así la clasificación no agrega latencia.
+    const [generated, emocion] = await Promise.all([
+      answer(session, deps),
+      deps.emotion.classify(incoming.text),
+    ]);
+    reply = generated;
+    await deps.events.log("emotion_detected", incoming.from, { emocion });
     // Regla accionable: ante enojo/frustración, ofrecer un humano.
-    if (NEGATIVE_EMOTIONS.includes(result.emocion)) {
+    if (NEGATIVE_EMOTIONS.includes(emocion)) {
       reply += ASESOR_OFFER;
     }
   }

@@ -37,6 +37,30 @@ export const EMOTION_GUIDE = [
   "- ansiedad: preocupacion o miedo sobre un resultado incierto, aunque venga como pregunta.",
 ].join("\n");
 
+// Few-shot con ejemplos NUEVOS (no del benchmark, para no filtrar el eval).
+const EMOTION_FEWSHOT = [
+  "Ejemplos:",
+  '"listo, lo quiero, como pago?" -> interes',
+  '"mil gracias, buenisimo todo" -> satisfaccion',
+  '"me cubren si choco de noche?" -> ansiedad',
+  '"otra vez el mismo error, no da mas" -> frustracion',
+  '"son una verguenza, me estafaron" -> enojo',
+].join("\n");
+
+/**
+ * Prompt de clasificación de emoción (enfocado: solo clasifica, no genera). Es la
+ * fuente única que usan el adapter de producción y el eval harness, así lo que se
+ * mide es literalmente lo que corre.
+ */
+export function emotionClassificationPrompt(): string {
+  return [
+    "Clasificás la emoción predominante del mensaje de un cliente de seguros por WhatsApp.",
+    EMOTION_GUIDE,
+    EMOTION_FEWSHOT,
+    `Respondé SOLO con una de estas palabras: ${EMOTIONS.join(", ")}.`,
+  ].join("\n");
+}
+
 /** Normaliza el texto de emoción del LLM a un valor válido; si no matchea, neutral. */
 export function parseEmotion(raw: string | undefined): Emotion {
   const t = (raw ?? "").trim().toLowerCase();

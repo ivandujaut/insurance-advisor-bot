@@ -16,6 +16,7 @@ import type {
 import { config } from "../config/index.js";
 import { createFilesystemKnowledge } from "../infrastructure/knowledge/filesystem.js";
 import { createAnthropicLlm } from "../infrastructure/llm/anthropic.js";
+import { createAnthropicEmotionClassifier } from "../infrastructure/llm/emotion-classifier.js";
 import { CliProvider } from "../infrastructure/messaging/cli.js";
 import { MetaProvider } from "../infrastructure/messaging/meta.js";
 import { createJsonlAnalyticsReader } from "../infrastructure/persistence/jsonl-analytics.js";
@@ -92,6 +93,7 @@ export async function buildDependencies(): Promise<Dependencies> {
     events,
     sessions,
     llm: createAnthropicLlm(),
+    emotion: createAnthropicEmotionClassifier(),
     knowledge: createFilesystemKnowledge(),
     // Hoy el modelo local de factores; mañana la API del tarifador real detrás
     // del mismo puerto (ver infrastructure/quoting).

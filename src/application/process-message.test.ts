@@ -38,6 +38,7 @@ function fakeDeps(over: Partial<Dependencies> = {}) {
       },
     },
     llm: { generate: async () => "respuesta simulada del asistente" },
+    emotion: { classify: async () => "neutral" },
     sessions: memorySessions(),
     knowledge: { load: async () => "conocimiento de prueba" },
     quoting: {
@@ -126,7 +127,8 @@ test("una consulta abierta registra el evento open_question", async () => {
 
 test("emoción negativa ofrece un asesor y registra emotion_detected", async () => {
   const { deps, logged } = fakeDeps({
-    llm: { generate: async () => '{"respuesta":"Entiendo tu molestia.","emocion":"enojo"}' },
+    llm: { generate: async () => "Entiendo tu molestia." },
+    emotion: { classify: async () => "enojo" },
   });
   await processMessage({ from: "u-enojo", text: "hola" }, deps);
   const reply = await processMessage({ from: "u-enojo", text: "esto es un desastre" }, deps);
