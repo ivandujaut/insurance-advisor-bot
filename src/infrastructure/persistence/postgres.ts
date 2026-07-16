@@ -13,9 +13,19 @@ import type {
 } from "../../application/ports.js";
 import { config } from "../../config/index.js";
 
-/** Crea el pool de conexiones. Por defecto usa DATABASE_URL de la config. */
+/**
+ * Crea el pool de conexiones. Por defecto usa DATABASE_URL de la config, que
+ * puede apuntar a cualquier Postgres (Render, Supabase, Neon, RDS): cambiar de
+ * proveedor es cambiar esa URL, sin tocar los adapters. El SSL se activa para los
+ * managed externos (Supabase/Neon) vía DATABASE_SSL=true o sslmode=require en la
+ * URL; el Postgres interno de Render no lo necesita.
+ */
 export function createPgPool(connectionString: string = config.persistence.databaseUrl): Pool {
-  return new Pool({ connectionString });
+  const needsSsl = config.persistence.databaseSsl || /[?&]sslmode=require/.test(connectionString);
+  return new Pool({
+    connectionString,
+    ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
+  });
 }
 
 /** Crea las tablas si no existen. Se corre una vez al arrancar. */
