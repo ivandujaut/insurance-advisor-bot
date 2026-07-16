@@ -14,35 +14,35 @@
       "id": "franquicia",
       "tema": "auto/cobertura",
       "pregunta": "¿Que es la franquicia?",
-      "variantes": ["¿que es el deducible?", "¿cuanto pago yo si choco?", "que significa franquicia a cargo del cliente"],
+      "variantes": ["¿que es el deducible?", "que es el deducible del seguro", "que significa franquicia a cargo del cliente", "cuanto pongo yo de mi bolsillo en un arreglo", "si choco cuanto pago yo de la reparacion", "que parte del arreglo pago yo"],
       "respuesta": "La franquicia es el importe que pagas vos para reparar daños parciales: un porcentaje de la suma asegurada. Ej: suma $10M, franquicia 1%, reparacion $1M, vos pagas $100 mil y La Caja el resto. Aplica al plan Todo Riesgo con Franquicia."
     },
     {
       "id": "granizo",
       "tema": "auto/cobertura",
       "pregunta": "¿El seguro cubre granizo?",
-      "variantes": ["¿me pagan si me cae piedra?", "cobertura de granizo", "si graniza y se abolla el auto"],
+      "variantes": ["cobertura de granizo", "si graniza y se abolla el auto", "me abolla el auto una tormenta de granizo", "si me cae piedra o granizo esta cubierto", "el granizo me arruino el techo del auto", "cubren daños por granizo"],
       "respuesta": "El granizo, sin tope ni limites, lo cubren los planes Terceros Completo con Granizo y Todo Riesgo con Franquicia (el Terceros Completo simple no)."
     },
     {
       "id": "planes-diferencia",
       "tema": "auto/planes",
       "pregunta": "¿Que diferencia hay entre los planes de auto?",
-      "variantes": ["¿cual plan me conviene?", "diferencias entre las coberturas de auto"],
+      "variantes": ["¿cual plan me conviene?", "diferencias entre las coberturas de auto", "que planes de auto hay", "compara los planes de auto", "opciones de cobertura de auto"],
       "respuesta": "Tres niveles: Terceros Completo (RC, robo, incendio, cristales laterales, asistencia con limite); Terceros Completo con Granizo (suma granizo, luneta/parabrisas, auto sustituto y asistencia sin limite); Todo Riesgo con Franquicia (suma daños parciales por accidente, con una franquicia a tu cargo)."
     },
     {
       "id": "terceros-que-cubre",
       "tema": "auto/cobertura",
       "pregunta": "¿Que cubre Terceros Completo?",
-      "variantes": ["que incluye el plan mas basico", "cobertura terceros completo"],
+      "variantes": ["cobertura terceros completo", "que cubre el terceros completo", "que incluye el terceros completo", "detalle del plan terceros completo"],
       "respuesta": "Responsabilidad Civil, robo y hurto, incendio, cristales laterales, cerraduras, ruedas y asistencia mecanica (con limite de eventos)."
     },
     {
       "id": "todo-riesgo",
       "tema": "auto/cobertura",
       "pregunta": "¿Que es Todo Riesgo con Franquicia?",
-      "variantes": ["el plan mas completo", "todo riesgo que cubre"],
+      "variantes": ["que es todo riesgo con franquicia", "cobertura todo riesgo", "el todo riesgo que cubre", "el plan que cubre daños a mi propio auto", "si choco yo me cubre mi auto", "plan que paga los daños de mi auto en un accidente"],
       "respuesta": "Es el plan mas completo: todo lo del Terceros Completo con Granizo mas los daños parciales por accidente, con una franquicia (deducible) a tu cargo."
     },
     {
@@ -70,7 +70,7 @@
       "id": "cobertura-desde",
       "tema": "auto/poliza",
       "pregunta": "¿Desde cuando estoy cubierto?",
-      "variantes": ["cuando arranca la cobertura", "cuanto dura la poliza"],
+      "variantes": ["cuando arranca la cobertura", "desde cuando tengo cobertura", "a partir de cuando estoy asegurado", "cuando empieza a valer el seguro", "cada cuanto se renueva la poliza"],
       "respuesta": "La cobertura arranca a las 12:00 hs del dia de inicio y es mensual con renovacion automatica."
     },
     {
@@ -112,21 +112,21 @@
       "id": "cotizacion-vinculante",
       "tema": "cotizacion",
       "pregunta": "¿El precio que me das es el final?",
-      "variantes": ["la estimacion es el precio real", "esto es vinculante"],
+      "variantes": ["la estimacion es el precio real", "el precio que me pasas es definitivo", "ese valor es el que voy a pagar", "la cotizacion es en firme", "es un presupuesto cerrado o aproximado"],
       "respuesta": "Es una estimacion orientativa segun tu perfil, no el precio en firme. El valor final lo confirma un asesor con el tarifador oficial."
     },
     {
       "id": "arrepentimiento",
       "tema": "poliza",
       "pregunta": "Me arrepenti, ¿puedo cancelar?",
-      "variantes": ["boton de arrepentimiento", "quiero dar de baja lo que contrate recien"],
+      "variantes": ["boton de arrepentimiento", "me arrepenti de la compra que hice recien", "contrate hace unos dias y me quiero echar atras", "cancelar dentro de los 10 dias sin costo", "recien contrate online y me arrepenti"],
       "respuesta": "Si contrataste online en los ultimos 10 dias, podes cancelar con el boton de arrepentimiento, sin costo."
     },
     {
       "id": "datos-cotizar",
       "tema": "cotizacion",
       "pregunta": "¿Que datos necesitas para cotizarme el auto?",
-      "variantes": ["que informacion te tengo que dar", "que preguntas para cotizar"],
+      "variantes": ["que informacion te tengo que dar", "que preguntas para cotizar", "que datos del auto necesitas", "que tengo que pasarte para cotizar auto"],
       "respuesta": "Para auto: año, si es 0km o usado, marca, modelo, version (opcional), si tiene GNC y el codigo postal donde se guarda."
     },
     {
@@ -147,14 +147,14 @@
       "id": "hogar-suma",
       "tema": "hogar",
       "pregunta": "¿Que es la suma asegurada del contenido?",
-      "variantes": ["cuanto declaro de contenido", "suma asegurada hogar"],
+      "variantes": ["cuanto declaro de contenido", "que monto declaro de mis cosas", "cuanto vale mi contenido para el seguro", "suma asegurada del contenido de la casa", "por cuanto aseguro mis muebles y electro"],
       "respuesta": "Es cuanto costaria reponer tus bienes (muebles, electrodomesticos, etc.). Define el monto maximo que te indemnizan y el precio del seguro."
     },
     {
       "id": "accidentes-que-es",
       "tema": "accidentes-personales",
       "pregunta": "¿Que es accidentes personales?",
-      "variantes": ["seguro de accidentes", "para que sirve accidentes personales"],
+      "variantes": ["seguro de accidentes personales", "para que sirve accidentes personales", "cobertura por invalidez o fallecimiento por accidente", "seguro que cubre si me lesiono", "plan de accidentes personales que incluye"],
       "respuesta": "Cubre lesiones, invalidez o fallecimiento por accidente, con asistencias como telemedicina 24h y ambulancia. Hay planes para proteccion familiar, trabajo independiente y personal domestico."
     },
     {
@@ -175,7 +175,7 @@
       "id": "salud",
       "tema": "salud",
       "pregunta": "¿Que es el seguro de salud?",
-      "variantes": ["cobertura de salud", "reintegros medicos"],
+      "variantes": ["seguro de salud que ofrece", "me reintegran las consultas medicas", "reintegro de farmacia y consultas", "cobertura de gastos medicos y odontologia", "seguro medico con reintegros"],
       "respuesta": "Ofrece chequeos preventivos y reintegros por consultas medicas, farmacia, odontologia y optica. No es un seguro de daños."
     },
     {
@@ -189,7 +189,7 @@
       "id": "denuncia-siniestro",
       "tema": "siniestros",
       "pregunta": "Tuve un choque, ¿que hago?",
-      "variantes": ["como denuncio un siniestro", "me chocaron como sigo"],
+      "variantes": ["como denuncio un siniestro", "me chocaron como sigo", "quiero hacer la denuncia de un choque", "tuve un accidente como aviso al seguro", "reportar un siniestro de auto"],
       "respuesta": "Podes gestionar la denuncia por la App La Caja o la Linea Unica 0810-555-2252. Te puedo derivar con un asesor ahora mismo si escribis *asesor*."
     },
     {
@@ -217,35 +217,35 @@
       "id": "letizia",
       "tema": "canales",
       "pregunta": "¿Que es Letizia?",
-      "variantes": ["el whatsapp de la caja", "quien es letizia"],
+      "variantes": ["quien es letizia", "el asistente de whatsapp de la caja", "autogestion de clientes por whatsapp", "el bot de whatsapp para modificar mi poliza", "que hace letizia"],
       "respuesta": "Letizia es el asistente de WhatsApp de La Caja para autogestion de clientes (modificar poliza, bajas, documentacion): 11-4857-7777. Yo te ayudo con la pre-venta: comparar y cotizar."
     },
     {
       "id": "linea-unica",
       "tema": "canales",
       "pregunta": "¿Cual es el telefono de La Caja?",
-      "variantes": ["numero de atencion", "como los llamo"],
+      "variantes": ["numero de atencion telefonica", "a que telefono llamo a la caja", "cual es el telefono de la caja", "el 0810 de la caja", "linea telefonica de atencion"],
       "respuesta": "La Linea Unica de La Caja es 0810-555-2252. Tambien esta la App y el Portal Personas."
     },
     {
       "id": "modificar-poliza",
       "tema": "posventa",
       "pregunta": "¿Como cambio algo de mi poliza?",
-      "variantes": ["modificar mi seguro", "actualizar datos de la poliza"],
+      "variantes": ["modificar mi seguro", "actualizar datos de la poliza", "cambiar un dato de mi poliza vigente", "corregir la patente o direccion de mi seguro", "sumar o sacar una cobertura de mi poliza"],
       "respuesta": "Las modificaciones de una poliza vigente se hacen por autogestion con Letizia (WhatsApp 11-4857-7777) o la App La Caja."
     },
     {
       "id": "baja",
       "tema": "posventa",
       "pregunta": "¿Como doy de baja mi seguro?",
-      "variantes": ["quiero cancelar mi poliza", "dar de baja el seguro"],
+      "variantes": ["quiero cancelar mi poliza que ya tengo", "dar de baja el seguro", "no quiero seguir con mi seguro", "terminar mi poliza vigente", "quiero cancelar un seguro que tengo hace tiempo"],
       "respuesta": "La baja de una poliza se gestiona por Letizia (WhatsApp) o la App. Si contrataste hace menos de 10 dias online, aplica el boton de arrepentimiento."
     },
     {
       "id": "que-lineas",
       "tema": "catalogo",
       "pregunta": "¿Que seguros tienen?",
-      "variantes": ["que productos ofrecen", "lista de seguros"],
+      "variantes": ["que productos ofrecen", "lista de seguros", "que seguros venden", "catalogo de seguros de la caja", "todos los seguros que tienen"],
       "respuesta": "Para personas: auto, moto, hogar, salud, bici/monopatin, notebook/tablet, cartera, vida, accidentes personales, cuidados mayores y auto conectado. Yo te cotizo auto, hogar, accidentes y bici."
     },
     {
