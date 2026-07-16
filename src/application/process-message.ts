@@ -25,7 +25,7 @@ export async function processMessage(
   // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
   if (reply === null) {
     await deps.events.log("open_question", incoming.from);
-    reply = await answer(session, incoming.text, deps);
+    reply = await answer(session, deps);
   }
 
   recordTurn(session, "assistant", reply);
