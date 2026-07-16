@@ -109,6 +109,25 @@ Nota metodológica: hubo varianza entre corridas del baseline (0.666 y 0.724 en 
 runs), por la no-determinación del modelo; la comparación v1 vs v2 es válida porque
 se mide en la MISMA corrida y condiciones.
 
+### Elección de modelo: sonnet vs Haiku (costo/latencia)
+
+El clasificador es una llamada aparte, en paralelo a la generación, y **se lo espera
+antes de responder** (para decidir el aviso de asesor): su cola es latencia del
+usuario. Con sonnet-5 pesaba 4-8s y a veces superaba el timeout. Se midió Haiku con
+el mismo prompt v2:
+
+| Modelo | Macro-F1 | Accuracy |
+|---|---|---|
+| sonnet-5 | 0.909 | 90.3% |
+| **claude-haiku-4-5 (en producción)** | **0.869** | **87.1%** |
+
+La caída (0.909 -> 0.869) NO toca la señal accionable: sobre los 20 mensajes
+negativos (enojo + frustración), Haiku marca los 20 como negativos (los que confunde
+son enojo↔frustración, ambas disparan el aviso de asesor) y con **cero falsos
+positivos**. La pérdida está en distinciones sin consecuencia (algún `neutral`
+etiquetado como interés/confusión). A cambio: ~3-5x más rápido y barato, sin ser
+lastre de latencia. Decisión: Haiku por default (`EMOTION_MODEL` lo overridea).
+
 ## Referencias
 
 - Ekman, P. (1992). *An argument for basic emotions.* Cognition & Emotion.
