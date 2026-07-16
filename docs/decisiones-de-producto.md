@@ -435,6 +435,65 @@ qué dato, y qué resigné.
   aclaración de que es una demo con datos públicos, no un canal oficial). A cambio,
   cualquiera prueba el bot en un clic, que es justo lo que una demo necesita.
 
+### Decisión 17: resolver las dudas repetidas sin llamar al LLM (router semántico)
+
+- **Criterio:** el costo por conversación importa, y la mayoría de las consultas
+  abiertas son las mismas pocas dudas (qué cubre tal plan, qué es la franquicia, cómo
+  pago). Pagar una generación de LLM por cada repetición es tirar plata; pero responder
+  mal una duda de seguros es peor que gastar de más.
+- **La decisión:** antes de la generación, la consulta pasa por un **router semántico**.
+  Al arrancar se embeden (OpenAI `text-embedding-3-small`) las 35 dudas del benchmark con
+  sus variantes (172 formulaciones); cada consulta se compara por **similitud coseno**
+  contra ese corpus, y si el mejor match supera un umbral, se devuelve la **respuesta
+  canónica sin llamar al LLM**. Si no, cae al asistente como siempre.
+- **Por qué se pudo sin tocar el núcleo:** de nuevo la Decisión 6. Entraron dos puertos
+  nuevos (un proveedor de embeddings y un matcher de FAQ) detrás de la misma interfaz de
+  dependencias; el motor solo sabe "¿hay respuesta canónica? sí o no". El coseno es
+  lógica pura en el dominio; el proveedor de embeddings es un borde intercambiable
+  (mañana, otro modelo o un vector store).
+- **Evaluación (por qué 0.65 y no a ojo):** elegir el umbral es un problema de
+  clasificación binaria (¿esta consulta tiene respuesta canónica?), así que se mide con
+  una **curva ROC**. Con método leave-one-out (cada formulación se busca contra el corpus
+  menos sí misma) sobre 172 formulaciones como positivos y 31 distractores como negativos
+  (fuera de tema y adyacentes a seguros sin cubrir: lanchas, mala praxis, caución), el
+  **AUC da 0.92**: el coseno separa muy bien lo conocido de lo desconocido.
+
+  ![Curva ROC del FAQ router, AUC 0.92](img/roc-faq.svg)
+
+  El punto de operación elegido, **0.65**, cae en el codo de la curva: **65% de
+  cobertura** (dudas resueltas sin LLM) con **3% de falsos positivos** (1 de 31 negativos
+  difíciles se filtra) y **96% de acierto de contenido**. Subir a 0.70 da **cero falsos
+  positivos** a costa de bajar la cobertura a 53%; bajar a 0.60 dispara los falsos
+  positivos a 16%. Se operó en 0.65 privilegiando cobertura, con el LLM de red de
+  seguridad para todo lo que no supera el umbral. Reproducir: `pnpm eval:faq`.
+- **Trade-off:** una llamada de embedding por consulta abierta (fracción de centavo) y un
+  benchmark que mantener. A cambio, las dudas repetidas se resuelven a costo casi cero,
+  con respuesta determinista y sin latencia de generación. El ahorro se mide en el funnel
+  (evento `faq_hit`, ver sección 6).
+
+### Decisión 18: detectar frustración para ofrecer un asesor humano
+
+- **Criterio:** la métrica es conversión, y un cliente frustrado que no encuentra
+  respuesta abandona. Si el bot detecta bronca, el mejor próximo paso no es insistir con
+  texto, es ofrecer una persona.
+- **La decisión:** en cada consulta abierta se clasifica la **emoción** del mensaje con
+  una llamada aparte, **en paralelo** a la respuesta (no agrega latencia). Si es negativa
+  (enojo o frustración), se suma al final la oferta de derivar a un asesor.
+- **La elección de modelo (una lección de producto):** la clasificación arrancó con el
+  mismo modelo que genera (sonnet-5), que en el eval dio macro-F1 0.909. Pero clasificar
+  una emoción es tarea simple, y sonnet era lento (lastre de latencia, a veces timeout).
+  Se midió **Haiku**: macro-F1 0.869, peor en el papel. La decisión igual fue Haiku,
+  porque **la métrica cruda no es la métrica útil**: sobre los mensajes negativos, Haiku
+  los marca a todos como negativos (confunde enojo con frustración, pero ambas disparan la
+  oferta) y con cero falsos positivos. Misma señal accionable, ~3-5x más rápido y barato.
+  (Detalle en `docs/emociones-investigacion.md`.)
+- **Por qué un puerto aparte:** el clasificador no es el `LlmPort` de generación; es otro
+  fin, con su propio prompt y su propio modelo más barato. Separarlo dejó cambiar el
+  modelo de emoción sin tocar la generación.
+- **Trade-off:** una llamada de clasificación por consulta abierta. Es best-effort: ante
+  falla o timeout devuelve "neutral" y la conversación sigue, nunca se rompe por una
+  emoción mal leída.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -455,8 +514,15 @@ métricas que instrumentaría:
 **Calidad de la conversación**
 - Tasa de contención (consultas resueltas sin humano).
 - Proporción de respuestas por IA vs menú, y satisfacción en cada una.
+- Consultas resueltas por el FAQ router sin LLM (evento `faq_hit`), como % de las
+  consultas abiertas: cobertura real del router en producción.
+- Tasa de detección de frustración y de ofertas de asesor aceptadas.
 - Tasa de "no entendí" del bot (mala interpretación).
 - CSAT al cierre.
+
+**Costo**
+- Llamadas de generación evitadas por el FAQ router (un `faq_hit` = una llamada cara
+  ahorrada). Es la palanca de costo de la Decisión 17, medible con el mismo evento.
 
 **Mix de producto**
 - Distribución de interés por plan (¿la gente elige el intermedio, como suele
@@ -499,6 +565,12 @@ métricas que instrumentaría:
 9. ~~Dejar el bot probable por cualquiera, sin lista blanca ni ngrok.~~ **Hecho:**
    canal web (demo web app con estética de WhatsApp) desplegado con URL pública y
    estable. Ver Decisión 16.
+10. ~~Bajar el costo de las dudas repetidas sin llamar al LLM.~~ **Hecho:** router
+    semántico de FAQ (embeddings + coseno), calibrado con una curva ROC (AUC 0.92) a
+    umbral 0.65. Ver Decisión 17 y `pnpm eval:faq`.
+11. ~~Detectar frustración para ofrecer un asesor a tiempo.~~ **Hecho:** clasificador
+    de emoción en paralelo (Haiku), que suma la oferta de asesor ante enojo/frustración.
+    Ver Decisión 18 y `docs/emociones-investigacion.md`.
 
 ## 9. Qué demuestra este ejercicio
 

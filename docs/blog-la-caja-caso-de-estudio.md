@@ -157,6 +157,36 @@ asesorada. Si en cualquier punto pregunto algo abierto, como "¿qué es la
 franquicia?", ahí toma el modelo de lenguaje y responde con la información real,
 sin romper el flujo. Ese reparto de tareas es la Decisión 3 funcionando en vivo.
 
+## Que lo repetido no cueste: el router de dudas
+
+Hay un detalle de costo escondido en ese reparto. La mayoría de las preguntas abiertas
+son las mismas pocas: qué cubre tal plan, qué es la franquicia, cómo se paga. Contestar
+cada repetición con una llamada al modelo de lenguaje es lento y cuesta plata. Así que
+antes de generar, el bot revisa si la pregunta se parece a una duda que ya conoce:
+convierte el texto en un vector, lo compara por significado con un catálogo de dudas
+frecuentes, y si hay match claro responde con la respuesta ya escrita, sin gastar una
+llamada al modelo. Si no la reconoce, ahí sí genera.
+
+La decisión fina es dónde poner el corte: demasiado laxo y el bot suelta una respuesta
+enlatada equivocada a algo que no era; demasiado estricto y casi nunca ahorra. Eso no lo
+dejé a ojo. Es un problema de clasificación (¿esta pregunta tiene respuesta conocida?), y
+se mide con una curva ROC:
+
+![Curva ROC del FAQ router, AUC 0.92](img/roc-faq.svg)
+
+El punto elegido resuelve el **65% de las dudas conocidas sin llamar al modelo**, con 96%
+de acierto y casi cero respuestas equivocadas a preguntas fuera de catálogo. Podría cubrir
+más bajando el corte, pero a costa de empezar a contestar de más, y para un bot de seguros
+una respuesta enlatada equivocada es peor que gastar una llamada. El resto cae al modelo,
+que es la red de seguridad. (El detalle técnico está en la segunda parte.)
+
+## Cuando el cliente se calienta
+
+Un cliente frustrado que no encuentra respuesta se va. Así que el bot, además de
+responder, lee el tono del mensaje: si detecta enojo o frustración, deja de insistir con
+texto y ofrece pasar a una persona. No reemplaza al asesor, lo llama en el momento justo,
+que es cuando el cliente está por abandonar.
+
 ## Un precio orientativo, no un número inventado
 
 Ese "$146.000 a $186.500 por mes" no lo saqué scrapeando la web ni lo inventé con un
