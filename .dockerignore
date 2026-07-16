@@ -9,5 +9,6 @@ data
 .test-tmp
 .DS_Store
 *.log
-docs
+docs/*
+!docs/benchmark-dudas.json
 .github
