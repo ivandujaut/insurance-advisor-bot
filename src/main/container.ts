@@ -32,8 +32,24 @@ import {
 import { createRedisSessionStore } from "../infrastructure/persistence/redis-sessions.js";
 import { createLocalQuotingProvider } from "../infrastructure/quoting/local-rating.js";
 
+/**
+ * Valida que la config tenga lo que cada driver necesita, y falla con un mensaje
+ * claro en vez de arrancar y romper después. Sin esto, PERSISTENCE=postgres con
+ * DATABASE_URL vacía cae al localhost de `pg` (ECONNREFUSED opaco).
+ */
+function assertConfig(): void {
+  if (config.persistence.driver === "postgres" && !config.persistence.databaseUrl) {
+    throw new Error("PERSISTENCE=postgres requiere DATABASE_URL (está vacía).");
+  }
+  if (config.session.driver === "redis" && !config.session.redisUrl) {
+    throw new Error("SESSION_STORE=redis requiere REDIS_URL (está vacía).");
+  }
+}
+
 /** Arma las dependencias concretas del núcleo. Se llama una vez por proceso. */
 export async function buildDependencies(): Promise<Dependencies> {
+  assertConfig();
+
   let leads: LeadRepository;
   let events: EventSink;
   if (config.persistence.driver === "postgres") {

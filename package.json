@@ -15,7 +15,7 @@
     "start": "node dist/main/server.js",
     "build": "tsc && node scripts/copy-assets.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/domain/conversation/*.test.ts src/domain/quoting/*.test.ts src/domain/analytics/*.test.ts src/application/*.test.ts src/infrastructure/persistence/*.test.ts src/infrastructure/messaging/*.test.ts src/config/*.test.ts",
+    "test": "rm -rf .test-tmp && LACAJA_DATA_DIR=.test-tmp ANTHROPIC_API_KEY= tsx --test src/domain/conversation/*.test.ts src/domain/quoting/*.test.ts src/domain/analytics/*.test.ts src/application/*.test.ts src/infrastructure/persistence/*.test.ts src/infrastructure/messaging/*.test.ts src/config/*.test.ts src/main/*.test.ts",
     "check:arch": "node scripts/check-arch.mjs",
     "format": "biome format --write src scripts",
     "lint": "biome check src scripts",
@@ -25,13 +25,10 @@
     "*.{ts,mjs}": "biome check --write --no-errors-on-unmatched"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
     "@hono/node-server": "^1.13.0",
-    "ai": "^4.0.0",
     "hono": "^4.6.0",
     "pg": "^8.22.0",
-    "redis": "^4.7.1",
-    "zod": "^3.23.0"
+    "redis": "^4.7.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.3",
