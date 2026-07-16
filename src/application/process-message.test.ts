@@ -194,6 +194,32 @@ test("contratar online registra quote_accepted con canal online", async () => {
   assert.equal(accepted?.props?.via, "online");
 });
 
+test("trabado en GNC: default inteligente y avanza en vez de loopear", async () => {
+  const { deps, logged } = fakeDeps(); // emoción neutral: escapa por reintentos
+  for (const t of ["hola", "1", "2020", "usado", "Toyota", "Corolla", "XEI"]) {
+    await processMessage({ from: "u-gnc", text: t }, deps);
+  }
+  // Ahora pregunta GNC. Primer fallo: re-pregunta.
+  const r1 = await processMessage({ from: "u-gnc", text: "que se yo" }, deps);
+  assert.match(r1, /No te entend/i);
+  // Segundo fallo (reintentos): pone el default "no" y avanza al CP.
+  const r2 = await processMessage({ from: "u-gnc", text: "basta" }, deps);
+  assert.match(r2, /pongo que \*no\*/i);
+  assert.match(r2, /c[oó]digo postal/i);
+  const stuck = logged.find((e) => e.type === "flow_stuck");
+  assert.equal(stuck?.props?.paso, "gnc");
+});
+
+test("un mensaje frustrado en un flujo corta el loop al instante", async () => {
+  const { deps, logged } = fakeDeps({ emotion: { classify: async () => "frustracion" } });
+  for (const t of ["hola", "1", "2020"]) await processMessage({ from: "u-frust", text: t }, deps);
+  // En el paso condición (0km/usado): un mensaje frustrado escapa ya (sin esperar).
+  const r = await processMessage({ from: "u-frust", text: "basta de preguntas" }, deps);
+  assert.match(r, /asesor|menú/i);
+  const stuck = logged.find((e) => e.type === "flow_stuck");
+  assert.equal(stuck?.props?.emocion, "frustracion");
+});
+
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
   // A queda a mitad de una cotización (año + condición + marca cargados).

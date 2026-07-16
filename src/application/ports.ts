@@ -53,7 +53,8 @@ export type EventType =
   | "emotion_detected"
   | "faq_hit"
   | "quote_accepted"
-  | "handoff_requested";
+  | "handoff_requested"
+  | "flow_stuck";
 
 export interface AnalyticsEvent {
   ts: string;
