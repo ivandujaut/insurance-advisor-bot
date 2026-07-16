@@ -124,6 +124,17 @@ test("una consulta abierta registra el evento open_question", async () => {
   assert.ok(logged.some((e) => e.type === "open_question"));
 });
 
+test("emoción negativa ofrece un asesor y registra emotion_detected", async () => {
+  const { deps, logged } = fakeDeps({
+    llm: { generate: async () => '{"respuesta":"Entiendo tu molestia.","emocion":"enojo"}' },
+  });
+  await processMessage({ from: "u-enojo", text: "hola" }, deps);
+  const reply = await processMessage({ from: "u-enojo", text: "esto es un desastre" }, deps);
+  assert.match(reply, /asesor/);
+  const emo = logged.find((e) => e.type === "emotion_detected");
+  assert.equal(emo?.props?.emocion, "enojo");
+});
+
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
   // A queda a mitad de una cotización (año + condición + marca cargados).

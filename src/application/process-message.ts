@@ -7,8 +7,11 @@
 
 import { handleFlow } from "../domain/conversation/flows.js";
 import { createSession, recordTurn, trimHistory } from "../domain/conversation/session.js";
+import { NEGATIVE_EMOTIONS } from "../domain/emotion.js";
 import { answer } from "./assistant.js";
 import type { Dependencies, IncomingMessage } from "./ports.js";
+
+const ASESOR_OFFER = "\n\nSi preferís que te ayude una persona, escribí *asesor* y te derivo. 🧑‍💼";
 
 export async function processMessage(
   incoming: IncomingMessage,
@@ -25,7 +28,13 @@ export async function processMessage(
   // 2) Si ningún flujo aplica, es una consulta abierta: responde el asistente.
   if (reply === null) {
     await deps.events.log("open_question", incoming.from);
-    reply = await answer(session, deps);
+    const result = await answer(session, deps);
+    reply = result.reply;
+    await deps.events.log("emotion_detected", incoming.from, { emocion: result.emocion });
+    // Regla accionable: ante enojo/frustración, ofrecer un humano.
+    if (NEGATIVE_EMOTIONS.includes(result.emocion)) {
+      reply += ASESOR_OFFER;
+    }
   }
 
   recordTurn(session, "assistant", reply);

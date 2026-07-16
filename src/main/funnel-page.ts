@@ -34,6 +34,15 @@ export function renderFunnelHtml(r: FunnelReport): string {
         .join("")
     : `<tr><td colspan="3" class="muted">Todavía no hay leads.</td></tr>`;
 
+  const emociones = r.emociones.length
+    ? r.emociones
+        .map(
+          (e) =>
+            `<tr><td>${esc(e.emocion)}</td><td class="num">${e.count}</td><td class="num">${e.tasa}</td></tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="3" class="muted">Todavía no hay consultas abiertas.</td></tr>`;
+
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -100,6 +109,14 @@ ${
     <table>
       <thead><tr><th>Plan</th><th class="num">Leads</th><th class="num">Share</th></tr></thead>
       <tbody>${mix}</tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Emociones (consultas abiertas)</h2>
+    <table>
+      <thead><tr><th>Emoción</th><th class="num">Detecciones</th><th class="num">Share</th></tr></thead>
+      <tbody>${emociones}</tbody>
     </table>
   </div>
 
