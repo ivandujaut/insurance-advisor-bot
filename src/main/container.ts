@@ -14,6 +14,8 @@ import type {
   SessionStore,
 } from "../application/ports.js";
 import { config } from "../config/index.js";
+import { createOpenAiEmbeddings } from "../infrastructure/embeddings/openai.js";
+import { createFaqMatcher } from "../infrastructure/faq/faq-matcher.js";
 import { createFilesystemKnowledge } from "../infrastructure/knowledge/filesystem.js";
 import { createAnthropicLlm } from "../infrastructure/llm/anthropic.js";
 import { createAnthropicEmotionClassifier } from "../infrastructure/llm/emotion-classifier.js";
@@ -88,10 +90,15 @@ export async function buildDependencies(): Promise<Dependencies> {
     sessions = createInMemorySessionStore(config.session.ttlSeconds);
   }
 
+  // FAQ router: embede el corpus del benchmark al arrancar (una vez). Sin
+  // OPENAI_API_KEY queda desactivado y toda consulta cae al asistente.
+  const faq = await createFaqMatcher(createOpenAiEmbeddings(), config.faq.threshold);
+
   return {
     leads,
     events,
     sessions,
+    faq,
     llm: createAnthropicLlm(),
     emotion: createAnthropicEmotionClassifier(),
     knowledge: createFilesystemKnowledge(),

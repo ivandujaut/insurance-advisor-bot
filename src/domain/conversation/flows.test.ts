@@ -36,6 +36,7 @@ function fakeDeps(): Dependencies & { savedLeads: LeadInput[]; events: { logged:
     // handleFlow nunca llama al LLM ni al clasificador (eso es del engine); stubs.
     llm: { generate: async () => "" },
     emotion: { classify: async () => "neutral" },
+    faq: { match: async () => null },
     // handleFlow tampoco toca el store de sesiones (recibe la sesión directa); stub.
     sessions: { get: async () => undefined, save: async () => {} },
     knowledge: { load: async () => "" },

@@ -47,13 +47,17 @@ test("computeFunnel: drop-off por paso y otras señales", () => {
     ev("quote_step", "b", "anio"),
     ev("quote_step", "a", "cp"),
     ev("open_question", "a"),
+    ev("open_question", "b"),
+    ev("faq_hit", "a"),
     ev("advisor_requested", "b"),
   ];
   const r = computeFunnel(events, []);
   assert.equal(r.pasos.find((p) => p.paso === "anio")?.count, 2);
   assert.equal(r.pasos.find((p) => p.paso === "cp")?.count, 1);
   assert.equal(r.pasos.find((p) => p.paso === "modelo")?.count, 0);
-  assert.equal(r.consultasAbiertas, 1);
+  assert.equal(r.consultasAbiertas, 2);
+  assert.equal(r.resueltasFaq, 1);
+  assert.equal(r.resueltasFaqTasa, "50%"); // 1 de 2 consultas abiertas
   assert.equal(r.pedidosAsesor, 1);
 });
 

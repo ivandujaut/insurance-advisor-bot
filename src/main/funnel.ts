@@ -47,6 +47,7 @@ if (r.emociones.length > 0) {
 }
 
 console.log("\n💬 Otras señales");
-console.log(`  Consultas abiertas (LLM)  ${r.consultasAbiertas}`);
+console.log(`  Consultas abiertas        ${r.consultasAbiertas}`);
+console.log(`  Resueltas por FAQ (sin IA) ${r.resueltasFaq} (${r.resueltasFaqTasa})`);
 console.log(`  Pedidos de asesor         ${r.pedidosAsesor}`);
 console.log("");

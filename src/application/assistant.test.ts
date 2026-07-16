@@ -20,6 +20,7 @@ function deps(llmReturn: () => Promise<string>): Dependencies {
     events: { log: async () => {} },
     llm: { generate: llmReturn },
     emotion: { classify: async () => "neutral" },
+    faq: { match: async () => null },
     sessions: { get: async () => undefined, save: async () => {} },
     knowledge: { load: async () => "base de conocimiento" },
     quoting: {

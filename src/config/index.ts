@@ -62,6 +62,19 @@ export const config = {
     // Se activa con DATABASE_SSL=true o si la URL trae sslmode=require.
     databaseSsl: process.env.DATABASE_SSL === "true",
   },
+  embeddings: {
+    // Clave de OpenAI para el FAQ router (búsqueda semántica). Sin clave, el
+    // router queda desactivado (no-op) y todo cae al asistente: degrada, no rompe.
+    apiKey: process.env.OPENAI_API_KEY ?? "",
+    // text-embedding-3-small: barato y suficiente para decenas de dudas.
+    model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small",
+  },
+  faq: {
+    // Umbral de similitud coseno para dar por buena una duda conocida. Alto a
+    // propósito: preferimos no responder de más (que caiga al LLM) antes que
+    // responder mal. Se calibra con `pnpm eval:faq`.
+    threshold: Number(process.env.FAQ_THRESHOLD ?? 0.75),
+  },
   session: {
     // Adapter de sesiones. Default en memoria.
     driver: (process.env.SESSION_STORE ?? "memory") as SessionDriver,

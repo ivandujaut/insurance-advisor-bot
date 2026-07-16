@@ -123,7 +123,8 @@ ${
   <div class="card">
     <h2>Otras señales</h2>
     <div class="señales">
-      <div class="señal"><div class="v">${r.consultasAbiertas}</div><div class="k">Consultas abiertas (IA)</div></div>
+      <div class="señal"><div class="v">${r.consultasAbiertas}</div><div class="k">Consultas abiertas</div></div>
+      <div class="señal"><div class="v">${r.resueltasFaq}</div><div class="k">Resueltas por FAQ (${r.resueltasFaqTasa}, sin IA)</div></div>
       <div class="señal"><div class="v">${r.pedidosAsesor}</div><div class="k">Pedidos de asesor</div></div>
     </div>
   </div>`

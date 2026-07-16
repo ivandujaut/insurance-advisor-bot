@@ -34,6 +34,10 @@ export interface FunnelReport {
   mixPlan: PlanMix[];
   emociones: EmotionCount[];
   consultasAbiertas: number;
+  /** Consultas abiertas resueltas por el FAQ router (respuesta canónica, sin LLM). */
+  resueltasFaq: number;
+  /** % de consultas abiertas que resolvió el FAQ router (ahorro de costo). */
+  resueltasFaqTasa: string;
   pedidosAsesor: number;
 }
 
@@ -80,6 +84,9 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
     .map(([emocion, count]) => ({ emocion, count, tasa: pct(count, emotionEvents.length) }))
     .sort((a, b) => b.count - a.count);
 
+  const consultasAbiertas = events.filter((e) => e.type === "open_question").length;
+  const resueltasFaq = events.filter((e) => e.type === "faq_hit").length;
+
   return {
     totalEventos: events.length,
     saludan,
@@ -90,7 +97,9 @@ export function computeFunnel(events: AnalyticsEvent[], leads: Lead[]): FunnelRe
     pasos,
     mixPlan,
     emociones,
-    consultasAbiertas: events.filter((e) => e.type === "open_question").length,
+    consultasAbiertas,
+    resueltasFaq,
+    resueltasFaqTasa: pct(resueltasFaq, consultasAbiertas),
     pedidosAsesor: events.filter((e) => e.type === "advisor_requested").length,
   };
 }
