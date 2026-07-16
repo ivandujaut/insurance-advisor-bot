@@ -6,6 +6,7 @@
  */
 import { createClient } from "redis";
 import type {
+  AnalyticsReader,
   Dependencies,
   EventSink,
   LeadRepository,
@@ -17,11 +18,13 @@ import { createFilesystemKnowledge } from "../infrastructure/knowledge/filesyste
 import { createAnthropicLlm } from "../infrastructure/llm/anthropic.js";
 import { CliProvider } from "../infrastructure/messaging/cli.js";
 import { MetaProvider } from "../infrastructure/messaging/meta.js";
+import { createJsonlAnalyticsReader } from "../infrastructure/persistence/jsonl-analytics.js";
 import { createJsonlEventSink } from "../infrastructure/persistence/jsonl-events.js";
 import { createJsonlLeadRepository } from "../infrastructure/persistence/jsonl-leads.js";
 import { createInMemorySessionStore } from "../infrastructure/persistence/memory-sessions.js";
 import {
   createPgPool,
+  createPostgresAnalyticsReader,
   createPostgresEventSink,
   createPostgresLeadRepository,
   ensureSchema,
@@ -63,6 +66,19 @@ export async function buildDependencies(): Promise<Dependencies> {
     // del mismo puerto (ver infrastructure/quoting).
     quoting: createLocalQuotingProvider(),
   };
+}
+
+/**
+ * Arma el lado de lectura de analytics (para el reporte de funnel). Va aparte de
+ * las Dependencies del núcleo porque leer métricas no es asunto del motor de
+ * conversación. Para Postgres usa su propio pool (el endpoint es de baja
+ * frecuencia); las tablas ya las creó buildDependencies al arrancar.
+ */
+export function buildAnalyticsReader(): AnalyticsReader {
+  if (config.persistence.driver === "postgres") {
+    return createPostgresAnalyticsReader(createPgPool());
+  }
+  return createJsonlAnalyticsReader();
 }
 
 /** Elige el proveedor de mensajería según la config. */

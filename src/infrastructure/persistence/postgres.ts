@@ -4,7 +4,13 @@
  * producción; los adapters JSONL siguen siendo el default sin dependencias.
  */
 import { Pool } from "pg";
-import type { EventSink, LeadRepository } from "../../application/ports.js";
+import type {
+  AnalyticsEvent,
+  AnalyticsReader,
+  EventSink,
+  Lead,
+  LeadRepository,
+} from "../../application/ports.js";
 import { config } from "../../config/index.js";
 
 /** Crea el pool de conexiones. Por defecto usa DATABASE_URL de la config. */
@@ -67,6 +73,34 @@ export function createPostgresEventSink(pool: Pool): EventSink {
       } catch (err) {
         console.error("No se pudo registrar el evento en Postgres:", err);
       }
+    },
+  };
+}
+
+export function createPostgresAnalyticsReader(pool: Pool): AnalyticsReader {
+  return {
+    async readEvents() {
+      const { rows } = await pool.query(`SELECT ts, type, user_id, props FROM events ORDER BY ts`);
+      return rows.map((r) => ({
+        ts: (r.ts as Date).toISOString(),
+        type: r.type,
+        userId: r.user_id,
+        props: r.props ?? undefined,
+      })) as AnalyticsEvent[];
+    },
+    async readLeads() {
+      const { rows } = await pool.query(
+        `SELECT ts, user_id, name, producto, plan, detalle FROM leads ORDER BY ts`,
+      );
+      // Se reconstruye el lead: columnas comunes + lo específico del `detalle` jsonb.
+      return rows.map((r) => ({
+        ts: (r.ts as Date).toISOString(),
+        userId: r.user_id,
+        name: r.name ?? undefined,
+        producto: r.producto,
+        plan: r.plan,
+        ...(r.detalle as Record<string, unknown>),
+      })) as Lead[];
     },
   };
 }
