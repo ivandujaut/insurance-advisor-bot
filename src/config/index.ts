@@ -51,7 +51,12 @@ export const config = {
   persistence: {
     // Adapter de leads/eventos. Default JSONL (sin dependencias).
     driver: (process.env.PERSISTENCE ?? "jsonl") as PersistenceDriver,
+    // Cualquier Postgres sirve (Render, Supabase, Neon, RDS): cambiar el proveedor
+    // es cambiar esta URL. Los managed externos exigen SSL (ver databaseSsl).
     databaseUrl: process.env.DATABASE_URL ?? "",
+    // SSL para la conexión. Render interno no lo necesita; Supabase/Neon sí.
+    // Se activa con DATABASE_SSL=true o si la URL trae sslmode=require.
+    databaseSsl: process.env.DATABASE_SSL === "true",
   },
   session: {
     // Adapter de sesiones. Default en memoria.

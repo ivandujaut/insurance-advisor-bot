@@ -52,6 +52,18 @@ por paso y mix de plan, en vivo.
 Nota: el Postgres **free** de Render se elimina a los ~30 días. Para que los datos
 duren, pasar la base a un plan pago desde el dashboard.
 
+### Cambiar de proveedor (Supabase, Neon, RDS)
+
+La persistencia está detrás de puertos y el adapter es Postgres puro, así que
+cualquier base compatible sirve. Para migrar de la base de Render a
+**Supabase** o **Neon**:
+
+1. Creá la base en el proveedor y copiá su connection string.
+2. En el servicio de Render (o donde corra), seteá `DATABASE_URL` con esa string
+   y `DATABASE_SSL=true` (los managed externos exigen SSL; también se activa solo
+   si la URL trae `sslmode=require`).
+3. Redeploy. El server crea las tablas al arrancar. No cambia una línea de código.
+
 ## Opcional: servir también el webhook de WhatsApp desde acá
 
 Si querés que este mismo deploy reemplace a ngrok como webhook de WhatsApp (no
