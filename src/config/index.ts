@@ -70,10 +70,13 @@ export const config = {
     model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small",
   },
   faq: {
-    // Umbral de similitud coseno para dar por buena una duda conocida. Alto a
-    // propósito: preferimos no responder de más (que caiga al LLM) antes que
-    // responder mal. Se calibra con `pnpm eval:faq`.
-    threshold: Number(process.env.FAQ_THRESHOLD ?? 0.75),
+    // Umbral de similitud coseno para dar por buena una duda conocida. Calibrado
+    // con `pnpm eval:faq` (text-embedding-3-small): 0.70 es el corte más bajo con
+    // contenido 100% correcto y cero falsos positivos sobre paráfrasis no vistas.
+    // Por debajo empieza a devolver la respuesta canónica equivocada; preferimos
+    // que esas caigan al LLM. Producción embede pregunta + variantes, así que la
+    // cobertura real es mayor que la del eval (que deja las variantes fuera).
+    threshold: Number(process.env.FAQ_THRESHOLD ?? 0.7),
   },
   session: {
     // Adapter de sesiones. Default en memoria.
