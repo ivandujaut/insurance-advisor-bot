@@ -17,11 +17,24 @@ import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messagi
 import { buildAnalyticsReader, buildDependencies, buildMessagingProvider } from "./container.js";
 import { DEMO_HTML } from "./demo-page.js";
 import { renderFunnelHtml } from "./funnel-page.js";
+import { createRateLimiter } from "./rate-limit.js";
 
 const app = new Hono();
 const deps = await buildDependencies();
 const provider = buildMessagingProvider();
 const analytics = buildAnalyticsReader();
+
+// Protección del canal web público: cada mensaje puede llegar al LLM (pago), así
+// que se limita por IP y se acotan los tamaños de entrada. Sin esto, cualquiera
+// puede loopear /chat y quemar el crédito.
+const chatLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
+const MAX_USERID_LEN = 64;
+const MAX_TEXT_LEN = 4000;
+
+/** IP del cliente detrás del proxy de Render (X-Forwarded-For), o un fallback. */
+function clientIp(c: { req: { header: (n: string) => string | undefined } }): string {
+  return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
 
 if (provider.name === "meta" && !config.meta.appSecret) {
   console.warn("⚠️  META_APP_SECRET no está seteado: no se verifica la firma del webhook.");
@@ -38,6 +51,9 @@ app.get("/funnel", async (c) => {
 });
 
 app.post("/chat", async (c) => {
+  if (!chatLimiter.allow(clientIp(c))) {
+    return c.json({ error: "Demasiadas solicitudes. Probá de nuevo en un momento." }, 429);
+  }
   let body: { userId?: string; text?: string; name?: string };
   try {
     body = await c.req.json();
@@ -48,6 +64,9 @@ app.post("/chat", async (c) => {
   const text = (body.text ?? "").trim();
   if (!userId || !text) {
     return c.json({ error: "Faltan userId o text" }, 400);
+  }
+  if (userId.length > MAX_USERID_LEN || text.length > MAX_TEXT_LEN) {
+    return c.json({ error: "userId o mensaje demasiado largo." }, 413);
   }
   const reply = await processMessage({ from: userId, text, name: body.name }, deps);
   return c.json({ reply });

@@ -177,6 +177,24 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   assert.equal(lead.cp, "3011");
 });
 
+test('GNC: responder "no tiene" queda como sin GNC (no se invierte)', async () => {
+  const s = newSession("t-gnc");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  await handleFlow(s, "2020", deps);
+  await handleFlow(s, "usado", deps);
+  await handleFlow(s, "Toyota", deps);
+  await handleFlow(s, "Corolla", deps);
+  await handleFlow(s, "XEI", deps);
+  await handleFlow(s, "no tiene", deps); // GNC: negación con la palabra "tiene"
+  await handleFlow(s, "3011", deps);
+  await handleFlow(s, "1", deps);
+  const lead = deps.savedLeads[0];
+  if (lead?.producto !== "auto") throw new Error("esperaba un lead de auto");
+  assert.equal(lead.gnc, false, '"no tiene" debe ser gnc=false');
+});
+
 test("auto usado dispara la nota de inspección online", async () => {
   const s = newSession("t-usado");
   const deps = fakeDeps();
