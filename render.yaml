@@ -34,8 +34,15 @@ services:
         fromDatabase:
           name: lacaja-db
           property: connectionString
+      # Sesiones en Redis (Key Value): sobreviven al redeploy/spin-down y sirven
+      # para más de una instancia (con "memory" se pierden en cada deploy).
       - key: SESSION_STORE
-        value: memory
+        value: redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: lacaja-kv
+          property: connectionString
       # PORT lo inyecta Render automáticamente; el server lo lee de process.env.
       # --- Secretos (solo si MESSAGING_PROVIDER=meta). Se cargan a mano en el
       # dashboard, nunca en el repo. sync:false = Render no los versiona. ---
@@ -52,3 +59,13 @@ services:
       # Opcional: habilita las respuestas del LLM a preguntas abiertas.
       - key: ANTHROPIC_API_KEY
         sync: false
+
+  # Key Value (Redis) para el store de sesiones. free: 25 MB, suficiente para la
+  # demo. ipAllowList vacío = solo conexiones internas (el web service, misma
+  # región). Las sesiones tienen TTL, así que allkeys-lru no molesta.
+  - type: redis
+    name: lacaja-kv
+    plan: free
+    region: oregon
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru

@@ -49,6 +49,11 @@ spin-down (con `jsonl` el disco de Render es efímero).
 El dashboard del embudo queda en `https://<tu-url>/funnel`: activación, drop-off
 por paso y mix de plan, en vivo.
 
+El `render.yaml` también declara un **Key Value (Redis)** `lacaja-kv` para el store
+de sesiones (`SESSION_STORE=redis`, `REDIS_URL` cableada): así una cotización a
+medio hacer **sobrevive a los redeploys y al spin-down** (con `memory` se perdía
+en cada deploy) y el bot puede correr con más de una instancia.
+
 Nota: el Postgres **free** de Render se elimina a los ~30 días. Para que los datos
 duren, pasar la base a un plan pago desde el dashboard.
 
