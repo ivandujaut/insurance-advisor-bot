@@ -53,7 +53,7 @@ enfría.
 |---|---|---|---|
 | **A** | **Retomar con conciencia del hueco**: si el usuario vuelve a mitad de un flujo tras >30 min, reconocer el tiempo y re-mostrar la pregunta pendiente, con opción de arrancar de nuevo. In-chat, sin LLM ni plataforma. | Bajo | **Hecho** |
 | **B** | **Nudge "¿seguís ahí?"** ~30 min tras una pausa en flujo, dentro de la ventana (mensaje libre). El bot escribe primero. | Medio (job proactivo que barre sesiones inactivas) | **Hecho** (opt-in, solo WhatsApp) |
-| **C** | **Re-enganche >24h** con plantilla de "cotización a medias" (cadencia 24/72h). | Alto (plantilla aprobada por Meta + opt-in + costo, es *marketing*) | Roadmap/producción |
+| **C** | **Re-enganche >24h** con plantilla de "cotización a medias". | Alto (plantilla aprobada por Meta + opt-in + costo, es *marketing*) | **Hecho** (código; falta opt-in y aprobar la plantilla) |
 
 **Criterio.** A es barato, no depende de la plataforma ni de infra proactiva, y
 ataca el problema que se ve hoy: volver y que el bot pregunte algo sin contexto (o
@@ -79,6 +79,19 @@ se resetea cuando el usuario responde). Corre en un `setInterval` en el server, 
 por `REENGAGEMENT_ENABLED` (apagado por default): **solo tiene canal en WhatsApp** (la
 web es request/response, sin push), por eso no se puede demostrar en la demo web. La
 lógica de a-quién (`shouldNudge`) y qué (`buildNudge`) es pura y testeada.
+
+**C — Plantilla fuera de la ventana (>24h).** Fuera de las 24h ya no se puede mandar un
+mensaje libre, solo una plantilla aprobada. Se agregó `MessagingProvider.sendTemplate`
+(el `MetaProvider` la manda por la Cloud API con `type: template`; el CLI la loguea) y un
+segundo barrido (`runTemplateReengagement`) que, a las sesiones a mitad de flujo e
+inactivas entre 24h y `maxHours` (72h), les manda la plantilla `cotizacion_a_medias` con
+el producto como variable, y marca `data.templateSent`. Gateado por
+`REENGAGEMENT_TEMPLATE_ENABLED` (off por default). **Dos prerequisitos de producción, aún
+pendientes:** (1) la plantilla tiene que estar **aprobada en Meta**, y (2) como es
+*marketing*, solo se manda con **opt-in** del usuario (`data.optIn`), que hoy no se
+captura en ningún lado; sin eso, `shouldSendTemplate` nunca dispara (correcto por
+política: mandar marketing sin consentimiento puede banear el número). Capturar el opt-in
+(ej: una línea de consentimiento al dejar el contacto) es el próximo paso.
 
 ## Fuentes
 

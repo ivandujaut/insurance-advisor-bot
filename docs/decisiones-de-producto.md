@@ -624,6 +624,10 @@ métricas que instrumentaría:
 16. ~~Que el bot pueda re-enganchar proactivamente una cotización a medias.~~ **Hecho
     (opt-in):** barrido que manda un "¿seguís ahí?" a las sesiones inactivas a mitad de
     flujo, dentro de la ventana de 24h. Apagado por default: solo tiene canal en WhatsApp.
+17. ~~Re-enganchar también fuera de la ventana de 24h.~~ **Hecho (código):**
+    `sendTemplate` en el proveedor de mensajería y un barrido que manda una plantilla de
+    "cotización a medias" entre 24h y 72h. Falta, para producción: aprobar la plantilla en
+    Meta y capturar el opt-in (es marketing). Ver `docs/benchmark-timeout-reengagement.md`.
 
 ## 9. Qué demuestra este ejercicio
 
