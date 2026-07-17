@@ -86,10 +86,9 @@ const MAIN_MENU = [
   "3️⃣ Cotizar accidentes personales",
   "4️⃣ Cotizar bici o monopatín",
   "5️⃣ Comparar los planes de auto",
-  "6️⃣ Tengo una duda",
-  "7️⃣ Hablar con un asesor",
+  "6️⃣ Hablar con un asesor",
   "",
-  "Respondé con el número, o escribime tu consulta directamente.",
+  "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
 ].join("\n");
 
 const PLAN_COMPARISON = [
@@ -185,6 +184,26 @@ function maybeResume(session: Session, now: Date): string | null {
     "",
     "Respondé para seguir, o escribí *menú* para arrancar de nuevo.",
   ].join("\n");
+}
+
+// Pasos (campos de datos) de cada cotización larga, en orden, para el indicador de
+// progreso. Los cortos (accidentes, bici: 2 pasos) no lo llevan: sumaría ruido.
+const AUTO_STEPS = ["anio", "condicion", "marca", "modelo", "version", "gnc", "cp", "plan"];
+
+/** Pasos de hogar según el camino (propietario asegura m², inquilino el contenido). */
+function hogarSteps(session: Session): string[] {
+  return session.data.tipoResidente === "inquilino"
+    ? ["tipoResidente", "tipoHogar", "uso", "cp", "sumaContenido"]
+    : ["tipoResidente", "tipoHogar", "uso", "m2", "cp"];
+}
+
+/**
+ * Prefija "📋 Dato N de M" a la pregunta de un paso, para que el usuario sepa cuánto
+ * falta (baja el abandono en flujos largos). N sale de cuántos campos ya se llenaron.
+ */
+function conProgreso(session: Session, steps: string[], pregunta: string): string {
+  const hechos = steps.filter((k) => session.data[k]).length;
+  return `📋 *Dato ${Math.min(hechos + 1, steps.length)} de ${steps.length}*\n${pregunta}`;
 }
 
 export async function handleFlow(
@@ -326,12 +345,12 @@ async function handleMainMenu(
       session.stage = "quoting_auto";
       session.data = {};
       await deps.events.log("quote_started", session.userId);
-      return "Genial, cotizamos tu *seguro de auto*. 🚗\n\nEmpecemos por el *año* del vehículo (entre 2006 y el actual).";
+      return `Genial, cotizamos tu *seguro de auto*. 🚗\n\n${conProgreso(session, AUTO_STEPS, "Empecemos por el *año* del vehículo (entre 2006 y el actual).")}`;
     case "2":
       session.stage = "quoting_hogar";
       session.data = {};
       await deps.events.log("quote_started", session.userId);
-      return "Buenísimo, cotizamos tu *seguro de hogar*. 🏠\n\n¿Sos *propietario* o *inquilino*?";
+      return `Buenísimo, cotizamos tu *seguro de hogar*. 🏠\n\n${conProgreso(session, hogarSteps(session), "¿Sos *propietario* o *inquilino*?")}`;
     case "3":
       session.stage = "quoting_accidentes";
       session.data = {};
@@ -347,14 +366,12 @@ async function handleMainMenu(
       await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
     case "6":
-      // Duda abierta -> la responde el LLM con la base de conocimiento.
-      return null;
-    case "7":
       session.stage = "idle";
       await deps.events.log("advisor_requested", session.userId);
       return ADVISOR_REPLY;
     default:
-      // Cualquier otra cosa desde el menú es una consulta abierta -> LLM.
+      // Cualquier otra cosa (incluida una duda escrita) es una consulta abierta:
+      // la resuelve el FAQ router o el LLM. Por eso ya no hace falta un ítem "duda".
       return null;
   }
 }
@@ -383,7 +400,11 @@ async function handleQuotingAuto(
     }
     session.data.anio = String(anio);
     await deps.events.log("quote_step", session.userId, { step: "anio" });
-    return "¿Es *0km* o *usado*? (un modelo de años anteriores también puede ser 0km si es stock sin patentar)";
+    return conProgreso(
+      session,
+      AUTO_STEPS,
+      "¿Es *0km* o *usado*? (un modelo de años anteriores también puede ser 0km si es stock sin patentar)",
+    );
   }
 
   // 2) Condición (0km / usado). No se deriva del año: un modelo viejo puede ser
@@ -398,21 +419,25 @@ async function handleQuotingAuto(
     }
     session.data.condicion = es0km ? "0km" : "usado";
     await deps.events.log("quote_step", session.userId, { step: "condicion" });
-    return "¿De qué *marca* es? (ej: Toyota)";
+    return conProgreso(session, AUTO_STEPS, "¿De qué *marca* es? (ej: Toyota)");
   }
 
   // 3) Marca
   if (!session.data.marca) {
     session.data.marca = text;
     await deps.events.log("quote_step", session.userId, { step: "marca" });
-    return "¿Y el *modelo*? (ej: Corolla)";
+    return conProgreso(session, AUTO_STEPS, "¿Y el *modelo*? (ej: Corolla)");
   }
 
   // 4) Modelo
   if (!session.data.modelo) {
     session.data.modelo = text;
     await deps.events.log("quote_step", session.userId, { step: "modelo" });
-    return "¿La *versión*? (la encontrás en la cédula). Si no la tenés a mano, escribí *no sé*.";
+    return conProgreso(
+      session,
+      AUTO_STEPS,
+      "¿La *versión*? (la encontrás en la cédula). Si no la tenés a mano, escribí *no sé*.",
+    );
   }
 
   // 5) Versión (opcional: se puede saltar)
@@ -420,7 +445,7 @@ async function handleQuotingAuto(
     const noLaSabe = /no s[eé]|ni idea|skip|saltar|omitir/.test(normalize(text));
     session.data.version = noLaSabe ? "no especificada" : text;
     await deps.events.log("quote_step", session.userId, { step: "version" });
-    return "¿Tiene *GNC*? Respondé *sí* o *no*.";
+    return conProgreso(session, AUTO_STEPS, "¿Tiene *GNC*? Respondé *sí* o *no*.");
   }
 
   // 6) GNC (sí/no)
@@ -442,7 +467,7 @@ async function handleQuotingAuto(
     }
     session.data.gnc = esSi ? "si" : "no";
     await deps.events.log("quote_step", session.userId, { step: "gnc" });
-    return "Último dato: ¿en qué *código postal* se guarda el auto?";
+    return conProgreso(session, AUTO_STEPS, "¿En qué *código postal* se guarda el auto?");
   }
 
   // 7) CP -> muestra los planes con la nota de inspección (según la condición).
@@ -453,7 +478,11 @@ async function handleQuotingAuto(
       session.data.condicion === "usado"
         ? "Al ser usado, la inspección se hace online cargando fotos (no hace falta llevarlo).\n\n"
         : "Al ser 0 km, no necesitás inspección.\n\n";
-    return `${notaInspeccion}${PLAN_COMPARISON}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`;
+    return conProgreso(
+      session,
+      AUTO_STEPS,
+      `${notaInspeccion}${PLAN_COMPARISON}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`,
+    );
   }
 
   if (!session.data.plan) {
@@ -545,7 +574,11 @@ async function handleQuotingHogar(
     }
     session.data.tipoResidente = esProp ? "propietario" : "inquilino";
     await deps.events.log("quote_step", session.userId, { step: "tipo_residente" });
-    return "¿La vivienda es una *casa*, un *departamento* o un *departamento en PB o PH*?";
+    return conProgreso(
+      session,
+      hogarSteps(session),
+      "¿La vivienda es una *casa*, un *departamento* o un *departamento en PB o PH*?",
+    );
   }
 
   // 2) Tipo de hogar (3 opciones, como el cotizador real).
@@ -562,7 +595,11 @@ async function handleQuotingHogar(
       return "No te entendí. ¿Es una *casa*, un *departamento* o un *departamento en PB o PH*?";
     }
     await deps.events.log("quote_step", session.userId, { step: "tipo_hogar" });
-    return "¿Qué *uso* tiene? Respondé *permanente* (se vive ahí), *temporal* o *alquilada*.";
+    return conProgreso(
+      session,
+      hogarSteps(session),
+      "¿Qué *uso* tiene? Respondé *permanente* (se vive ahí), *temporal* o *alquilada*.",
+    );
   }
 
   // 3) Uso (ocupación: una vivienda vacía o alquilada tiene más riesgo).
@@ -581,9 +618,13 @@ async function handleQuotingHogar(
     await deps.events.log("quote_step", session.userId, { step: "uso" });
     // Los m² solo se piden a propietario: el inquilino no asegura el edificio.
     if (session.data.tipoResidente === "propietario") {
-      return "¿Cuántos *m² construidos* tiene? (entre 25 y 300)";
+      return conProgreso(
+        session,
+        hogarSteps(session),
+        "¿Cuántos *m² construidos* tiene? (entre 25 y 300)",
+      );
     }
-    return "¿En qué *código postal* está la vivienda?";
+    return conProgreso(session, hogarSteps(session), "¿En qué *código postal* está la vivienda?");
   }
 
   // 4) Metros cuadrados (solo propietario, para estimar el edificio).
@@ -594,7 +635,7 @@ async function handleQuotingHogar(
     }
     session.data.m2 = String(m2);
     await deps.events.log("quote_step", session.userId, { step: "m2" });
-    return "¿En qué *código postal* está la vivienda?";
+    return conProgreso(session, hogarSteps(session), "¿En qué *código postal* está la vivienda?");
   }
 
   // 5) Código postal (zona). Al inquilino le pedimos el contenido; al propietario
@@ -603,7 +644,11 @@ async function handleQuotingHogar(
     session.data.cp = text;
     await deps.events.log("quote_step", session.userId, { step: "cp" });
     if (session.data.tipoResidente === "inquilino") {
-      return "Por último: ¿cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.";
+      return conProgreso(
+        session,
+        hogarSteps(session),
+        "¿Cuánto costaría reponer *el contenido* (muebles, electro, etc.)? Un monto aproximado en pesos alcanza.",
+      );
     }
   }
 

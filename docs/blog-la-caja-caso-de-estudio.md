@@ -123,7 +123,7 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Yo:** hola
 > **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
 > cotizar tu cobertura. 1 Auto · 2 Hogar · 3 Accidentes personales · 4 Bici o
-> monopatín · 5 Comparar planes · 6 Tengo una duda · 7 Hablar con un asesor.
+> monopatín · 5 Comparar planes · 6 Hablar con un asesor. (O escribime tu consulta.)
 > **Yo:** 1
 > **Bot:** Genial, cotizamos tu seguro de auto. Empecemos por el año del vehículo.
 > **Yo:** 2020
