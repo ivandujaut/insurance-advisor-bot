@@ -15,8 +15,9 @@ import {
   ACCIDENTES_MODALIDADES,
   ACCIDENTES_PLANES,
   AUTO_PLANS,
+  MID_FLOW_STAGES,
   type Session,
-  type Stage,
+  STAGE_PRODUCTO,
 } from "./session.js";
 
 // Mensaje cuando no se pudo persistir el lead: mejor avisar que fingir éxito.
@@ -152,23 +153,6 @@ async function shouldEscape(
 // contexto o perder el progreso. Best practice de re-enganche dentro de la ventana
 // de 24h de WhatsApp (ver docs/benchmark-timeout-reengagement.md).
 const RESUME_GAP_MS = 30 * 60 * 1000; // 30 min
-
-// Etapas "a mitad de algo" que vale la pena retomar (no el menú ni idle).
-const MID_FLOW_STAGES = new Set<Stage>([
-  "quoting_auto",
-  "quoting_hogar",
-  "quoting_accidentes",
-  "quoting_bici",
-  "post_quote",
-  "capturing_contact",
-]);
-
-const STAGE_PRODUCTO: Partial<Record<Stage, string>> = {
-  quoting_auto: "auto",
-  quoting_hogar: "hogar",
-  quoting_accidentes: "accidentes personales",
-  quoting_bici: "bici o monopatín",
-};
 
 /** Última cosa que dijo el bot: es la pregunta pendiente que hay que re-mostrar. */
 function lastAssistantMessage(session: Session): string | null {

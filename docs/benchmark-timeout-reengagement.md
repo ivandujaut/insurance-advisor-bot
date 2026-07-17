@@ -52,7 +52,7 @@ enfría.
 | # | Mejora | Costo | Estado |
 |---|---|---|---|
 | **A** | **Retomar con conciencia del hueco**: si el usuario vuelve a mitad de un flujo tras >30 min, reconocer el tiempo y re-mostrar la pregunta pendiente, con opción de arrancar de nuevo. In-chat, sin LLM ni plataforma. | Bajo | **Hecho** |
-| **B** | **Nudge "¿seguís ahí?"** ~30 min tras una pausa en flujo, dentro de la ventana (mensaje libre). | Medio (necesita un job proactivo que escanee sesiones inactivas) | Roadmap |
+| **B** | **Nudge "¿seguís ahí?"** ~30 min tras una pausa en flujo, dentro de la ventana (mensaje libre). El bot escribe primero. | Medio (job proactivo que barre sesiones inactivas) | **Hecho** (opt-in, solo WhatsApp) |
 | **C** | **Re-enganche >24h** con plantilla de "cotización a medias" (cadencia 24/72h). | Alto (plantilla aprobada por Meta + opt-in + costo, es *marketing*) | Roadmap/producción |
 
 **Criterio.** A es barato, no depende de la plataforma ni de infra proactiva, y
@@ -61,14 +61,24 @@ peor, perder el progreso). B y C dependen de un scheduler (B) y de toda la máqu
 plantillas/opt-in de WhatsApp (C), que además choca con que la demo no puede usar
 WhatsApp real (bloqueo de verificación de negocio, ver `docs/conectar-meta.md`).
 
-## 6. Lo que se hizo (mejora A)
+## 6. Lo que se hizo
 
-`Session.lastActivityAt` guarda el ISO del último mensaje. En `handleFlow`, si el
-usuario vuelve a mitad de un flujo (cotización, cierre o captura de contacto) tras más
-de `RESUME_GAP_MS` (30 min), en vez de seguir mudo se le devuelve un mensaje de
-"retomamos" con la **pregunta pendiente sacada del historial** (así no se duplican los
-textos de cada paso), y el *menú* sigue disponible para arrancar de nuevo. El umbral
-se dispara una sola vez, porque `lastActivityAt` se actualiza en cada mensaje.
+**A — Retomar (reactivo).** `Session.lastActivityAt` guarda el ISO del último mensaje.
+En `handleFlow`, si el usuario vuelve a mitad de un flujo (cotización, cierre o captura
+de contacto) tras más de `RESUME_GAP_MS` (30 min), en vez de seguir mudo se le devuelve
+un mensaje de "retomamos" con la **pregunta pendiente sacada del historial** (así no se
+duplican los textos de cada paso), y el *menú* sigue disponible para arrancar de nuevo.
+Se dispara una sola vez, porque `lastActivityAt` se actualiza en cada mensaje.
+
+**B — Nudge proactivo (opt-in).** El paso de reactivo a proactivo: el bot escribe
+primero. Un barrido (`application/reengagement.ts`) recorre las sesiones activas
+(`SessionStore.listActive`, con SCAN/keys en Redis) y, a las que están a mitad de flujo
+e inactivas entre 30 min y 24h (dentro de la ventana de WhatsApp), les manda un
+"¿seguís por ahí?" con contexto, marcando cada una para no repetir (`data.nudged`, que
+se resetea cuando el usuario responde). Corre en un `setInterval` en el server, gateado
+por `REENGAGEMENT_ENABLED` (apagado por default): **solo tiene canal en WhatsApp** (la
+web es request/response, sin push), por eso no se puede demostrar en la demo web. La
+lógica de a-quién (`shouldNudge`) y qué (`buildNudge`) es pura y testeada.
 
 ## Fuentes
 

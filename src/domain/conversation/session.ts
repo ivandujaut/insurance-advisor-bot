@@ -17,6 +17,24 @@ export type Stage =
   // Capturando el contacto para que un asesor llame con la cotización a mano.
   | "capturing_contact";
 
+/** Etapas "a mitad de algo" que vale la pena retomar/re-enganchar (no menú ni idle). */
+export const MID_FLOW_STAGES = new Set<Stage>([
+  "quoting_auto",
+  "quoting_hogar",
+  "quoting_accidentes",
+  "quoting_bici",
+  "post_quote",
+  "capturing_contact",
+]);
+
+/** Nombre del producto por etapa de cotización (para los mensajes de retomar). */
+export const STAGE_PRODUCTO: Partial<Record<Stage, string>> = {
+  quoting_auto: "auto",
+  quoting_hogar: "hogar",
+  quoting_accidentes: "accidentes personales",
+  quoting_bici: "bici o monopatín",
+};
+
 /** Planes de auto de La Caja, de menor a mayor cobertura. */
 export const AUTO_PLANS = [
   "Terceros Completo",

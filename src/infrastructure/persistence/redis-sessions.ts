@@ -10,6 +10,7 @@ import type { Session } from "../../domain/conversation/session.js";
 export interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, options?: { EX?: number }): Promise<unknown>;
+  keys(pattern: string): Promise<string[]>;
 }
 
 export function createRedisSessionStore(client: RedisLike, ttlSeconds: number): SessionStore {
@@ -20,6 +21,17 @@ export function createRedisSessionStore(client: RedisLike, ttlSeconds: number): 
     },
     async save(session) {
       await client.set(`session:${session.userId}`, JSON.stringify(session), { EX: ttlSeconds });
+    },
+    // Redis expira las sesiones solo (TTL), así que las claves vivas son las activas.
+    // `keys` alcanza para el volumen de la demo; a escala convendría SCAN.
+    async listActive() {
+      const claves = await client.keys("session:*");
+      const sesiones: Session[] = [];
+      for (const clave of claves) {
+        const raw = await client.get(clave);
+        if (raw) sesiones.push(JSON.parse(raw) as Session);
+      }
+      return sesiones;
     },
   };
 }

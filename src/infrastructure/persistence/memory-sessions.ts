@@ -39,5 +39,14 @@ export function createInMemorySessionStore(
         for (const [k, e] of store) if (t >= e.expiresAt) store.delete(k);
       }
     },
+    listActive: async () => {
+      const t = now();
+      const sesiones: Session[] = [];
+      for (const [k, e] of store) {
+        if (t >= e.expiresAt) store.delete(k);
+        else sesiones.push(e.session);
+      }
+      return sesiones;
+    },
   };
 }

@@ -54,7 +54,8 @@ export type EventType =
   | "faq_hit"
   | "quote_accepted"
   | "handoff_requested"
-  | "flow_stuck";
+  | "flow_stuck"
+  | "nudge_sent";
 
 export interface AnalyticsEvent {
   ts: string;
@@ -228,6 +229,12 @@ export class LlmNotConfiguredError extends Error {
 export interface SessionStore {
   get(userId: string): Promise<Session | undefined>;
   save(session: Session): Promise<void>;
+  /**
+   * Todas las sesiones activas (no expiradas). Opcional: solo la usa el barrido de
+   * re-enganche (ver application/reengagement). Los adapters de producción (Redis,
+   * memoria) la implementan; los fakes de test no la necesitan.
+   */
+  listActive?(): Promise<Session[]>;
 }
 
 // --- Conocimiento ---

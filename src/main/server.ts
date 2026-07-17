@@ -11,6 +11,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { processMessage } from "../application/process-message.js";
+import { runReengagement } from "../application/reengagement.js";
 import { config } from "../config/index.js";
 import { computeFunnel } from "../domain/analytics/funnel.js";
 import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
@@ -28,6 +29,28 @@ const app = new Hono();
 const deps = await buildDependencies();
 const provider = buildMessagingProvider();
 const analytics = buildAnalyticsReader();
+
+// Re-enganche proactivo (opt-in): barre sesiones a mitad de flujo e inactivas y les
+// manda un "¿seguís ahí?". Solo tiene canal en WhatsApp, por eso viene apagado.
+if (config.reengagement.enabled) {
+  const opts = {
+    afterMs: config.reengagement.afterMinutes * 60_000,
+    windowMs: config.session.ttlSeconds * 1000,
+  };
+  const timer = setInterval(() => {
+    runReengagement(
+      { sessions: deps.sessions, messaging: provider, events: deps.events },
+      new Date(),
+      opts,
+    )
+      .then((n) => n > 0 && console.log(`Re-enganche: ${n} nudge(s) enviados.`))
+      .catch((err) => console.error("Error en el barrido de re-enganche:", err));
+  }, config.reengagement.intervalMinutes * 60_000);
+  timer.unref(); // que no mantenga vivo el proceso por sí solo
+  console.log(
+    `🔔 Re-enganche proactivo activo: cada ${config.reengagement.intervalMinutes} min, tras ${config.reengagement.afterMinutes} min de inactividad.`,
+  );
+}
 
 // Protección del canal web público: cada mensaje puede llegar al LLM (pago), así
 // que se limita por IP y se acotan los tamaños de entrada. Sin esto, cualquiera
