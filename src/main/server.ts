@@ -11,7 +11,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { processMessage } from "../application/process-message.js";
-import { runReengagement } from "../application/reengagement.js";
+import { runReengagement, runTemplateReengagement } from "../application/reengagement.js";
 import { config } from "../config/index.js";
 import { computeFunnel } from "../domain/analytics/funnel.js";
 import { parseMetaWebhook, verifyMetaSignature } from "../infrastructure/messaging/meta.js";
@@ -30,25 +30,36 @@ const deps = await buildDependencies();
 const provider = buildMessagingProvider();
 const analytics = buildAnalyticsReader();
 
-// Re-enganche proactivo (opt-in): barre sesiones a mitad de flujo e inactivas y les
-// manda un "¿seguís ahí?". Solo tiene canal en WhatsApp, por eso viene apagado.
-if (config.reengagement.enabled) {
-  const opts = {
-    afterMs: config.reengagement.afterMinutes * 60_000,
-    windowMs: config.session.ttlSeconds * 1000,
-  };
+// Re-enganche proactivo (opt-in): barre sesiones a mitad de flujo e inactivas. Dos
+// horizontes: B (dentro de la ventana de 24h, mensaje libre) y C (fuera, plantilla).
+// Solo tienen canal en WhatsApp, por eso vienen apagados.
+if (config.reengagement.enabled || config.reengagement.templateEnabled) {
+  const windowMs = config.session.ttlSeconds * 1000;
+  const ports = { sessions: deps.sessions, messaging: provider, events: deps.events };
   const timer = setInterval(() => {
-    runReengagement(
-      { sessions: deps.sessions, messaging: provider, events: deps.events },
-      new Date(),
-      opts,
-    )
-      .then((n) => n > 0 && console.log(`Re-enganche: ${n} nudge(s) enviados.`))
-      .catch((err) => console.error("Error en el barrido de re-enganche:", err));
+    const now = new Date();
+    if (config.reengagement.enabled) {
+      runReengagement(ports, now, {
+        afterMs: config.reengagement.afterMinutes * 60_000,
+        windowMs,
+      })
+        .then((n) => n > 0 && console.log(`Re-enganche: ${n} nudge(s) enviados.`))
+        .catch((err) => console.error("Error en el barrido de re-enganche (B):", err));
+    }
+    if (config.reengagement.templateEnabled) {
+      runTemplateReengagement(ports, now, {
+        windowMs,
+        maxMs: config.reengagement.maxHours * 3_600_000,
+        templateName: config.reengagement.templateName,
+        templateLanguage: config.reengagement.templateLanguage,
+      })
+        .then((n) => n > 0 && console.log(`Re-enganche: ${n} plantilla(s) enviadas.`))
+        .catch((err) => console.error("Error en el barrido de re-enganche (C):", err));
+    }
   }, config.reengagement.intervalMinutes * 60_000);
   timer.unref(); // que no mantenga vivo el proceso por sí solo
   console.log(
-    `🔔 Re-enganche proactivo activo: cada ${config.reengagement.intervalMinutes} min, tras ${config.reengagement.afterMinutes} min de inactividad.`,
+    `🔔 Re-enganche proactivo activo (nudge: ${config.reengagement.enabled}, plantilla: ${config.reengagement.templateEnabled}), cada ${config.reengagement.intervalMinutes} min.`,
   );
 }
 
