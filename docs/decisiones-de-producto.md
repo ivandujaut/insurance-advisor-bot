@@ -528,6 +528,32 @@ qué dato, y qué resigné.
 - **Trade-off:** dos etapas más de conversación y un cierre que mantener. A cambio, se
   ataca la fuga en el punto de máxima intención.
 
+### Decisión 20: bajar la fricción del flujo con progreso visible y un menú más corto
+
+- **Criterio:** una cotización por chat es una serie de preguntas a ciegas. El usuario no
+  sabe si le faltan dos pasos o diez, y esa incertidumbre es una causa conocida de
+  abandono (misma lógica que la barra de progreso de un checkout). Y un menú con opciones
+  redundantes agrega carga de decisión antes de empezar.
+- **La decisión (progreso):** cada paso de las cotizaciones largas (auto y hogar) muestra
+  un indicador `📋 Dato N de M` antes de la pregunta, para que el usuario vea cuánto falta.
+  - **Consciente del camino:** hogar bifurca (propietario asegura los m², inquilino el
+    contenido), así que el total "de M" se calcula sobre los pasos reales de cada rama; el
+    "de 5" es honesto en ambas.
+  - **Solo en preguntas de avance:** las re-preguntas y las salidas de recuperación (el
+    destrabe de la Decisión 18) no llevan el contador, para no ensuciar el momento en que
+    el usuario ya está trabado.
+  - Los flujos cortos (accidentes y bici, 2 pasos) no lo llevan: ahí el progreso sería
+    ruido, no ayuda.
+- **La decisión (menú):** se elimina la opción redundante "Tengo una duda" (una consulta
+  libre ya la resuelve el router de FAQ o el LLM con solo escribirla, sin ocupar un
+  renglón del menú) y se renumera "Hablar con un asesor". El pie del menú invita
+  explícitamente a escribir la consulta directamente.
+- **Por qué es barato:** es lógica de presentación pura, en el dominio, sin tocar puertos
+  ni infraestructura. El total de pasos sale de la misma lista que ordena el flujo, así
+  que no hay un número mágico que se desincronice.
+- **Trade-off:** un texto más por pregunta (más verboso). A cambio, el usuario tiene
+  expectativa de cuánto falta, que es lo que sostiene la finalización del flujo.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -629,6 +655,9 @@ métricas que instrumentaría:
     "cotización a medias" entre 24h y 72h, con **opt-in capturado** (pregunta explícita al
     dejar el contacto). Falta para producción: aprobar la plantilla en Meta. Ver
     `docs/benchmark-timeout-reengagement.md`.
+18. ~~Bajar la fricción del flujo de cotización.~~ **Hecho:** indicador de progreso
+    `Dato N de M` en auto y hogar (consciente del camino propietario/inquilino), y un menú
+    más corto que elimina la opción redundante "Tengo una duda". Ver Decisión 20.
 
 ## 9. Qué demuestra este ejercicio
 
