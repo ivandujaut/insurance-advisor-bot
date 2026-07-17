@@ -168,7 +168,7 @@
       "id": "moto",
       "tema": "moto",
       "pregunta": "¿Tienen seguro de moto?",
-      "variantes": ["aseguran motos", "quiero asegurar mi moto", "seguro para mi motocicleta", "poliza de moto contra robo", "cotizar seguro de moto", "cobertura para una moto"],
+      "variantes": ["aseguran motos", "tienen seguro para motos", "seguro de motocicleta"],
       "respuesta": "Si, hay seguro de moto con cobertura ante robo, incendio y daño. Se cotiza en moto.lacaja.com.ar."
     },
     {
