@@ -86,6 +86,16 @@ export const config = {
     // TTL de una sesión inactiva en Redis (segundos). Default 24h.
     ttlSeconds: Number(process.env.SESSION_TTL_SECONDS ?? 86400),
   },
+  reengagement: {
+    // Barrido proactivo "¿seguís ahí?" para cotizaciones a medias. Apagado por
+    // default: solo tiene sentido en WhatsApp (la web no tiene canal para push) y
+    // así no mete ruido en dev/demo. Ver docs/benchmark-timeout-reengagement.md.
+    enabled: process.env.REENGAGEMENT_ENABLED === "true",
+    // Minutos de inactividad tras los que se manda el nudge (dentro de la ventana de 24h).
+    afterMinutes: Number(process.env.REENGAGEMENT_AFTER_MINUTES ?? 30),
+    // Cada cuántos minutos corre el barrido.
+    intervalMinutes: Number(process.env.REENGAGEMENT_INTERVAL_MINUTES ?? 5),
+  },
   server: {
     port: Number(process.env.PORT ?? 3000),
   },
