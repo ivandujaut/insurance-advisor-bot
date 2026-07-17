@@ -1,7 +1,8 @@
 # Seguro de Hogar (La Caja)
 
 > Fuente: seguros.lacaja.com.ar/personas-seguro-de-hogar (relevado 2026-07).
-> Cotiza en hogar.lacaja.com.ar. Verificar condiciones vigentes.
+> Se cotiza en este asistente (el usuario escribe *menu* y elige hogar). No derivar
+> a un cotizador web externo. Verificar condiciones vigentes.
 
 ## Coberturas
 

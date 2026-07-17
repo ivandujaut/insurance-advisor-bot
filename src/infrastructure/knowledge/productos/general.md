@@ -8,7 +8,7 @@
   con Franquicia. (Ver detalle en el producto Auto.)
 - **Moto**: cobertura ante robo, incendio y daño. Cotiza en moto.lacaja.com.ar.
 - **Hogar**: incendio, robo de contenido y servicios de asistencia (electricista,
-  gasista, cuidado de mascotas). Cotiza en hogar.lacaja.com.ar.
+  gasista, cuidado de mascotas). Se cotiza en este asistente (opcion hogar del menu).
 - **Salud**: chequeos preventivos y reintegros por consultas medicas, farmacia,
   odontologia y optica.
 - **Bicicleta / Monopatin**: robo, accidentes y otros imprevistos.
