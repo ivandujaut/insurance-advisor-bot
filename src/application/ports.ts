@@ -34,10 +34,29 @@ export interface OutgoingMessage {
   text: string;
 }
 
+/**
+ * Mensaje de plantilla pre-aprobada. Es el ÚNICO camino para escribirle a un usuario
+ * fuera de la ventana de 24h de WhatsApp (ver docs/benchmark-timeout-reengagement.md).
+ */
+export interface TemplateMessage {
+  to: string;
+  /** Nombre de la plantilla aprobada en Meta. */
+  template: string;
+  /** Código de idioma de la plantilla (ej: "es_AR"). */
+  language: string;
+  /** Valores de las variables {{1}}, {{2}}... del cuerpo, en orden. */
+  params: string[];
+}
+
 /** Proveedor de mensajería. El núcleo no sabe si detrás hay Meta, Twilio o consola. */
 export interface MessagingProvider {
   readonly name: string;
   send(message: OutgoingMessage): Promise<void>;
+  /**
+   * Envía una plantilla pre-aprobada. Opcional: solo Meta lo implementa de verdad
+   * (fuera de la ventana de 24h); los demás canales lo loguean.
+   */
+  sendTemplate?(message: TemplateMessage): Promise<void>;
 }
 
 // --- Eventos del funnel ---
@@ -55,7 +74,8 @@ export type EventType =
   | "quote_accepted"
   | "handoff_requested"
   | "flow_stuck"
-  | "nudge_sent";
+  | "nudge_sent"
+  | "reengage_template_sent";
 
 export interface AnalyticsEvent {
   ts: string;

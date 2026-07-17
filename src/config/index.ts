@@ -95,6 +95,15 @@ export const config = {
     afterMinutes: Number(process.env.REENGAGEMENT_AFTER_MINUTES ?? 30),
     // Cada cuántos minutos corre el barrido.
     intervalMinutes: Number(process.env.REENGAGEMENT_INTERVAL_MINUTES ?? 5),
+    // C: re-enganche FUERA de la ventana de 24h con una plantilla pre-aprobada. Es
+    // marketing: requiere opt-in del usuario y una plantilla aprobada en Meta. Apagado
+    // por default. Ver docs/benchmark-timeout-reengagement.md.
+    templateEnabled: process.env.REENGAGEMENT_TEMPLATE_ENABLED === "true",
+    templateName: process.env.REENGAGEMENT_TEMPLATE_NAME ?? "cotizacion_a_medias",
+    templateLanguage: process.env.REENGAGEMENT_TEMPLATE_LANGUAGE ?? "es_AR",
+    // Hasta cuántas horas después se sigue intentando el re-enganche (después, el lead
+    // ya está frío). Default 72h (una cadencia típica de carrito abandonado).
+    maxHours: Number(process.env.REENGAGEMENT_MAX_HOURS ?? 72),
   },
   server: {
     port: Number(process.env.PORT ?? 3000),

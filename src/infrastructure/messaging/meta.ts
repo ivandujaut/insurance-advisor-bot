@@ -8,6 +8,7 @@ import type {
   IncomingMessage,
   MessagingProvider,
   OutgoingMessage,
+  TemplateMessage,
 } from "../../application/ports.js";
 import { config, getMetaConfig } from "../../config/index.js";
 
@@ -44,8 +45,44 @@ export class MetaProvider implements MessagingProvider {
   }
 
   async send(message: OutgoingMessage): Promise<void> {
-    // Escape hatch para el numero de prueba (ver META_RECIPIENT_OVERRIDES).
-    const to = this.recipientOverrides[message.to] ?? message.to;
+    await this.post({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: this.recipient(message.to),
+      type: "text",
+      text: { body: message.text },
+    });
+  }
+
+  /**
+   * Envía una plantilla pre-aprobada (único camino fuera de la ventana de 24h). Los
+   * `params` van a las variables {{1}}, {{2}}... del cuerpo de la plantilla.
+   */
+  async sendTemplate(message: TemplateMessage): Promise<void> {
+    await this.post({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: this.recipient(message.to),
+      type: "template",
+      template: {
+        name: message.template,
+        language: { code: message.language },
+        components: [
+          {
+            type: "body",
+            parameters: message.params.map((text) => ({ type: "text", text })),
+          },
+        ],
+      },
+    });
+  }
+
+  /** Escape hatch para el número de PRUEBA de Meta (ver META_RECIPIENT_OVERRIDES). */
+  private recipient(to: string): string {
+    return this.recipientOverrides[to] ?? to;
+  }
+
+  private async post(body: unknown): Promise<void> {
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${this.phoneNumberId}/messages`;
     const res = await fetch(url, {
       method: "POST",
@@ -53,15 +90,8 @@ export class MetaProvider implements MessagingProvider {
         Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to,
-        type: "text",
-        text: { body: message.text },
-      }),
+      body: JSON.stringify(body),
     });
-
     if (!res.ok) {
       const detail = await res.text();
       throw new Error(`Error enviando a Meta (${res.status}): ${detail}`);

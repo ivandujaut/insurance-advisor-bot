@@ -57,9 +57,10 @@ export async function processMessage(
   // tras un hueco largo y ofrecerle retomar (ver handleFlow). Se setea al final,
   // después de que handleFlow leyó el valor anterior.
   session.lastActivityAt = new Date().toISOString();
-  // El usuario respondió: se resetea el nudge de re-enganche, así un nuevo hueco
-  // puede volver a dispararlo (ver application/reengagement).
+  // El usuario respondió: se resetean los flags de re-enganche, así un nuevo hueco
+  // puede volver a dispararlos (ver application/reengagement).
   delete session.data.nudged;
+  delete session.data.templateSent;
   await deps.sessions.save(session);
   return reply;
 }
