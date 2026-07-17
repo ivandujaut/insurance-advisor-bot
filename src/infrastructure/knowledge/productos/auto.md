@@ -37,10 +37,11 @@ Incluye todo lo anterior, y suma:
 - Telemedicina 24hs por WhatsApp para clientes (videoconsultas clinicas y
   pediatricas, turnos programados, cobertura para el grupo familiar).
 
-## Como cotizar (flujo actual en la web)
+## Como cotizar
 
-4 pasos: 1) datos personales, 2) cotizar, 3) elegir forma de pago, 4) listo.
-La cotizacion online se hace en cotizador.lacaja.com.ar/seguro-auto.
+En este asistente se cotiza el auto aca mismo, sin salir de WhatsApp: el usuario
+escribe *menu* y elige la opcion de auto, y el bot lo guia paso a paso. El asesor
+confirma el precio final y la forma de pago. NO derivar a un cotizador web externo.
 
 ## Preguntas frecuentes
 
