@@ -87,11 +87,13 @@ segundo barrido (`runTemplateReengagement`) que, a las sesiones a mitad de flujo
 inactivas entre 24h y `maxHours` (72h), les manda la plantilla `cotizacion_a_medias` con
 el producto como variable, y marca `data.templateSent`. Gateado por
 `REENGAGEMENT_TEMPLATE_ENABLED` (off por default). **Dos prerequisitos de producción, aún
-pendientes:** (1) la plantilla tiene que estar **aprobada en Meta**, y (2) como es
-*marketing*, solo se manda con **opt-in** del usuario (`data.optIn`), que hoy no se
-captura en ningún lado; sin eso, `shouldSendTemplate` nunca dispara (correcto por
-política: mandar marketing sin consentimiento puede banear el número). Capturar el opt-in
-(ej: una línea de consentimiento al dejar el contacto) es el próximo paso.
+*marketing*, solo se manda con **opt-in** del usuario (`data.optIn`), que se **captura en
+la captura de contacto** con una pregunta explícita y separable ("¿te puedo escribir por
+acá si dejás una cotización a medias?"), no bundleada con el contacto (lo que exige la
+política). Sin opt-in, `shouldSendTemplate` no dispara (correcto: mandar marketing sin
+consentimiento puede banear el número). **Prerequisito de producción que queda:** la
+plantilla tiene que estar **aprobada en Meta**. (En producción, el consentimiento iría a
+un registro durable; acá vive en la sesión, alcanza para la demo.)
 
 ## Fuentes
 

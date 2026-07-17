@@ -173,16 +173,41 @@ test("tras cotizar, el cierre ofrece avanzar (no vuelve al menú frío)", async 
   assert.match(reply, /online/i);
 });
 
-test("aceptar con asesor captura el contacto y registra el handoff", async () => {
+test("aceptar con asesor: contacto -> handoff -> pide opt-in -> lo captura", async () => {
   const { deps, logged } = fakeDeps();
   for (const text of AUTO_QUOTE) await processMessage({ from: "u-close", text }, deps);
   const r1 = await processMessage({ from: "u-close", text: "1" }, deps);
   assert.match(r1, /nombre.*tel[eé]fono/i);
   const accepted = logged.find((e) => e.type === "quote_accepted");
   assert.equal(accepted?.props?.via, "asesor");
+  // Da el contacto: se registra el handoff y se le pide el opt-in (aparte).
   const r2 = await processMessage({ from: "u-close", text: "Ana, 11 5555 5555, tardes" }, deps);
-  assert.match(r2, /asesor de La Caja te va a contactar/i);
+  assert.match(r2, /¿te puedo escribir/i);
   assert.ok(logged.some((e) => e.type === "handoff_requested"));
+  // Acepta: se confirma y queda el opt-in guardado.
+  const r3 = await processMessage({ from: "u-close", text: "sí, dale" }, deps);
+  assert.match(r3, /asesor de La Caja te va a contactar/i);
+});
+
+test("opt-in: si dice que no, no queda consentido (optIn = 0)", async () => {
+  const { deps } = fakeDeps();
+  const store = deps.sessions;
+  for (const text of AUTO_QUOTE) await processMessage({ from: "u-optout", text }, deps);
+  await processMessage({ from: "u-optout", text: "1" }, deps); // asesor
+  await processMessage({ from: "u-optout", text: "Ana, 11 5555 5555" }, deps); // contacto
+  await processMessage({ from: "u-optout", text: "no gracias" }, deps); // rechaza opt-in
+  const s = await store.get("u-optout");
+  assert.equal(s?.data.optIn, "0");
+});
+
+test("opt-in: si acepta, queda consentido (optIn = 1)", async () => {
+  const { deps } = fakeDeps();
+  for (const text of AUTO_QUOTE) await processMessage({ from: "u-optin", text }, deps);
+  await processMessage({ from: "u-optin", text: "1" }, deps);
+  await processMessage({ from: "u-optin", text: "Ana, 11 5555 5555" }, deps);
+  await processMessage({ from: "u-optin", text: "dale" }, deps);
+  const s = await deps.sessions.get("u-optin");
+  assert.equal(s?.data.optIn, "1");
 });
 
 test("contratar online registra quote_accepted con canal online", async () => {
