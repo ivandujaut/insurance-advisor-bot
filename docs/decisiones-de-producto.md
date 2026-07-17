@@ -621,6 +621,9 @@ métricas que instrumentaría:
     usuario vuelve tras un hueco largo, el bot reconoce el tiempo y re-muestra la
     pregunta pendiente (en vez de seguir mudo o mandarlo al menú). Benchmark y horizontes
     de re-enganche en `docs/benchmark-timeout-reengagement.md`.
+16. ~~Que el bot pueda re-enganchar proactivamente una cotización a medias.~~ **Hecho
+    (opt-in):** barrido que manda un "¿seguís ahí?" a las sesiones inactivas a mitad de
+    flujo, dentro de la ventana de 24h. Apagado por default: solo tiene canal en WhatsApp.
 
 ## 9. Qué demuestra este ejercicio
 
