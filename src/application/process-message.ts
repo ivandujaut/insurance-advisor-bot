@@ -53,6 +53,10 @@ export async function processMessage(
 
   recordTurn(session, "assistant", reply);
   trimHistory(session);
+  // Sello el momento para detectar, en el próximo mensaje, si el usuario vuelve
+  // tras un hueco largo y ofrecerle retomar (ver handleFlow). Se setea al final,
+  // después de que handleFlow leyó el valor anterior.
+  session.lastActivityAt = new Date().toISOString();
   await deps.sessions.save(session);
   return reply;
 }

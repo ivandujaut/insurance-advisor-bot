@@ -11,7 +11,13 @@
  */
 import type { Dependencies, LeadInput } from "../../application/ports.js";
 import { NEGATIVE_EMOTIONS } from "../emotion.js";
-import { ACCIDENTES_MODALIDADES, ACCIDENTES_PLANES, AUTO_PLANS, type Session } from "./session.js";
+import {
+  ACCIDENTES_MODALIDADES,
+  ACCIDENTES_PLANES,
+  AUTO_PLANS,
+  type Session,
+  type Stage,
+} from "./session.js";
 
 // Mensaje cuando no se pudo persistir el lead: mejor avisar que fingir éxito.
 const LEAD_ERROR =
@@ -141,6 +147,62 @@ async function shouldEscape(
   return false;
 }
 
+// Hueco tras el cual, si el usuario vuelve a mitad de un flujo, se le reconoce el
+// tiempo y se le re-muestra dónde estábamos, en vez de seguir preguntando sin
+// contexto o perder el progreso. Best practice de re-enganche dentro de la ventana
+// de 24h de WhatsApp (ver docs/benchmark-timeout-reengagement.md).
+const RESUME_GAP_MS = 30 * 60 * 1000; // 30 min
+
+// Etapas "a mitad de algo" que vale la pena retomar (no el menú ni idle).
+const MID_FLOW_STAGES = new Set<Stage>([
+  "quoting_auto",
+  "quoting_hogar",
+  "quoting_accidentes",
+  "quoting_bici",
+  "post_quote",
+  "capturing_contact",
+]);
+
+const STAGE_PRODUCTO: Partial<Record<Stage, string>> = {
+  quoting_auto: "auto",
+  quoting_hogar: "hogar",
+  quoting_accidentes: "accidentes personales",
+  quoting_bici: "bici o monopatín",
+};
+
+/** Última cosa que dijo el bot: es la pregunta pendiente que hay que re-mostrar. */
+function lastAssistantMessage(session: Session): string | null {
+  for (let i = session.history.length - 1; i >= 0; i--) {
+    const turn = session.history[i];
+    if (turn?.role === "assistant") return turn.content;
+  }
+  return null;
+}
+
+/**
+ * Si el usuario vuelve a mitad de un flujo tras un hueco largo, devuelve un mensaje
+ * de "retomamos" con la pregunta que había quedado pendiente (sacada del historial,
+ * así no se duplican los textos de cada paso). Si no aplica, null. Evita el
+ * antipatrón de seguir preguntando sin contexto (o perder el progreso si el usuario
+ * vuelve con un "hola", que hoy lo manda al menú).
+ */
+function maybeResume(session: Session, now: Date): string | null {
+  if (!session.lastActivityAt || !MID_FLOW_STAGES.has(session.stage)) return null;
+  const gapMs = now.getTime() - new Date(session.lastActivityAt).getTime();
+  if (Number.isNaN(gapMs) || gapMs < RESUME_GAP_MS) return null;
+  const pregunta = lastAssistantMessage(session);
+  if (!pregunta) return null;
+  const producto = STAGE_PRODUCTO[session.stage];
+  const dondeEstabamos = producto ? `tu cotización de *${producto}*` : "donde estábamos";
+  return [
+    `¡Hola de nuevo! 👋 Seguíamos con ${dondeEstabamos}. Te había preguntado esto:`,
+    "",
+    pregunta,
+    "",
+    "Respondé para seguir, o escribí *menú* para arrancar de nuevo.",
+  ].join("\n");
+}
+
 export async function handleFlow(
   session: Session,
   text: string,
@@ -153,6 +215,14 @@ export async function handleFlow(
     session.stage = "idle";
     await deps.events.log("advisor_requested", session.userId);
     return ADVISOR_REPLY;
+  }
+
+  // Retomar tras un hueco: si volvió a mitad de flujo, reconocer el tiempo y
+  // re-mostrar la pregunta pendiente (una sola vez, porque después se actualiza
+  // lastActivityAt). El *menú* sigue disponible para arrancar de nuevo.
+  if (!MENU_KEYWORDS.includes(input)) {
+    const resume = maybeResume(session, new Date());
+    if (resume !== null) return resume;
   }
 
   // Saludo, pedido de menú, o primer contacto -> menú principal.

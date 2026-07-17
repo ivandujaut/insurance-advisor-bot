@@ -66,6 +66,38 @@ test("un saludo muestra el menú principal y pasa a main_menu", async () => {
   assert.equal(s.stage, "main_menu");
 });
 
+test("retomar: vuelve a mitad de flujo tras un hueco largo y ofrece retomar", async () => {
+  const s: Session = {
+    userId: "t-resume",
+    stage: "quoting_auto",
+    data: { anio: "2020" },
+    history: [
+      { role: "assistant", content: "¿Es *0km* o *usado*?" },
+      { role: "user", content: "hola" },
+    ],
+    lastActivityAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1h atrás
+  };
+  // Aunque diga "hola" (que normalmente iría al menú), se le ofrece retomar.
+  const reply = (await handleFlow(s, "hola", fakeDeps())) ?? "";
+  assert.match(reply, /Hola de nuevo/);
+  assert.match(reply, /0km.*usado/); // re-muestra la pregunta pendiente del historial
+  assert.match(reply, /menú/);
+  assert.equal(s.stage, "quoting_auto", "no pierde el progreso");
+});
+
+test("retomar: NO se dispara si el hueco es corto (sigue el flujo normal)", async () => {
+  const s: Session = {
+    userId: "t-nores",
+    stage: "quoting_auto",
+    data: { anio: "2020" },
+    history: [{ role: "assistant", content: "¿Es *0km* o *usado*?" }],
+    lastActivityAt: new Date(Date.now() - 60 * 1000).toISOString(), // 1 min
+  };
+  const reply = (await handleFlow(s, "usado", fakeDeps())) ?? "";
+  assert.doesNotMatch(reply, /Hola de nuevo/);
+  assert.match(reply, /marca/i); // procesó "usado" y avanzó al paso de marca
+});
+
 test("opción 1 arranca la cotización de auto", async () => {
   const s = newSession("t-cotizar");
   const deps = fakeDeps();

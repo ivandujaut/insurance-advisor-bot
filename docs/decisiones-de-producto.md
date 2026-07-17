@@ -617,6 +617,10 @@ métricas que instrumentaría:
 14. ~~Endurecer el deploy para que un fallo transitorio no lo tire.~~ **Hecho:** reintento
     con backoff de la conexión a Postgres al arrancar, y smoke test de `docker build` en
     CI (que atrapa fallas de empaquetado antes del deploy).
+15. ~~Que volver a mitad de una cotización no pierda el contexto.~~ **Hecho:** si el
+    usuario vuelve tras un hueco largo, el bot reconoce el tiempo y re-muestra la
+    pregunta pendiente (en vez de seguir mudo o mandarlo al menú). Benchmark y horizontes
+    de re-enganche en `docs/benchmark-timeout-reengagement.md`.
 
 ## 9. Qué demuestra este ejercicio
 
