@@ -273,31 +273,47 @@ async function handlePostQuote(
 }
 
 /**
- * Captura el contacto para el llamado del asesor y registra `handoff_requested`
- * con el contexto de la cotización. El contacto crudo NO se persiste en analytics
- * (es PII); en producción va al canal del asesor / CRM.
+ * Captura el contacto para el llamado del asesor (registra `handoff_requested`) y,
+ * en un segundo paso, el opt-in EXPLÍCITO para el re-enganche por WhatsApp. El opt-in
+ * va aparte del contacto a propósito: el re-enganche es marketing y la política de
+ * WhatsApp exige consentimiento afirmativo y separable, no bundleado. El contacto
+ * crudo NO se persiste en analytics (es PII); en producción va al canal del asesor/CRM,
+ * y el consentimiento a un registro durable (acá vive en la sesión, alcanza para la demo).
  */
 async function handleCapturingContact(
   session: Session,
   text: string,
   deps: Dependencies,
 ): Promise<string | null> {
+  // Fase 2: respuesta al opt-in de re-enganche.
+  if (session.data.awaitingOptIn === "1") {
+    const acepta = /^(s[ií]|dale|ok|acepto|claro|bueno|de una)/.test(normalize(text));
+    session.data.optIn = acepta ? "1" : "0";
+    delete session.data.awaitingOptIn;
+    session.stage = "idle";
+    const aviso = acepta
+      ? "Genial, te aviso por acá si dejás una cotización a medias. "
+      : "Perfecto, no te escribo de más. ";
+    return [
+      `¡Listo! 🙌 ${aviso}Un asesor de La Caja te va a contactar con tu cotización lista, así no repetís nada.`,
+      "",
+      "(En la demo no hay un contacto real detrás; en producción, acá se agenda el llamado en el canal oficial.)",
+      "",
+      "Escribí *menú* si querés hacer otra consulta.",
+    ].join("\n");
+  }
+
+  // Fase 1: el contacto.
   const contacto = text.trim();
   if (contacto.length < 5) {
     return "Necesito al menos un nombre y un teléfono para que un asesor te llame. ¿Me los pasás?";
   }
-  session.stage = "idle";
   await deps.events.log("handoff_requested", session.userId, {
     plan: session.data.plan ?? "",
     resumen: session.data.resumen ?? "",
   });
-  return [
-    "¡Listo! 🙌 Un asesor de La Caja te va a contactar con tu cotización lista, así no repetís nada.",
-    "",
-    "(En la demo no hay un contacto real detrás; en producción, acá se agenda el llamado en el canal oficial.)",
-    "",
-    "Escribí *menú* si querés hacer otra consulta.",
-  ].join("\n");
+  session.data.awaitingOptIn = "1";
+  return "¡Anotado! 🙌 Una última: ¿te puedo escribir por acá si dejás una cotización a medias, para retomarla? Respondé *sí* o *no*.";
 }
 
 async function handleMainMenu(

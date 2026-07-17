@@ -626,8 +626,9 @@ métricas que instrumentaría:
     flujo, dentro de la ventana de 24h. Apagado por default: solo tiene canal en WhatsApp.
 17. ~~Re-enganchar también fuera de la ventana de 24h.~~ **Hecho (código):**
     `sendTemplate` en el proveedor de mensajería y un barrido que manda una plantilla de
-    "cotización a medias" entre 24h y 72h. Falta, para producción: aprobar la plantilla en
-    Meta y capturar el opt-in (es marketing). Ver `docs/benchmark-timeout-reengagement.md`.
+    "cotización a medias" entre 24h y 72h, con **opt-in capturado** (pregunta explícita al
+    dejar el contacto). Falta para producción: aprobar la plantilla en Meta. Ver
+    `docs/benchmark-timeout-reengagement.md`.
 
 ## 9. Qué demuestra este ejercicio
 
