@@ -49,7 +49,7 @@
       "id": "robo",
       "tema": "auto/cobertura",
       "pregunta": "¿Cubre el robo del auto?",
-      "variantes": ["si me roban el auto me pagan", "robo total y parcial"],
+      "variantes": ["si me roban el auto me pagan", "robo total y parcial", "poliza de auto contra robo", "cobertura de robo del auto"],
       "respuesta": "Si, todos los planes cubren robo y hurto: robo total, daños parciales por robo y recupero del vehiculo."
     },
     {
