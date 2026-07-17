@@ -96,6 +96,11 @@ export interface Session {
   data: Record<string, string>;
   /** Historial breve para dar contexto al LLM. */
   history: Turn[];
+  /**
+   * ISO del último mensaje procesado. Sirve para detectar cuando el usuario vuelve
+   * a mitad de un flujo tras un hueco largo y ofrecerle retomar (ver flows.ts).
+   */
+  lastActivityAt?: string;
 }
 
 const MAX_HISTORY = 12;
