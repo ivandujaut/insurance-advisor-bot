@@ -1,8 +1,8 @@
 # Deploy: dejar la demo online (sin ngrok)
 
-El objetivo es una URL pública y estable que cualquiera (en particular La Caja)
-pueda abrir y probar en el navegador, sin instalar nada. La demo web usa el mismo
-motor que WhatsApp; solo cambia el canal.
+El objetivo es una URL pública y estable que cualquiera (alguien de La Caja, o de
+cualquier aseguradora) pueda abrir y probar en el navegador, sin instalar nada. La
+demo web usa el mismo motor que WhatsApp; solo cambia el canal.
 
 ## Plataforma: Render
 
@@ -84,6 +84,37 @@ solo la demo web):
    `META_VERIFY_TOKEN`. Verificá y suscribí el campo `messages`.
 
 Con eso, ngrok queda de más: la demo web y el webhook viven en la misma URL.
+
+## Renombrar el servicio (aprendizaje del rename a insurance-advisor-bot)
+
+En 2026-07 el proyecto se renombró de `lacaja-whatsapp-bot` a
+`insurance-advisor-bot` (separación white-label, ver Decisión 24). Lo que pasó en
+Render es un comportamiento a conocer:
+
+**El Blueprint matchea recursos por nombre: renombrar un servicio en `render.yaml`
+NO lo renombra, crea uno NUEVO.** Al mergear el rename, Render levantó un segundo
+servicio con el nombre nuevo y dejó el viejo andando (por eso "Name is already in
+use" al intentar el renombre manual después). Consecuencias prácticas:
+
+- **Las claves `sync:false` no viajan.** El servicio nuevo nace sin
+  `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` ni las `META_*`: hay que recargarlas a
+  mano en Environment (el motor arranca igual, pero FAQ router y LLM quedan
+  caídos hasta entonces; el health check no lo detecta).
+- **La base y el KV se conservaron porque NO se renombraron.** `lacaja-db` y
+  `lacaja-kv` mantienen su nombre interno a propósito: el blueprint los siguió
+  matcheando y el servicio nuevo se colgó de los mismos datos. Renombrarlos
+  habría hecho que el blueprint los recree vacíos (pérdida de leads/eventos y
+  sesiones). Un nombre interno feo es mejor que una base nueva.
+- **La URL vieja muere sin redirect** (a diferencia de GitHub, que sí redirige el
+  repo renombrado). Si el webhook de WhatsApp apuntaba ahí, hay que actualizar la
+  Callback URL en Meta.
+- **El servicio viejo hay que borrarlo a mano** (después de verificar el nuevo:
+  health + una FAQ + una pregunta abierta, que es lo que prueba las dos keys).
+
+Para un próximo rename, el orden que evita el doble servicio: renombrar primero
+el servicio en el dashboard (Settings > Name, conserva env vars y deploys) y
+recién después actualizar `render.yaml` para que el blueprint matchee el nombre
+nuevo.
 
 ## Redeploys
 
