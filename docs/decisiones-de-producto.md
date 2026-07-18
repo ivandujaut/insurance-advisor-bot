@@ -551,6 +551,16 @@ qué dato, y qué resigné.
 - **Por qué es barato:** es lógica de presentación pura, en el dominio, sin tocar puertos
   ni infraestructura. El total de pasos sale de la misma lista que ordena el flujo, así
   que no hay un número mágico que se desincronice.
+- **Extensiones de la misma decisión (fricción):**
+  - **Volver atrás para corregir.** "Volver" a mitad de una cotización deshacía TODO el
+    progreso (caía en el reset a menú). Ahora deshace solo el último dato y lo vuelve a
+    preguntar, en los cuatro flujos; equivocarse deja de costar el recorrido entero.
+    Evento `quote_step_back` para medir dónde se corrige.
+  - **Opciones de plan numeradas.** En la elección final, los planes van con 1️⃣/2️⃣/3️⃣
+    (los nombres salen de la misma lista que resuelve la elección por índice, así el
+    número mostrado y el parseado no pueden divergir). La comparación informativa del
+    menú queda sin numerar a propósito: ahí 1/2/3 siguen siendo opciones del menú, y
+    numerarla invitaría a responder "2" esperando un plan y caer en otra cotización.
 - **Trade-off:** un texto más por pregunta (más verboso). A cambio, el usuario tiene
   expectativa de cuánto falta, que es lo que sostiene la finalización del flujo.
 
