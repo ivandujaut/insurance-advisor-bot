@@ -561,6 +561,14 @@ qué dato, y qué resigné.
     número mostrado y el parseado no pueden divergir). La comparación informativa del
     menú queda sin numerar a propósito: ahí 1/2/3 siguen siendo opciones del menú, y
     numerarla invitaría a responder "2" esperando un plan y caer en otra cotización.
+  - **Elecciones en lenguaje natural.** "Respondé 1, 2 o 3" no obliga a contestar con
+    el dígito: "creo que la segunda me sirve", "la última", "el de granizo" también
+    eligen (caso real reportado: el bot respondía "no te entendí" a una elección
+    válida). El parser es deliberadamente conservador: ante señales de pregunta
+    ("¿la segunda cubre granizo?") NO elige, porque re-preguntar es barato y elegir
+    mal es caro; en el cierre post-cotización, esa pregunta cae al LLM, que es quien
+    responde dudas. Aplica al plan de auto, accidentes (modalidad y plan) y al CTA
+    post-cotización.
 - **Trade-off:** un texto más por pregunta (más verboso). A cambio, el usuario tiene
   expectativa de cuánto falta, que es lo que sostiene la finalización del flujo.
 
