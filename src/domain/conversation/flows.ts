@@ -91,18 +91,34 @@ const MAIN_MENU = [
   "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
 ].join("\n");
 
-const PLAN_COMPARISON = [
-  "📋 *Planes de auto de La Caja* (de menor a mayor cobertura):",
-  "",
-  "🔹 *Terceros Completo*",
+// Resúmenes de cada plan, alineados por índice con AUTO_PLANS (la lista canónica
+// que resuelve la elección 1/2/3): una sola fuente para nombres y orden, así el
+// número que se muestra y el que se parsea no pueden divergir.
+const PLAN_RESUMENES = [
   "Responsabilidad Civil, robo y hurto, incendio, cristales laterales, cerraduras, ruedas y asistencia mecánica (con límite de eventos).",
-  "",
-  "🔸 *Terceros Completo con Granizo*",
   "Todo lo anterior + granizo sin tope, luneta y parabrisas, auto sustituto ante pérdida total y asistencia sin límite.",
-  "",
-  "🔷 *Todo Riesgo con Franquicia*",
   "Todo lo anterior + daños parciales por accidente (con una franquicia a cargo tuyo).",
-].join("\n");
+];
+
+/** Lista de planes con la viñeta que corresponda a cada índice. */
+function listaDePlanes(bullets: string[]): string {
+  return AUTO_PLANS.flatMap((plan, i) => [
+    "",
+    `${bullets[i] ?? "•"} *${plan}*`,
+    PLAN_RESUMENES[i] ?? "",
+  ]).join("\n");
+}
+
+const PLAN_HEADER = "📋 *Planes de auto de La Caja* (de menor a mayor cobertura):";
+
+// Comparación informativa (opción 5 del menú): viñetas SIN número, a propósito.
+// Acá 1/2/3 no eligen un plan (el usuario sigue en el menú, donde 1 cotiza auto y
+// 2 hogar); numerarlas invitaría a responder "2" esperando Granizo.
+const PLAN_COMPARISON = `${PLAN_HEADER}\n${listaDePlanes(["🔹", "🔸", "🔷"])}`;
+
+// Elección de plan (paso final de la cotización): numerada, para que el mapeo con
+// el "Respondé 1, 2 o 3" sea visible de un vistazo.
+const PLAN_CHOICES = `${PLAN_HEADER}\n${listaDePlanes(["1️⃣", "2️⃣", "3️⃣"])}`;
 
 function normalize(text: string): string {
   return text.trim().toLowerCase();
@@ -609,7 +625,7 @@ async function handleQuotingAuto(
     return conProgreso(
       session,
       AUTO_STEPS,
-      `${notaInspeccion}${PLAN_COMPARISON}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`,
+      `${notaInspeccion}${PLAN_CHOICES}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`,
     );
   }
 
