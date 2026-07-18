@@ -127,7 +127,21 @@
       "tema": "cotizacion",
       "pregunta": "¿Que datos necesitas para cotizarme el auto?",
       "variantes": ["que datos necesitas para cotizarme el auto", "que informacion pedis para darme el precio", "que me preguntas para cotizar auto", "que datos del auto tengo que pasarte para el presupuesto"],
-      "respuesta": "Para auto: año, si es 0km o usado, marca, modelo, version (opcional), si tiene GNC y el codigo postal donde se guarda."
+      "respuesta": "Para auto: año del vehiculo (o *0km* si todavia no esta patentado), marca, modelo, version (opcional), si tiene GNC y el codigo postal donde se guarda."
+    },
+    {
+      "id": "cero-km",
+      "tema": "cotizacion",
+      "pregunta": "¿Que se considera un auto 0km?",
+      "variantes": ["que significa que el auto sea 0km", "que quiere decir que este patentado", "mi auto todavia no tiene patente, es 0km", "compre el auto y aun no lo patente"],
+      "respuesta": "0km es un auto que todavia no fue patentado ni circulo. En cuanto se patenta, para el seguro cuenta como usado, aunque tenga pocos km. Por eso te pregunto por la patente: el 0km ademas no necesita inspeccion previa."
+    },
+    {
+      "id": "corregir-dato",
+      "tema": "cotizacion",
+      "pregunta": "¿Puedo corregir un dato que cargue mal?",
+      "variantes": ["me equivoque en un dato de la cotizacion", "como corrijo el año que puse mal", "puedo cambiar un dato que ya te pase", "quiero volver un paso atras en la cotizacion"],
+      "respuesta": "Si, escribi *volver* durante la cotizacion y deshago el ultimo dato para que lo cargues de nuevo, sin perder el resto del progreso."
     },
     {
       "id": "hogar-que-cubre",
