@@ -5,7 +5,7 @@
 services:
   bot:
     build: .
-    image: lacaja-whatsapp-bot
+    image: insurance-advisor-bot
     env_file:
       - path: .env
         required: false

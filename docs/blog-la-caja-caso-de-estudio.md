@@ -381,7 +381,7 @@ por un segundo canal: una **web app** de chat con la estética de WhatsApp, en u
 pública. Es la misma conversación (menús, cotización, respuestas de IA); lo único que
 cambia es el canal por el que entra el mensaje.
 
-**Probala acá: [lacaja-whatsapp-bot.onrender.com](https://lacaja-whatsapp-bot.onrender.com)**
+**Probala acá: [insurance-advisor-bot.onrender.com](https://insurance-advisor-bot.onrender.com)**
 
 Escribí "hola" y arranca el menú, igual que en WhatsApp. Está en un plan gratuito, así
 que la primera carga después de un rato de inactividad puede tardar unos segundos en

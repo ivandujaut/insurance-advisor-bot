@@ -84,7 +84,7 @@ if (provider.name === "meta" && !config.meta.appSecret) {
 
 // Canal web: la demo pública. La página de chat y su endpoint.
 app.get("/", (c) => c.html(DEMO_HTML));
-app.get("/health", (c) => c.text("lacaja-whatsapp-bot OK"));
+app.get("/health", (c) => c.text("insurance-advisor-bot OK"));
 
 // Dashboard del funnel: activación, drop-off por paso y mix de plan, en vivo.
 app.get("/funnel", async (c) => {

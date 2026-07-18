@@ -11,7 +11,10 @@ databases:
 
 services:
   - type: web
-    name: lacaja-whatsapp-bot
+    # El nombre define la URL pública (<name>.onrender.com). Renombrado junto al
+    # repo (white-label); la base y el KV conservan su nombre interno a propósito:
+    # renombrarlos haría que el Blueprint los recree (y se pierden los datos).
+    name: insurance-advisor-bot
     runtime: docker
     dockerfilePath: ./Dockerfile
     # free: sin costo pero se duerme tras inactividad (cold start ~30-50s).

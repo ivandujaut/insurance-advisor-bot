@@ -1,5 +1,5 @@
 {
-  "name": "lacaja-whatsapp-bot",
+  "name": "insurance-advisor-bot",
   "version": "0.1.0",
   "private": true,
   "description": "Bot de WhatsApp para cotizacion y consulta de polizas de seguros (La Caja). Motor hibrido: menus + LLM.",

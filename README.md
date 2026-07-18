@@ -1,6 +1,6 @@
-# lacaja-whatsapp-bot
+# insurance-advisor-bot
 
-[![CI](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml)
+[![CI](https://github.com/ivandujaut/insurance-advisor-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ivandujaut/insurance-advisor-bot/actions/workflows/ci.yml)
 
 Bot de WhatsApp **white-label** para venta asesorada de seguros: comparar planes,
 cotizar y capturar el lead dentro del chat. Motor **híbrido**: menús
