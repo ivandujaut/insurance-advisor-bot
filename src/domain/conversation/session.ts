@@ -119,6 +119,12 @@ export interface Session {
    * a mitad de un flujo tras un hueco largo y ofrecerle retomar (ver flows.ts).
    */
   lastActivityAt?: string;
+  /**
+   * Nivel emocional negativo acumulado (ver domain/emotion.ts). Vive fuera de
+   * `data` a propósito: es estado de la persona, no del flujo, y no debe perderse
+   * cuando un reset de menú limpia los datos de cotización.
+   */
+  nivelEmocional?: number;
 }
 
 const MAX_HISTORY = 12;

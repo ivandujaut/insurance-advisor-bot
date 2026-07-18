@@ -584,6 +584,36 @@ qué dato, y qué resigné.
   asesor. A cambio, el caso mayoritario (usados) ahorra una pregunta y el bot razona
   como la persona espera.
 
+### Decisión 22: el asesor se ofrece, no se lista (gateado por emoción con nivel)
+
+- **Criterio:** si "hablar con un asesor" es una opción visible del menú, es la salida
+  fácil: buena parte de los usuarios la elige de entrada y el bot se canibaliza solo
+  (nunca llega a cotizar ni a calificar el lead, que es su función). El humano es el
+  recurso caro; el bot existe para reservarlo para cuando agrega valor.
+- **La decisión:** el asesor sale del menú (que queda en 5 opciones de cotización y
+  comparación) y pasa a ofrecerse **cuando el motor de emociones detecta malestar, con
+  un nivel**:
+  - El clasificador devuelve una etiqueta, no una intensidad, así que el nivel sale de
+    la **severidad** de la etiqueta y su **persistencia**: el *enojo* (dirigido, se
+    siente maltratado) pesa 2 y dispara la oferta solo; la *frustración* (meta
+    bloqueada, más leve) pesa 1 y necesita sostenerse más de un mensaje (una puede ser
+    desahogo; dos es una señal). Umbral: nivel ≥ 2.
+  - Una *satisfacción* resetea el acumulado (el malestar quedó atrás); tras ofrecer, el
+    nivel vuelve a cero para no repetir la oferta en cada mensaje.
+  - El nivel vive en la sesión **fuera de los datos del flujo**: es estado de la
+    persona, y un reset de menú no debe borrarlo.
+- **Las salidas que quedan:** escribir *asesor* deriva siempre, en cualquier punto (el
+  que quiere una persona la tiene, solo que no se la promociona); el destrabe de flujos
+  (Decisión 18) sigue ofreciendo una persona ante el usuario trabado; y el cierre
+  post-cotización (Decisión 19) mantiene "que me llame un asesor" como CTA, porque ahí
+  el asesor ES el paso de conversión, no una fuga.
+- **Métrica:** `emotion_detected` ahora registra el nivel acumulado, y
+  `advisor_requested` permite comparar cuántas derivaciones había con el asesor listado
+  en el menú vs. ofrecido por emoción.
+- **Trade-off:** el usuario decidido a hablar con una persona tarda un mensaje más en
+  descubrir cómo (tiene que escribirlo). A cambio, el flujo automatizado deja de
+  competir contra su propia opción de escape.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -695,6 +725,9 @@ métricas que instrumentaría:
 20. ~~Poder corregir un dato a mitad de la cotización sin empezar de cero.~~ **Hecho:**
     "volver atrás" deshace el último dato y lo vuelve a preguntar (auto, hogar, accidentes,
     bici), en vez de perder todo el progreso. Evento `quote_step_back`.
+21. ~~Que el menú no canibalice el flujo con la opción de asesor.~~ **Hecho:** el asesor
+    salió del menú y se ofrece cuando el motor de emociones acumula malestar (enojo
+    inmediato; frustración sostenida). Escribir *asesor* deriva siempre. Ver Decisión 22.
 
 ## 9. Qué demuestra este ejercicio
 

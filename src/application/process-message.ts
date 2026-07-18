@@ -7,7 +7,7 @@
 
 import { handleFlow } from "../domain/conversation/flows.js";
 import { createSession, recordTurn, trimHistory } from "../domain/conversation/session.js";
-import { NEGATIVE_EMOTIONS } from "../domain/emotion.js";
+import { ADVISOR_OFFER_LEVEL, nivelEmocional } from "../domain/emotion.js";
 import { answer } from "./assistant.js";
 import type { Dependencies, IncomingMessage } from "./ports.js";
 
@@ -44,10 +44,18 @@ export async function processMessage(
     }
 
     const emocion = await emotionPromise;
-    await deps.events.log("emotion_detected", incoming.from, { emocion });
-    // Regla accionable: ante enojo/frustración, ofrecer un humano.
-    if (NEGATIVE_EMOTIONS.includes(emocion)) {
+    // Regla accionable con nivel: el asesor ya no se lista en el menú (todos lo
+    // elegirían); se ofrece cuando el malestar acumulado supera el umbral. Enojo
+    // alcanza solo; frustración necesita sostenerse (ver domain/emotion.ts).
+    const nivel = nivelEmocional(session.nivelEmocional ?? 0, emocion);
+    await deps.events.log("emotion_detected", incoming.from, { emocion, nivel: String(nivel) });
+    if (nivel >= ADVISOR_OFFER_LEVEL) {
       reply += ASESOR_OFFER;
+      // Ofrecido: el nivel vuelve a cero para no repetir la oferta en cada
+      // mensaje; si el malestar sigue, se re-acumula y se vuelve a ofrecer.
+      session.nivelEmocional = 0;
+    } else {
+      session.nivelEmocional = nivel;
     }
   }
 
