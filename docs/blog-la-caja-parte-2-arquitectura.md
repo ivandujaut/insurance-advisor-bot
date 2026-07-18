@@ -257,6 +257,16 @@ servir además el webhook de WhatsApp. La demo está viva en
 [lacaja-whatsapp-bot.onrender.com](https://lacaja-whatsapp-bot.onrender.com): otra vez,
 un borde nuevo sin tocar el corazón.
 
+El mismo razonamiento terminó alcanzando a la **identidad**. La marca de la
+aseguradora era texto hardcodeado en los mensajes del bot; hoy es configuración
+(`BRAND_NAME` y compañía) que el composition root inyecta una vez al arrancar, y los
+textos que la nombran pasaron de constantes a funciones que componen la frase con o
+sin marca. Sin configurar, el bot es un asistente de seguros neutro; con la variable,
+habla en nombre de la aseguradora. Sumado a que el catálogo ya era una carpeta de
+markdown y el tarifador un puerto, el resultado es un motor **white-label**: cambiar
+de aseguradora es cambiar contenido y configuración, no código. El caso de estudio de
+La Caja es una instanciación; el motor no tiene marca propia.
+
 ## Lo que sostiene todo
 
 La arquitectura sola no alcanza. Alrededor hay una red de seguridad:
