@@ -617,9 +617,9 @@ qué dato, y qué resigné.
   fácil: buena parte de los usuarios la elige de entrada y el bot se canibaliza solo
   (nunca llega a cotizar ni a calificar el lead, que es su función). El humano es el
   recurso caro; el bot existe para reservarlo para cuando agrega valor.
-- **La decisión:** el asesor sale del menú (que queda en 5 opciones de cotización y
-  comparación) y pasa a ofrecerse **cuando el motor de emociones detecta malestar, con
-  un nivel**:
+- **La decisión:** el asesor sale del menú (que después quedó en 4 acciones de
+  cotización, ver Decisión 23) y pasa a ofrecerse **cuando el motor de emociones
+  detecta malestar, con un nivel**:
   - El clasificador devuelve una etiqueta, no una intensidad, así que el nivel sale de
     la **severidad** de la etiqueta y su **persistencia**: el *enojo* (dirigido, se
     siente maltratado) pesa 2 y dispara la oferta solo; la *frustración* (meta
@@ -640,6 +640,27 @@ qué dato, y qué resigné.
 - **Trade-off:** el usuario decidido a hablar con una persona tarda un mensaje más en
   descubrir cómo (tiene que escribirlo). A cambio, el flujo automatizado deja de
   competir contra su propia opción de escape.
+
+### Decisión 23: el menú lista acciones, no información
+
+- **Criterio:** es el principio que emergió de podar el menú tres veces ("Tengo una
+  duda" en la Decisión 20, "Hablar con un asesor" en la 22, y ahora "Comparar los
+  planes de auto"): cada opción del menú compite por atención con las demás, así que
+  cada renglón tiene que ganarse el lugar. La información no lo gana, porque ya se
+  atiende por intención (escribiéndola).
+- **El problema de "Comparar los planes de auto":** era una opción **asimétrica** (el
+  menú lista 4 líneas para cotizar, y una opción informativa que existe solo para
+  auto) y **redundante dos veces**: la comparación completa ya aparece dentro del
+  flujo, en el paso de elección de plan, que es el momento donde de verdad sirve (con
+  el precio adelante); y "¿qué diferencia hay entre los planes?" ya la responde el
+  FAQ router o el LLM con solo escribirla.
+- **La decisión:** el menú queda en **4 acciones simétricas de cotizar** (auto, hogar,
+  accidentes, bici). Pedir la comparación por texto ("comparame los planes") la sigue
+  mostrando completa, con su evento `plan_comparison_viewed`, y el pie del menú sigue
+  invitando a escribir la consulta.
+- **Trade-off:** la comparación pierde visibilidad para quien no sabe que puede
+  pedirla. Se mitiga porque el momento de mayor valor de la comparación (elegir plan
+  con precio) está garantizado dentro del flujo, no depende del menú.
 
 ## 6. Cómo mediría el éxito
 
@@ -755,6 +776,10 @@ métricas que instrumentaría:
 21. ~~Que el menú no canibalice el flujo con la opción de asesor.~~ **Hecho:** el asesor
     salió del menú y se ofrece cuando el motor de emociones acumula malestar (enojo
     inmediato; frustración sostenida). Escribir *asesor* deriva siempre. Ver Decisión 22.
+22. ~~Que el menú liste solo acciones.~~ **Hecho:** "Comparar los planes de auto"
+    (informativa, asimétrica) salió del menú, que quedó en 4 acciones de cotizar. La
+    comparación se pide por texto y sigue dentro del flujo, en la elección de plan.
+    Ver Decisión 23.
 
 ## 9. Qué demuestra este ejercicio
 

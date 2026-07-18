@@ -169,15 +169,24 @@ test("el flujo de bici guarda el lead con el valor y la cuota estimada", async (
   assert.equal(lead.valor, 500000);
 });
 
-test("opción 5 muestra la comparación de los tres planes", async () => {
+test("pedir comparar por texto muestra la comparación de los tres planes", async () => {
   const s = newSession("t-comparar");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
-  const reply = (await handleFlow(s, "5", deps)) ?? "";
+  const reply = (await handleFlow(s, "comparame los planes", deps)) ?? "";
   assert.match(reply, /Terceros Completo/);
   assert.match(reply, /Terceros Completo con Granizo/);
   assert.match(reply, /Todo Riesgo con Franquicia/);
   assert.equal(s.stage, "main_menu");
+  assert.ok(deps.events.logged.some((e) => e.type === "plan_comparison_viewed"));
+});
+
+test("el menú lista solo acciones de cotizar (sin comparar, duda ni asesor)", async () => {
+  const s = newSession("t-menu-acciones");
+  const reply = (await handleFlow(s, "hola", fakeDeps())) ?? "";
+  assert.match(reply, /4️⃣ Cotizar bici/);
+  // Sin opciones informativas ni de escape (el pie sí invita a escribir la duda).
+  assert.doesNotMatch(reply, /5️⃣|Comparar|asesor|Tengo una duda/i);
 });
 
 test("el flujo completo termina en un resumen y guarda el lead vía el puerto", async () => {

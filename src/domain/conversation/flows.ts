@@ -85,7 +85,6 @@ const MAIN_MENU = [
   "2️⃣ Cotizar mi seguro de hogar",
   "3️⃣ Cotizar accidentes personales",
   "4️⃣ Cotizar bici o monopatín",
-  "5️⃣ Comparar los planes de auto",
   "",
   "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
 ].join("\n");
@@ -110,9 +109,10 @@ function listaDePlanes(bullets: string[]): string {
 
 const PLAN_HEADER = "📋 *Planes de auto de La Caja* (de menor a mayor cobertura):";
 
-// Comparación informativa (opción 5 del menú): viñetas SIN número, a propósito.
-// Acá 1/2/3 no eligen un plan (el usuario sigue en el menú, donde 1 cotiza auto y
-// 2 hogar); numerarlas invitaría a responder "2" esperando Granizo.
+// Comparación informativa (se pide por texto desde el menú, ej: "comparame los
+// planes"): viñetas SIN número, a propósito. Acá 1/2/3 no eligen un plan (el
+// usuario sigue en el menú, donde 1 cotiza auto y 2 hogar); numerarlas invitaría
+// a responder "2" esperando Granizo.
 const PLAN_COMPARISON = `${PLAN_HEADER}\n${listaDePlanes(["🔹", "🔸", "🔷"])}`;
 
 // Elección de plan (paso final de la cotización): numerada, para que el mapeo con
@@ -525,11 +525,14 @@ async function handleMainMenu(
       session.data = {};
       await deps.events.log("quote_started", session.userId);
       return "Buenísimo, cotizamos tu rodado. 🚲\n\n¿Es una *bicicleta* o un *monopatín eléctrico*?";
-    case "5":
-      // La comparación es informativa; el usuario sigue en el menú.
-      await deps.events.log("plan_comparison_viewed", session.userId);
-      return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
     default:
+      // Comparar planes salió del menú (Decisión 23): era una opción informativa,
+      // solo de auto, en un menú de acciones. La intención se atiende igual, por
+      // texto; y la comparación completa aparece en el paso de plan del flujo.
+      if (/compar/.test(input)) {
+        await deps.events.log("plan_comparison_viewed", session.userId);
+        return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
+      }
       // Cualquier otra cosa (incluida una duda escrita) es una consulta abierta:
       // la resuelve el FAQ router o el LLM. El asesor NO se lista en el menú a
       // propósito: listarlo primero canibaliza el flujo automatizado (todos lo
