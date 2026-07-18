@@ -662,6 +662,33 @@ qué dato, y qué resigné.
   pedirla. Se mitiga porque el momento de mayor valor de la comparación (elegir plan
   con precio) está garantizado dentro del flujo, no depende del menú.
 
+### Decisión 24: la marca es configuración (white-label); el caso de estudio, la instanciación
+
+- **Criterio:** separar el **producto** (un motor de venta asesorada por WhatsApp) del
+  **caso de estudio** (el análisis de La Caja). Son dos activos distintos con audiencias
+  distintas: el análisis demuestra juicio de producto sobre una empresa concreta; el
+  motor le sirve a cualquier aseguradora. Mezclarlos en la demo tenía dos costos: una
+  insurtech que abre el chat y ve "La Caja" concluye "esto no es para mí", y presentarse
+  con el logo y una tilde de "cuenta verificada" ajenos roza la impersonación (el
+  disclaimer no alcanza si la identidad visual dice otra cosa).
+- **La decisión:** la identidad de la aseguradora pasa a ser **configuración, no
+  código** (`BRAND_NAME`, `BRAND_ONLINE_URL`, `BRAND_PHONE`). Sin marca (default), el
+  bot y la demo quedan neutros ("soy tu asistente de seguros", header sin logo de
+  terceros ni verificado); con marca, los mismos textos se instancian para esa
+  aseguradora. El aviso de la demo explicita el encuadre: *demo white-label, caso de
+  estudio con datos públicos de La Caja, no es un canal oficial*.
+- **Por qué no es cosmético:** es la Decisión 6 (bordes intercambiables) aplicada a la
+  identidad. La base de conocimiento ya era una carpeta de markdown y el tarifador un
+  puerto; con la marca como config, el pitch a una aseguradora queda completo: *traé tu
+  catálogo (markdown) y tu marca (env vars), el motor es el mismo*.
+- **Lo que NO cambia:** el análisis, el benchmark y el blog siguen siendo sobre La
+  Caja. Esa especificidad es la evidencia de juicio de producto; genericarla sería
+  tirar el diferencial. La demo desplegada corre con la identidad neutra y el catálogo
+  público de La Caja como instanciación de ejemplo.
+- **Trade-off:** la demo neutra pierde el golpe visual de "parece el canal real de La
+  Caja". A cambio gana honestidad de marca (nada de logos ni verificados ajenos) y
+  amplía la audiencia: cualquier insurtech puede proyectarse usando el motor.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -780,6 +807,9 @@ métricas que instrumentaría:
     (informativa, asimétrica) salió del menú, que quedó en 4 acciones de cotizar. La
     comparación se pide por texto y sigue dentro del flujo, en la elección de plan.
     Ver Decisión 23.
+23. ~~Separar el producto del caso de estudio.~~ **Hecho:** la marca es configuración
+    white-label (`BRAND_NAME` y compañía) con default neutro; la demo ya no usa logo ni
+    verificado de terceros. El análisis sigue siendo de La Caja. Ver Decisión 24.
 
 ## 9. Qué demuestra este ejercicio
 

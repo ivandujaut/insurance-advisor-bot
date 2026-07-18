@@ -2,10 +2,17 @@
 
 [![CI](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ivandujaut/lacaja-whatsapp-bot/actions/workflows/ci.yml)
 
-Bot de WhatsApp para cotización y consulta de pólizas de seguros (orientado a la
-oferta de **La Caja**). Motor **híbrido**: menús determinísticos para lo
-estructurado (cotizar, derivar) + **LLM (Claude)** para consultas abiertas,
-anclado a una base de conocimiento.
+Bot de WhatsApp **white-label** para venta asesorada de seguros: comparar planes,
+cotizar y capturar el lead dentro del chat. Motor **híbrido**: menús
+determinísticos para lo estructurado (cotizar, derivar) + **LLM (Claude)** para
+consultas abiertas, anclado a una base de conocimiento.
+
+El motor es genérico: la **marca es configuración** (`BRAND_NAME`,
+`BRAND_ONLINE_URL`, `BRAND_PHONE`; sin setear, identidad neutra) y el **catálogo
+es contenido** (markdown en `src/infrastructure/knowledge/productos/`). El
+**caso de estudio** que acompaña al proyecto lo instancia con la oferta pública
+de **La Caja** (ver `docs/decisiones-de-producto.md`); no es un canal oficial de
+esa empresa.
 
 ## Arquitectura
 

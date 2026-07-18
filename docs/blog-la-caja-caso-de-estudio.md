@@ -373,9 +373,9 @@ parte de tener criterio.
 ## Probalo vos mismo (es una web app, no un video)
 
 Todo esto no es un mockup ni una captura: el bot está **desplegado y andando**. Y
-acá hubo una decisión de producto más. Para que cualquiera pueda probarlo (en
-particular, alguien de La Caja) el acceso no podía tener fricción: WhatsApp solo
-responde a números habilitados en una lista blanca, y no quería que la demo
+acá hubo una decisión de producto más. Para que cualquiera pueda probarlo (alguien
+de La Caja, o de cualquier aseguradora) el acceso no podía tener fricción: WhatsApp
+solo responde a números habilitados en una lista blanca, y no quería que la demo
 dependiera de que yo tuviera la máquina prendida. Así que expuse el **mismo motor**
 por un segundo canal: una **web app** de chat con la estética de WhatsApp, en una URL
 pública. Es la misma conversación (menús, cotización, respuestas de IA); lo único que
@@ -387,6 +387,15 @@ Escribí "hola" y arranca el menú, igual que en WhatsApp. Está en un plan grat
 que la primera carga después de un rato de inactividad puede tardar unos segundos en
 despertar. Que se pueda probar en un clic, sin instalar nada ni pedir permiso, es la
 diferencia entre contar el proyecto y mostrarlo funcionando.
+
+Una aclaración sobre lo que vas a ver: la demo se presenta con una identidad
+**neutra** ("Asesor de Seguros"), no como La Caja. Es deliberado, por dos razones.
+La honesta: no corresponde presentarse con el logo y la tilde de verificado de una
+empresa ajena, por más disclaimer que haya abajo. Y la de producto: el motor es
+**white-label**. La marca es una variable de configuración y el catálogo es una
+carpeta de markdown, así que la misma base sirve para cualquier aseguradora: traé
+tu catálogo y tu marca, y el bot es tuyo. La Caja es la instanciación que elegí
+para el caso de estudio, con sus datos públicos; el producto es el motor.
 
 ## Qué me llevo
 
@@ -400,7 +409,11 @@ es estirar ese mismo canal una etapa antes, a la venta asesorada, que hoy queda
 en tierra de nadie.
 
 Si trabajás en producto y te interesa discutir este análisis (o marcarme dónde
-me equivoco, que para eso lo publico), me encantaría charlarlo.
+me equivoco, que para eso lo publico), me encantaría charlarlo. Y si trabajás en
+una aseguradora o una insurtech y este recorrido te resuena, el motor detrás de
+la demo es white-label: la marca es configuración y el catálogo es contenido.
+El mismo análisis que hice acá con datos públicos se puede hacer con tu
+producto, y la demo se instancia con tu oferta. Hablemos.
 
 ---
 
