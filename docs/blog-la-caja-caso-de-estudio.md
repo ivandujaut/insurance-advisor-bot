@@ -123,7 +123,7 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Yo:** hola
 > **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
 > cotizar tu cobertura. 1 Auto · 2 Hogar · 3 Accidentes personales · 4 Bici o
-> monopatín · 5 Comparar planes. (O escribime tu consulta.)
+> monopatín. (O escribime tu consulta.)
 > **Yo:** 1
 > **Bot:** Genial, cotizamos tu seguro de auto. Dato 1 de 7: empecemos por el año
 > del vehículo (entre 2006 y 2026). Si es 0km, escribilo.
@@ -167,10 +167,14 @@ tirar todo el progreso (que era lo que pasaba antes). Y en la elección final, l
 van numerados igual que la instrucción ("respondé 1, 2 o 3"), para no hacerte contar
 posiciones; tampoco hace falta contestar con el dígito: "creo que la segunda me
 sirve" o "el de granizo" también eligen, aunque si el mensaje huele a pregunta el bot
-prefiere repreguntar antes que elegir por vos. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué la
-opción "tengo una duda", que sobraba porque una consulta libre se responde con solo
-escribirla), y el momento clave (la comparación de planes) pasa dentro del chat, que es
-donde se juega la venta asesorada. Si en cualquier punto pregunto algo abierto, como
+prefiere repreguntar antes que elegir por vos. El menú hace el trabajo pesado del recorrido, y terminó
+en cuatro acciones simétricas de cotizar, después de podarlo tres veces con el mismo
+principio: lista acciones, no información ni escapes. "Tengo una duda" sobraba porque
+una consulta libre se responde con solo escribirla; "hablar con un asesor" se ofrece
+por emoción (ya vamos a eso); y "comparar los planes" era una opción informativa, solo
+de auto, cuando la comparación de verdad importa dentro del flujo, con tu precio
+adelante (y pedirla por texto la sigue mostrando). El momento clave (la comparación de
+planes) pasa dentro del chat, que es donde se juega la venta asesorada. Si en cualquier punto pregunto algo abierto, como
 "¿qué es la franquicia?", ahí toma el modelo de lenguaje y responde con la información
 real, sin romper el flujo. Ese reparto de tareas es la Decisión 3 funcionando en vivo.
 
