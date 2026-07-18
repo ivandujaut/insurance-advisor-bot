@@ -14,6 +14,7 @@ import type {
   SessionStore,
 } from "../application/ports.js";
 import { config } from "../config/index.js";
+import { configureBrand } from "../domain/brand.js";
 import { createOpenAiEmbeddings } from "../infrastructure/embeddings/openai.js";
 import { createFaqMatcher } from "../infrastructure/faq/faq-matcher.js";
 import { createFilesystemKnowledge } from "../infrastructure/knowledge/filesystem.js";
@@ -63,6 +64,9 @@ export async function shutdown(): Promise<void> {
 /** Arma las dependencias concretas del núcleo. Se llama una vez por proceso. */
 export async function buildDependencies(): Promise<Dependencies> {
   assertConfig();
+  // La marca es white-label: se configura una vez acá (composition root) y el
+  // dominio la lee sin conocer config. Sin BRAND_NAME, identidad neutra.
+  configureBrand(config.brand);
 
   let leads: LeadRepository;
   let events: EventSink;

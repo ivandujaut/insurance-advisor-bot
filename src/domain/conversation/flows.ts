@@ -10,6 +10,7 @@
  * - Devuelve null    -> no aplica menú; el motor delega en el LLM.
  */
 import type { Dependencies, LeadInput } from "../../application/ports.js";
+import { brandName, brandOnlineUrl, brandPhone, deMarca } from "../brand.js";
 import { NEGATIVE_EMOTIONS } from "../emotion.js";
 import {
   ACCIDENTES_MODALIDADES,
@@ -50,11 +51,14 @@ const GREETINGS = [
 ];
 const MENU_KEYWORDS = ["menu", "menú", "inicio", "volver", "empezar", "start"];
 const ADVISOR_KEYWORDS = ["asesor", "humano", "agente", "persona"];
-const ADVISOR_REPLY =
-  "Te derivo con un asesor de La Caja. 🧑‍💼\n\n(En producción, acá se dispara la derivación al canal oficial / Línea Única 0810-555-2252.)";
 
-// Sitio público de La Caja para la contratación online (con descuento por CBU).
-const LACAJA_ONLINE_URL = "https://www.lacaja.com.ar";
+// Los textos que nombran a la aseguradora son FUNCIONES, no constantes: la marca
+// es white-label (domain/brand.ts, configurada al arrancar) y con marca vacía la
+// frase queda neutra. Una constante congelaría la marca al momento del import.
+function advisorReply(): string {
+  const canal = brandPhone() ? `al canal oficial (${brandPhone()})` : "al canal oficial";
+  return `Te derivo con un asesor${deMarca()}. 🧑‍💼\n\n(En producción, acá se dispara la derivación ${canal}.)`;
+}
 
 // Cierre post-cotización: en el momento de mayor intención de compra, en vez de
 // devolver al menú frío se ofrece avanzar. Es la palanca de conversión del tramo
@@ -67,27 +71,38 @@ const POST_QUOTE_CTA = [
   "3️⃣ Comparar otro plan u otra consulta",
 ].join("\n");
 
-const ONLINE_REPLY = [
-  "💻 *Contratación online*",
-  "",
-  "Los planes se pueden contratar en el sitio de La Caja, con descuento por débito por CBU:",
-  LACAJA_ONLINE_URL,
-  "",
-  "¿Preferís que te acompañe una persona? Escribí *asesor*.",
-  "",
-  "Escribí *menú* para otra consulta.",
-].join("\n");
+function onlineReply(): string {
+  const donde = brandOnlineUrl()
+    ? [
+        `Los planes se pueden contratar en el sitio${deMarca()}, con descuento por débito por CBU:`,
+        brandOnlineUrl(),
+      ]
+    : [
+        "Los planes se pueden contratar en el sitio oficial, con descuento por débito por CBU (un asesor te pasa el link).",
+      ];
+  return [
+    "💻 *Contratación online*",
+    "",
+    ...donde,
+    "",
+    "¿Preferís que te acompañe una persona? Escribí *asesor*.",
+    "",
+    "Escribí *menú* para otra consulta.",
+  ].join("\n");
+}
 
-const MAIN_MENU = [
-  "👋 Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y cotizar tu cobertura.",
-  "",
-  "1️⃣ Cotizar mi seguro de auto",
-  "2️⃣ Cotizar mi seguro de hogar",
-  "3️⃣ Cotizar accidentes personales",
-  "4️⃣ Cotizar bici o monopatín",
-  "",
-  "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
-].join("\n");
+function mainMenu(): string {
+  return [
+    `👋 Hola, soy ${brandName() ? `el asistente de seguros${deMarca()}` : "tu asistente de seguros"}. Te ayudo a encontrar y cotizar tu cobertura.`,
+    "",
+    "1️⃣ Cotizar mi seguro de auto",
+    "2️⃣ Cotizar mi seguro de hogar",
+    "3️⃣ Cotizar accidentes personales",
+    "4️⃣ Cotizar bici o monopatín",
+    "",
+    "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
+  ].join("\n");
+}
 
 // Resúmenes de cada plan, alineados por índice con AUTO_PLANS (la lista canónica
 // que resuelve la elección 1/2/3): una sola fuente para nombres y orden, así el
@@ -107,17 +122,23 @@ function listaDePlanes(bullets: string[]): string {
   ]).join("\n");
 }
 
-const PLAN_HEADER = "📋 *Planes de auto de La Caja* (de menor a mayor cobertura):";
+function planHeader(): string {
+  return `📋 *Planes de auto${deMarca()}* (de menor a mayor cobertura):`;
+}
 
 // Comparación informativa (se pide por texto desde el menú, ej: "comparame los
 // planes"): viñetas SIN número, a propósito. Acá 1/2/3 no eligen un plan (el
 // usuario sigue en el menú, donde 1 cotiza auto y 2 hogar); numerarlas invitaría
 // a responder "2" esperando Granizo.
-const PLAN_COMPARISON = `${PLAN_HEADER}\n${listaDePlanes(["🔹", "🔸", "🔷"])}`;
+function planComparison(): string {
+  return `${planHeader()}\n${listaDePlanes(["🔹", "🔸", "🔷"])}`;
+}
 
 // Elección de plan (paso final de la cotización): numerada, para que el mapeo con
 // el "Respondé 1, 2 o 3" sea visible de un vistazo.
-const PLAN_CHOICES = `${PLAN_HEADER}\n${listaDePlanes(["1️⃣", "2️⃣", "3️⃣"])}`;
+function planChoices(): string {
+  return `${planHeader()}\n${listaDePlanes(["1️⃣", "2️⃣", "3️⃣"])}`;
+}
 
 function normalize(text: string): string {
   return text.trim().toLowerCase();
@@ -358,7 +379,7 @@ export async function handleFlow(
   if (ADVISOR_KEYWORDS.includes(input)) {
     session.stage = "idle";
     await deps.events.log("advisor_requested", session.userId);
-    return ADVISOR_REPLY;
+    return advisorReply();
   }
 
   // Volver atrás a corregir: si está a mitad de una cotización, deshace el último
@@ -371,7 +392,7 @@ export async function handleFlow(
       // Nada que deshacer todavía (recién arrancó): lo llevo al menú a empezar.
       session.stage = "main_menu";
       session.data = {};
-      return MAIN_MENU;
+      return mainMenu();
     }
     delete session.data[last];
     // Al deshacer un paso, reseteo el contador de "trabado" para no arrastrarlo.
@@ -398,7 +419,7 @@ export async function handleFlow(
     }
     session.stage = "main_menu";
     session.data = {};
-    return MAIN_MENU;
+    return mainMenu();
   }
 
   switch (session.stage) {
@@ -444,11 +465,11 @@ async function handlePostQuote(
     case 2:
       session.stage = "idle";
       await deps.events.log("quote_accepted", session.userId, { plan, via: "online" });
-      return ONLINE_REPLY;
+      return onlineReply();
     case 3:
       session.stage = "main_menu";
       session.data = {};
-      return MAIN_MENU;
+      return mainMenu();
     default:
       // Cualquier otra cosa es una consulta abierta -> LLM.
       return null;
@@ -478,7 +499,7 @@ async function handleCapturingContact(
       ? "Genial, te aviso por acá si dejás una cotización a medias. "
       : "Perfecto, no te escribo de más. ";
     return [
-      `¡Listo! 🙌 ${aviso}Un asesor de La Caja te va a contactar con tu cotización lista, así no repetís nada.`,
+      `¡Listo! 🙌 ${aviso}Un asesor${deMarca()} te va a contactar con tu cotización lista, así no repetís nada.`,
       "",
       "(En la demo no hay un contacto real detrás; en producción, acá se agenda el llamado en el canal oficial.)",
       "",
@@ -531,7 +552,7 @@ async function handleMainMenu(
       // texto; y la comparación completa aparece en el paso de plan del flujo.
       if (/compar/.test(input)) {
         await deps.events.log("plan_comparison_viewed", session.userId);
-        return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
+        return `${planComparison()}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
       }
       // Cualquier otra cosa (incluida una duda escrita) es una consulta abierta:
       // la resuelve el FAQ router o el LLM. El asesor NO se lista en el menú a
@@ -682,7 +703,7 @@ async function handleQuotingAuto(
     return conProgreso(
       session,
       AUTO_STEPS,
-      `${notaInspeccion}${PLAN_CHOICES}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`,
+      `${notaInspeccion}${planChoices()}\n\n¿Qué plan te interesa? Respondé *1*, *2* o *3*.`,
     );
   }
 

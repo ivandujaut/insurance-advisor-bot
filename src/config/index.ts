@@ -105,6 +105,15 @@ export const config = {
     // ya está frío). Default 72h (una cadencia típica de carrito abandonado).
     maxHours: Number(process.env.REENGAGEMENT_MAX_HOURS ?? 72),
   },
+  // Marca white-label: la identidad de la aseguradora es configuración, no
+  // código. Sin BRAND_NAME (default), el bot y el demo quedan con identidad
+  // neutra; con BRAND_NAME (ej: "La Caja") los textos se instancian para esa
+  // aseguradora. Ver domain/brand.ts y la Decisión 24.
+  brand: {
+    name: process.env.BRAND_NAME ?? "",
+    onlineUrl: process.env.BRAND_ONLINE_URL ?? "",
+    phone: process.env.BRAND_PHONE ?? "",
+  },
   server: {
     port: Number(process.env.PORT ?? 3000),
   },

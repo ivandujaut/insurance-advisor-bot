@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { configureBrand } from "../domain/brand.js";
 import type { Session } from "../domain/conversation/session.js";
 import type { Emotion } from "../domain/emotion.js";
 import type { Dependencies, EventType, LeadInput, SessionStore } from "./ports.js";
@@ -160,8 +161,27 @@ test("el menú ya no lista al asesor, pero escribir 'asesor' sigue derivando", a
   const menu = await processMessage({ from: "u-menu-asesor", text: "hola" }, deps);
   assert.doesNotMatch(menu, /asesor/i, "el menú no promociona al asesor");
   const reply = await processMessage({ from: "u-menu-asesor", text: "asesor" }, deps);
-  assert.match(reply, /asesor de La Caja/i);
+  assert.match(reply, /Te derivo con un asesor/i);
   assert.ok(logged.some((e) => e.type === "advisor_requested"));
+});
+
+test("marca white-label: sin marca los textos son neutros; con marca, la nombran", async () => {
+  // Default: identidad neutra (ninguna aseguradora nombrada).
+  const { deps } = fakeDeps();
+  const menuNeutro = await processMessage({ from: "u-brand-0", text: "hola" }, deps);
+  assert.match(menuNeutro, /soy tu asistente de seguros\./i);
+  assert.doesNotMatch(menuNeutro, /La Caja/);
+  // Con BRAND_NAME configurado, la misma frase se instancia para la aseguradora.
+  configureBrand({ name: "La Caja" });
+  try {
+    const menuMarca = await processMessage({ from: "u-brand-1", text: "hola" }, deps);
+    assert.match(menuMarca, /asistente de seguros de La Caja/);
+    const asesor = await processMessage({ from: "u-brand-1", text: "asesor" }, deps);
+    assert.match(asesor, /asesor de La Caja/);
+  } finally {
+    // La marca es estado global del dominio: se resetea para no filtrar a otros tests.
+    configureBrand({ name: "", onlineUrl: "", phone: "" });
+  }
 });
 
 test("una duda conocida la responde el FAQ router sin llamar al LLM", async () => {
@@ -213,7 +233,7 @@ test("aceptar con asesor: contacto -> handoff -> pide opt-in -> lo captura", asy
   assert.ok(logged.some((e) => e.type === "handoff_requested"));
   // Acepta: se confirma y queda el opt-in guardado.
   const r3 = await processMessage({ from: "u-close", text: "sí, dale" }, deps);
-  assert.match(r3, /asesor de La Caja te va a contactar/i);
+  assert.match(r3, /asesor te va a contactar/i);
 });
 
 test("opt-in: si dice que no, no queda consentido (optIn = 0)", async () => {

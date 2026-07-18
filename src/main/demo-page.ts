@@ -4,18 +4,25 @@
  * cualquiera pruebe el bot en el navegador, sin Meta ni allowlist.
  *
  * La UI replica el chat de WhatsApp en modo oscuro lo más fiel posible: header
- * oscuro con avatar + nombre + check de verificado, fondo de doodles que se
- * repite (tile infinito), burbujas con hora, e input con botón de envío
- * circular. Los assets (logo, fondo) se embeben en base64 desde ./demo-assets.
+ * oscuro con avatar + nombre, fondo de doodles que se repite (tile infinito),
+ * burbujas con hora, e input con botón de envío circular. El fondo se embebe en
+ * base64 desde ./demo-assets.
+ *
+ * La identidad es white-label: el nombre sale de config.brand (BRAND_NAME) con
+ * un default neutro. A propósito NO hay logo de terceros ni tilde de "cuenta
+ * verificada": esta demo no debe hacerse pasar por el canal de nadie.
  */
-import { FONDO_WHATSAPP, LOGO_LACAJA } from "./demo-assets.js";
+import { config } from "../config/index.js";
+import { FONDO_WHATSAPP } from "./demo-assets.js";
+
+const NOMBRE_DEMO = config.brand.name || "Asesor de Seguros";
 
 export const DEMO_HTML = `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>La Caja de Ahorro y Seguro (demo)</title>
+<title>${NOMBRE_DEMO} (demo)</title>
 <style>
   :root {
     --wa-bg:#0b141a; --wa-header:#111b21;
@@ -30,8 +37,7 @@ export const DEMO_HTML = `<!doctype html>
   .doodle-bg { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; background-color:var(--wa-bg); background-image:url("${FONDO_WHATSAPP}"); background-repeat:repeat; background-size:300px; }
   header { position:relative; z-index:2; background:var(--wa-header); color:var(--texto); padding:9px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 0 #0006; }
   header .back { color:var(--texto-sec); font-size:26px; line-height:1; margin:-2px 2px 0 -2px; }
-  header .avatar { width:40px; height:40px; border-radius:50%; background:#fff; overflow:hidden; flex:0 0 auto; }
-  header .avatar img { width:100%; height:100%; object-fit:contain; padding:3px; }
+  header .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#00a884,#005c4b); overflow:hidden; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:20px; }
   header .title { display:flex; flex-direction:column; min-width:0; }
   header .name { display:flex; align-items:center; gap:5px; font-size:16px; font-weight:600; line-height:1.25; }
   header .name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -57,20 +63,16 @@ export const DEMO_HTML = `<!doctype html>
   <div class="doodle-bg"></div>
   <header>
     <span class="back">&#8249;</span>
-    <div class="avatar"><img src="${LOGO_LACAJA}" alt="La Caja de Ahorro y Seguro" /></div>
+    <div class="avatar" aria-hidden="true">🛡️</div>
     <div class="title">
       <div class="name">
-        <span>La Caja de Ahorro y Seguro</span>
-        <svg width="17" height="17" viewBox="0 0 24 24" aria-label="Cuenta verificada" role="img">
-          <circle cx="12" cy="12" r="11" fill="var(--check)"/>
-          <path d="M16.8 8.4l-6.1 6.4-3.5-3.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <span>${NOMBRE_DEMO}</span>
       </div>
-      <div class="status">en línea</div>
+      <div class="status">demo · en línea</div>
     </div>
   </header>
   <div class="chat" id="chat"></div>
-  <div class="aviso">Demo con datos públicos. No es un canal oficial de La Caja.</div>
+  <div class="aviso">Demo white-label. Caso de estudio con datos públicos de La Caja; no es un canal oficial.</div>
   <form id="form" autocomplete="off">
     <span class="plus">+</span>
     <input id="input" placeholder="Mensaje" />
@@ -85,8 +87,8 @@ export const DEMO_HTML = `<!doctype html>
   const input = document.getElementById("input");
   const send = document.getElementById("send");
   // Un id estable por navegador para que la sesión persista entre mensajes.
-  let userId = localStorage.getItem("lacaja_demo_uid");
-  if (!userId) { userId = "web-" + Math.random().toString(36).slice(2, 12); localStorage.setItem("lacaja_demo_uid", userId); }
+  let userId = localStorage.getItem("demo_chat_uid");
+  if (!userId) { userId = "web-" + Math.random().toString(36).slice(2, 12); localStorage.setItem("demo_chat_uid", userId); }
 
   function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c])); }
   function format(text) { return escapeHtml(text).replace(/\\*([^*\\n]+)\\*/g, "<b>$1</b>").replace(/\\n/g, "<br>"); }

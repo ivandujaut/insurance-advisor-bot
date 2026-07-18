@@ -3,7 +3,13 @@
  * vez de solo por CLI. Autocontenido (sin assets externos). Recibe el reporte ya
  * calculado; acá solo se presenta.
  */
+import { config } from "../config/index.js";
 import type { FunnelReport } from "../domain/analytics/funnel.js";
+
+// Identidad white-label: con BRAND_NAME el titulo la nombra; sin marca, neutro.
+const NOMBRE_FUNNEL = config.brand.name
+  ? `Asistente de ${config.brand.name}`
+  : "Asistente de seguros";
 
 function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] ?? c);
@@ -48,7 +54,7 @@ export function renderFunnelHtml(r: FunnelReport): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Funnel · Asistente de La Caja (demo)</title>
+<title>Funnel · ${NOMBRE_FUNNEL} (demo)</title>
 <style>
   :root { --rojo:#c8102e; --bg:#f4f5f7; --card:#fff; --texto:#111b21; --muted:#667781; --linea:#e6e8eb; }
   * { box-sizing:border-box; }
@@ -82,7 +88,7 @@ export function renderFunnelHtml(r: FunnelReport): string {
 <body>
 <header><div class="in">
   <h1>Funnel del bot</h1>
-  <p>Asistente de seguros de La Caja · demo · ${r.totalEventos} eventos registrados</p>
+  <p>${NOMBRE_FUNNEL} · demo · ${r.totalEventos} eventos registrados</p>
 </div></header>
 <div class="wrap">
 ${
@@ -130,7 +136,7 @@ ${
     </div>
   </div>`
 }
-  <div class="foot">Datos de la demo pública. No es un canal oficial de La Caja.</div>
+  <div class="foot">Datos de la demo pública. Caso de estudio con datos públicos de La Caja; no es un canal oficial.</div>
 </div>
 </body>
 </html>`;
