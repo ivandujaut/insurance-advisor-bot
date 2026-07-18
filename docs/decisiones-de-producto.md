@@ -570,6 +570,13 @@ qué dato, y qué resigné.
   - **0km** (escrito por el usuario) → condición 0km, año en curso.
   - Año en curso → **único caso ambiguo** (0km o usado del año): ahí sí una repregunta
     corta, presentada como aclaración del año, no como un paso propio del recorrido.
+- **La repregunta usa el criterio objetivo, no el juicio:** "¿ya está *patentado*?"
+  en vez de "¿es 0km o usado?". 0km significa exactamente *sin patentar* (esa es la
+  definición del negocio, y es lo que decide si hace falta inspección previa); quien
+  compró un auto del año con pocos km duda de si "ya es usado", pero no duda de si
+  tiene patente. Es reemplazar un juicio subjetivo por un hecho verificable. El
+  *año de patentamiento* como dato numérico NO se pide: no mueve el precio (la suma
+  asegurada sale del año de modelo contra la tabla de valores) y sumaría un paso.
 - **Efecto:** el flujo de auto pasa de 8 a 7 pasos para el caso común, y el indicador de
   progreso (Decisión 20) se ajusta solo, porque la condición dejó de ser un paso.
 - **Trade-off:** se pierde el "0km de un modelo de año anterior" (0km de stock viejo),

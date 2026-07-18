@@ -473,6 +473,12 @@ async function handleMainMenu(
 const MIN_AUTO_YEAR = 2006;
 const CURRENT_YEAR = new Date().getFullYear();
 
+// Aclaración de condición para el año en curso, por el criterio objetivo: 0km =
+// sin patentar. "¿Tiene patente?" es un hecho verificable; "¿es 0km o usado?" es un
+// juicio que confunde a quien tiene un auto del año con pocos km (ver Decisión 21).
+const PATENTE_QUESTION =
+  "¿Ya está *patentado*? Respondé *sí* o *no* (si todavía no tiene patente, es 0km).";
+
 /** Formatea un monto en pesos con separador de miles ("$16.200"). */
 function pesos(monto: number): string {
   return `$${monto.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
@@ -511,20 +517,29 @@ async function handleQuotingAuto(
       session.data.condicion = "usado";
       return conProgreso(session, AUTO_STEPS, "¿De qué *marca* es? (ej: Toyota)");
     }
-    // Solo el año en curso es genuinamente ambiguo: ahí sí preguntamos (sin número
-    // de paso: es una aclaración del año, no un paso propio del recorrido).
-    return "Del año en curso, ¿es *0km* o *usado*? (ya rodó)";
+    // Solo el año en curso es genuinamente ambiguo: ahí sí preguntamos, pero por el
+    // criterio objetivo (la patente) y no por el juicio "¿0km o usado?", que confunde
+    // a quien tiene un auto del año con pocos km. 0km = sin patentar: es la definición
+    // real del negocio y decide la inspección. (Sin número de paso: es una aclaración
+    // del año, no un paso propio del recorrido.)
+    return PATENTE_QUESTION;
   }
 
   // 2) Condición: solo se llega acá para el año en curso (ambiguo). Para el resto
-  // ya quedó resuelta junto al año.
+  // ya quedó resuelta junto al año. Se resuelve por la patente (sí = usado, no = 0km),
+  // aceptando también 0km/usado por si responden con el término de siempre.
   if (!session.data.condicion) {
     const t = normalize(text);
-    const es0km = /0\s*km|cero|nuev/.test(t);
-    const esUsado = /usad|segunda|used|rod/.test(t);
+    // "no sé" / "ni idea" es duda, no una negación: cae al reintento, no a 0km.
+    const esDuda = /no\s*s[eé]|ni idea/.test(t);
+    // La negación va primero: "no está patentado" empieza con "no" y NO debe
+    // matchear el "patentad" del sí (invertiría la condición).
+    const esNo = !esDuda && /^no/.test(t);
+    const es0km = esNo || /0\s*km|cero|nuev|sin patent/.test(t);
+    const esUsado = !es0km && !esDuda && (/^s[ií]/.test(t) || /patentad|usad|segunda|rod/.test(t));
     if (!es0km && !esUsado) {
       if (await shouldEscape(session, text, deps, "condicion")) return STUCK_EXIT;
-      return "No te entendí. ¿El auto es *0km* o *usado*?";
+      return `No te entendí. ${PATENTE_QUESTION}`;
     }
     session.data.condicion = es0km ? "0km" : "usado";
     await deps.events.log("quote_step", session.userId, { step: "condicion" });
