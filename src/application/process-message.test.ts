@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Session } from "../domain/conversation/session.js";
+import type { Emotion } from "../domain/emotion.js";
 import type { Dependencies, EventType, LeadInput, SessionStore } from "./ports.js";
 import { LlmNotConfiguredError } from "./ports.js";
 import { processMessage } from "./process-message.js";
@@ -116,7 +117,7 @@ test("una consulta abierta registra el evento open_question", async () => {
   assert.ok(logged.some((e) => e.type === "open_question"));
 });
 
-test("emoción negativa ofrece un asesor y registra emotion_detected", async () => {
+test("enojo ofrece el asesor de una (pesa 2, alcanza el umbral solo)", async () => {
   const { deps, logged } = fakeDeps({
     llm: { generate: async () => "Entiendo tu molestia." },
     emotion: { classify: async () => "enojo" },
@@ -126,6 +127,41 @@ test("emoción negativa ofrece un asesor y registra emotion_detected", async () 
   assert.match(reply, /asesor/);
   const emo = logged.find((e) => e.type === "emotion_detected");
   assert.equal(emo?.props?.emocion, "enojo");
+});
+
+test("frustración: la primera no ofrece asesor, la segunda (sostenida) sí", async () => {
+  const { deps } = fakeDeps({
+    llm: { generate: async () => "Te ayudo con eso." },
+    emotion: { classify: async () => "frustracion" },
+  });
+  await processMessage({ from: "u-frus2", text: "hola" }, deps);
+  const r1 = await processMessage({ from: "u-frus2", text: "no me sale esto" }, deps);
+  assert.doesNotMatch(r1, /escribí \*asesor\*/i, "una frustración aislada no dispara la oferta");
+  const r2 = await processMessage({ from: "u-frus2", text: "sigue sin salir, que embole" }, deps);
+  assert.match(r2, /escribí \*asesor\*/i, "frustración sostenida sí ofrece el asesor");
+});
+
+test("una satisfacción resetea el nivel emocional acumulado", async () => {
+  const emociones: Emotion[] = ["frustracion", "satisfaccion", "frustracion"];
+  let i = 0;
+  const { deps } = fakeDeps({
+    llm: { generate: async () => "Claro." },
+    emotion: { classify: async () => emociones[i++] ?? "neutral" },
+  });
+  await processMessage({ from: "u-reset", text: "hola" }, deps);
+  await processMessage({ from: "u-reset", text: "no me sale" }, deps); // frustracion: nivel 1
+  await processMessage({ from: "u-reset", text: "ah listo, gracias" }, deps); // satisfaccion: nivel 0
+  const r = await processMessage({ from: "u-reset", text: "ahora esto no anda" }, deps); // frustracion: nivel 1
+  assert.doesNotMatch(r, /escribí \*asesor\*/i, "el reset evita arrastrar malestar viejo");
+});
+
+test("el menú ya no lista al asesor, pero escribir 'asesor' sigue derivando", async () => {
+  const { deps, logged } = fakeDeps();
+  const menu = await processMessage({ from: "u-menu-asesor", text: "hola" }, deps);
+  assert.doesNotMatch(menu, /asesor/i, "el menú no promociona al asesor");
+  const reply = await processMessage({ from: "u-menu-asesor", text: "asesor" }, deps);
+  assert.match(reply, /asesor de La Caja/i);
+  assert.ok(logged.some((e) => e.type === "advisor_requested"));
 });
 
 test("una duda conocida la responde el FAQ router sin llamar al LLM", async () => {

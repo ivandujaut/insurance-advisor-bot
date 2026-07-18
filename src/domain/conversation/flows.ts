@@ -86,7 +86,6 @@ const MAIN_MENU = [
   "3️⃣ Cotizar accidentes personales",
   "4️⃣ Cotizar bici o monopatín",
   "5️⃣ Comparar los planes de auto",
-  "6️⃣ Hablar con un asesor",
   "",
   "Respondé con el número, o escribime tu consulta o duda directamente. 💬",
 ].join("\n");
@@ -474,13 +473,12 @@ async function handleMainMenu(
       // La comparación es informativa; el usuario sigue en el menú.
       await deps.events.log("plan_comparison_viewed", session.userId);
       return `${PLAN_COMPARISON}\n\nEscribí *1* para cotizar, o preguntame lo que quieras.`;
-    case "6":
-      session.stage = "idle";
-      await deps.events.log("advisor_requested", session.userId);
-      return ADVISOR_REPLY;
     default:
       // Cualquier otra cosa (incluida una duda escrita) es una consulta abierta:
-      // la resuelve el FAQ router o el LLM. Por eso ya no hace falta un ítem "duda".
+      // la resuelve el FAQ router o el LLM. El asesor NO se lista en el menú a
+      // propósito: listarlo primero canibaliza el flujo automatizado (todos lo
+      // elegirían). Se ofrece cuando el motor de emociones detecta malestar
+      // sostenido (ver Decisión 22), y escribir *asesor* sigue funcionando siempre.
       return null;
   }
 }

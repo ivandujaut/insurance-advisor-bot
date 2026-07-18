@@ -123,7 +123,7 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Yo:** hola
 > **Bot:** Hola, soy el asistente de seguros de La Caja. Te ayudo a encontrar y
 > cotizar tu cobertura. 1 Auto · 2 Hogar · 3 Accidentes personales · 4 Bici o
-> monopatín · 5 Comparar planes · 6 Hablar con un asesor. (O escribime tu consulta.)
+> monopatín · 5 Comparar planes. (O escribime tu consulta.)
 > **Yo:** 1
 > **Bot:** Genial, cotizamos tu seguro de auto. Dato 1 de 7: empecemos por el año
 > del vehículo (entre 2006 y 2026). Si es 0km, escribilo.
@@ -195,6 +195,14 @@ Un cliente frustrado que no encuentra respuesta se va. Así que el bot, además 
 responder, lee el tono del mensaje: si detecta enojo o frustración, deja de insistir con
 texto y ofrece pasar a una persona. No reemplaza al asesor, lo llama en el momento justo,
 que es cuando el cliente está por abandonar.
+
+Por eso el asesor tampoco figura en el menú. Si "hablar con una persona" es la primera
+opción visible, todos la eligen y el bot no llega ni a cotizar: se canibaliza solo. La
+oferta es contextual y con nivel: el enojo (dirigido, se siente maltratado) dispara la
+oferta de una; la frustración (más leve) tiene que sostenerse más de un mensaje, porque
+una puede ser desahogo y dos son una señal. Un mensaje de satisfacción resetea el
+acumulado. Y quien quiere una persona igual la tiene: escribir "asesor" deriva siempre,
+en cualquier punto.
 
 Y eso vale sobre todo **dentro de la cotización**, que es donde más se traba y se calienta
 la gente. Si en un paso contesta cualquier cosa ("no sé el modelo, basta de preguntas"),

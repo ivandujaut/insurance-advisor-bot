@@ -21,6 +21,23 @@ export type Emotion = (typeof EMOTIONS)[number];
 export const NEGATIVE_EMOTIONS: readonly Emotion[] = ["enojo", "frustracion"];
 
 /**
+ * Nivel emocional acumulado de la sesión: el clasificador devuelve una etiqueta,
+ * no una intensidad, así que el "nivel" sale de la severidad de la etiqueta y de
+ * su persistencia. El enojo (dirigido, se siente maltratado) pesa 2 y alcanza el
+ * umbral solo; la frustración (meta bloqueada, más leve) pesa 1 y necesita
+ * sostenerse en más de un mensaje: una puede ser desahogo, dos es una señal. Una
+ * satisfacción resetea (el malestar quedó atrás); lo demás no modifica.
+ */
+export const ADVISOR_OFFER_LEVEL = 2;
+
+export function nivelEmocional(prev: number, emocion: Emotion): number {
+  if (emocion === "enojo") return prev + 2;
+  if (emocion === "frustracion") return prev + 1;
+  if (emocion === "satisfaccion") return 0;
+  return prev;
+}
+
+/**
  * Guía de clasificación calibrada (definiciones + regla anti-neutral). Fue la que
  * subió el macro-F1 de 0.72 a 0.91 en el eval (ver docs/emociones-investigacion.md).
  * Fuente única de verdad: la usan el asistente (producción) y el eval harness, así
