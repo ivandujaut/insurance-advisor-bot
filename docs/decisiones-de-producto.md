@@ -442,8 +442,8 @@ qué dato, y qué resigné.
   pago). Pagar una generación de LLM por cada repetición es tirar plata; pero responder
   mal una duda de seguros es peor que gastar de más.
 - **La decisión:** antes de la generación, la consulta pasa por un **router semántico**.
-  Al arrancar se embeden (OpenAI `text-embedding-3-small`) las 35 dudas del benchmark con
-  sus variantes (172 formulaciones); cada consulta se compara por **similitud coseno**
+  Al arrancar se embeden (OpenAI `text-embedding-3-small`) las 37 dudas del benchmark con
+  sus variantes (181 formulaciones); cada consulta se compara por **similitud coseno**
   contra ese corpus, y si el mejor match supera un umbral, se devuelve la **respuesta
   canónica sin llamar al LLM**. Si no, cae al asistente como siempre.
 - **Por qué se pudo sin tocar el núcleo:** de nuevo la Decisión 6. Entraron dos puertos
@@ -454,15 +454,15 @@ qué dato, y qué resigné.
 - **Evaluación (por qué 0.65 y no a ojo):** elegir el umbral es un problema de
   clasificación binaria (¿esta consulta tiene respuesta canónica?), así que se mide con
   una **curva ROC**. Con método leave-one-out (cada formulación se busca contra el corpus
-  menos sí misma) sobre 172 formulaciones como positivos y 31 distractores como negativos
+  menos sí misma) sobre 181 formulaciones como positivos y 31 distractores como negativos
   (fuera de tema y adyacentes a seguros sin cubrir: lanchas, mala praxis, caución), el
   **AUC da 0.92**: el coseno separa muy bien lo conocido de lo desconocido.
 
   ![Curva ROC del FAQ router, AUC 0.92](img/roc-faq.svg)
 
-  El punto de operación elegido, **0.65**, cae en el codo de la curva: **65% de
+  El punto de operación elegido, **0.65**, cae en el codo de la curva: **64% de
   cobertura** (dudas resueltas sin LLM) con **3% de falsos positivos** (1 de 31 negativos
-  difíciles se filtra) y **96% de acierto de contenido**. Subir a 0.70 da **cero falsos
+  difíciles se filtra) y **97% de acierto de contenido**. Subir a 0.70 da **cero falsos
   positivos** a costa de bajar la cobertura a 53%; bajar a 0.60 dispara los falsos
   positivos a 16%. Se operó en 0.65 privilegiando cobertura, con el LLM de red de
   seguridad para todo lo que no supera el umbral. Reproducir: `pnpm eval:faq`.
@@ -470,6 +470,15 @@ qué dato, y qué resigné.
   benchmark que mantener. A cambio, las dudas repetidas se resuelven a costo casi cero,
   con respuesta determinista y sin latencia de generación. El ahorro se mide en el funnel
   (evento `faq_hit`, ver sección 6).
+- **Mantenimiento (el corpus es contenido, y el contenido deriva):** cuando el producto
+  cambia, las respuestas canónicas quedan viejas *en silencio*, porque el router las
+  devuelve verbatim con la misma confianza. Pasó acá: al fusionar la condición en el año
+  (Decisión 21), la respuesta de "qué datos pedís" seguía diciendo "si es 0km o usado".
+  La disciplina es: cada cambio de flujo dispara una pasada por el corpus (corregir lo
+  viejo y sumar las dudas que el cambio genera, ej: "¿qué significa patentado?"), y como
+  editar el corpus mueve el paisaje de similitud, se **re-corre `pnpm eval:faq`** para
+  revalidar el umbral. En la última pasada (35→37 dudas): AUC 0.92 estable y 0.65 sigue
+  en el codo.
 
 ### Decisión 18: detectar frustración para ofrecer un asesor humano
 

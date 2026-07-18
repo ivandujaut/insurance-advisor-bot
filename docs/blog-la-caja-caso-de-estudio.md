@@ -189,11 +189,19 @@ se mide con una curva ROC:
 
 ![Curva ROC del FAQ router, AUC 0.92](img/roc-faq.svg)
 
-El punto elegido resuelve el **65% de las dudas conocidas sin llamar al modelo**, con 96%
+El punto elegido resuelve el **64% de las dudas conocidas sin llamar al modelo**, con 97%
 de acierto y casi cero respuestas equivocadas a preguntas fuera de catálogo. Podría cubrir
 más bajando el corte, pero a costa de empezar a contestar de más, y para un bot de seguros
 una respuesta enlatada equivocada es peor que gastar una llamada. El resto cae al modelo,
 que es la red de seguridad. (El detalle técnico está en la segunda parte.)
+
+Ese catálogo, además, es contenido vivo. Cuando cambié el flujo de auto (el año pasó a
+llevar la condición), la respuesta canónica de "qué datos pedís" quedó vieja y el router
+la seguía sirviendo con total confianza: el retrieval no se entera de que el producto
+cambió debajo. Así que cada cambio de flujo dispara una pasada por el catálogo (corregir
+lo viejo, sumar las dudas nuevas que el cambio genera, como "¿qué significa patentado?")
+y una re-corrida del eval, porque tocar el corpus mueve el paisaje de similitud y el
+umbral hay que revalidarlo, no asumirlo.
 
 ## Cuando el cliente se calienta
 
