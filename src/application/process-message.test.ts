@@ -86,18 +86,8 @@ test("una consulta abierta cae al fallback cuando el LLM no está configurado", 
 
 test("completar la cotización guarda el lead vía el repositorio inyectado", async () => {
   const { deps, savedLeads } = fakeDeps();
-  for (const text of [
-    "hola",
-    "1",
-    "2020",
-    "usado",
-    "Toyota",
-    "Corolla",
-    "XEI",
-    "no",
-    "3011",
-    "2",
-  ]) {
+  // 2020 es un año pasado: se asume usado sin repreguntar (no va "usado" aparte).
+  for (const text of ["hola", "1", "2020", "Toyota", "Corolla", "XEI", "no", "3011", "2"]) {
     await processMessage({ from: "u-lead", text, name: "Caro" }, deps);
   }
   assert.equal(savedLeads.length, 1);
@@ -111,7 +101,7 @@ test("completar la cotización guarda el lead vía el repositorio inyectado", as
 
 test("el funnel registra el evento lead_captured", async () => {
   const { deps, logged } = fakeDeps();
-  for (const text of ["hola", "1", "2019", "usado", "VW", "Gol", "no sé", "no", "1425", "1"]) {
+  for (const text of ["hola", "1", "2019", "VW", "Gol", "no sé", "no", "1425", "1"]) {
     await processMessage({ from: "u-evento", text, name: "Dani" }, deps);
   }
   const captured = logged.filter((e) => e.type === "lead_captured");
@@ -159,7 +149,8 @@ test("una duda conocida la responde el FAQ router sin llamar al LLM", async () =
   assert.equal(hit?.props?.id, "franquicia");
 });
 
-const AUTO_QUOTE = ["hola", "1", "2020", "usado", "Toyota", "Corolla", "XEI", "no", "3011", "2"];
+// 2020 es un año pasado: se asume usado, sin paso de condición aparte.
+const AUTO_QUOTE = ["hola", "1", "2020", "Toyota", "Corolla", "XEI", "no", "3011", "2"];
 
 test("tras cotizar, el cierre ofrece avanzar (no vuelve al menú frío)", async () => {
   const { deps } = fakeDeps();
@@ -221,7 +212,7 @@ test("contratar online registra quote_accepted con canal online", async () => {
 
 test("trabado en GNC: default inteligente y avanza en vez de loopear", async () => {
   const { deps, logged } = fakeDeps(); // emoción neutral: escapa por reintentos
-  for (const t of ["hola", "1", "2020", "usado", "Toyota", "Corolla", "XEI"]) {
+  for (const t of ["hola", "1", "2020", "Toyota", "Corolla", "XEI"]) {
     await processMessage({ from: "u-gnc", text: t }, deps);
   }
   // Ahora pregunta GNC. Primer fallo: re-pregunta.
@@ -237,7 +228,11 @@ test("trabado en GNC: default inteligente y avanza en vez de loopear", async () 
 
 test("un mensaje frustrado en un flujo corta el loop al instante", async () => {
   const { deps, logged } = fakeDeps({ emotion: { classify: async () => "frustracion" } });
-  for (const t of ["hola", "1", "2020"]) await processMessage({ from: "u-frust", text: t }, deps);
+  // Año en curso: el único caso que sí pregunta condición (0km/usado), que es el
+  // paso donde queremos verificar el escape ante frustración.
+  const anioActual = String(new Date().getFullYear());
+  for (const t of ["hola", "1", anioActual])
+    await processMessage({ from: "u-frust", text: t }, deps);
   // En el paso condición (0km/usado): un mensaje frustrado escapa ya (sin esperar).
   const r = await processMessage({ from: "u-frust", text: "basta de preguntas" }, deps);
   assert.match(r, /asesor|menú/i);
@@ -245,10 +240,47 @@ test("un mensaje frustrado en un flujo corta el loop al instante", async () => {
   assert.equal(stuck?.props?.emocion, "frustracion");
 });
 
+test("un año pasado no repregunta 0km/usado: se asume usado y avanza", async () => {
+  const { deps } = fakeDeps();
+  await processMessage({ from: "u-anio", text: "hola" }, deps);
+  await processMessage({ from: "u-anio", text: "1" }, deps);
+  const r = await processMessage({ from: "u-anio", text: "2009" }, deps);
+  assert.match(r, /marca/i); // avanza directo a la marca
+  assert.doesNotMatch(r, /0km|usado/i); // no hace la pregunta redundante
+  const s = await deps.sessions.get("u-anio");
+  assert.equal(s?.data.condicion, "usado");
+  assert.equal(s?.data.anio, "2009");
+});
+
+test("escribir 0km en el paso del año se toma como 0km y avanza", async () => {
+  const { deps } = fakeDeps();
+  await processMessage({ from: "u-0km", text: "hola" }, deps);
+  await processMessage({ from: "u-0km", text: "1" }, deps);
+  const r = await processMessage({ from: "u-0km", text: "0km" }, deps);
+  assert.match(r, /marca/i);
+  const s = await deps.sessions.get("u-0km");
+  assert.equal(s?.data.condicion, "0km");
+});
+
+test("el año en curso sí pregunta 0km/usado (único caso ambiguo)", async () => {
+  const { deps } = fakeDeps();
+  const anioActual = String(new Date().getFullYear());
+  await processMessage({ from: "u-curr", text: "hola" }, deps);
+  await processMessage({ from: "u-curr", text: "1" }, deps);
+  const r = await processMessage({ from: "u-curr", text: anioActual }, deps);
+  assert.match(r, /0km.*usado|usado.*0km/i); // pregunta la condición
+  const mid = await deps.sessions.get("u-curr");
+  assert.equal(mid?.data.condicion, undefined); // todavía sin resolver
+  const r2 = await processMessage({ from: "u-curr", text: "usado" }, deps);
+  assert.match(r2, /marca/i);
+  const s = await deps.sessions.get("u-curr");
+  assert.equal(s?.data.condicion, "usado");
+});
+
 test("volver a mitad de la cotización corrige el último dato sin perder el resto", async () => {
   const { deps, logged } = fakeDeps();
-  // Carga año, condición y marca; el bot ahora pregunta el modelo.
-  for (const t of ["hola", "1", "2020", "usado", "Toyota"]) {
+  // Carga año (2020 → usado) y marca; el bot ahora pregunta el modelo.
+  for (const t of ["hola", "1", "2020", "Toyota"]) {
     await processMessage({ from: "u-back", text: t }, deps);
   }
   // "volver" deshace la marca y la re-pregunta (no manda al menú).
@@ -275,11 +307,10 @@ test("volver sin ningún dato cargado lleva al menú (no rompe)", async () => {
 
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
-  // A queda a mitad de una cotización (año + condición + marca cargados).
+  // A queda a mitad de una cotización (año 2021 → usado, y marca cargados).
   await processMessage({ from: "u-a", text: "hola", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "1", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "2021", name: "A" }, deps);
-  await processMessage({ from: "u-a", text: "usado", name: "A" }, deps);
   await processMessage({ from: "u-a", text: "Fiat", name: "A" }, deps);
   // B arranca de cero y no afecta a A.
   const bReply = await processMessage({ from: "u-b", text: "hola", name: "B" }, deps);

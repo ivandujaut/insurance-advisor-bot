@@ -188,7 +188,10 @@ function maybeResume(session: Session, now: Date): string | null {
 
 // Pasos (campos de datos) de cada cotización larga, en orden, para el indicador de
 // progreso. Los cortos (accidentes, bici: 2 pasos) no lo llevan: sumaría ruido.
-const AUTO_STEPS = ["anio", "condicion", "marca", "modelo", "version", "gnc", "cp", "plan"];
+// La condición (0km/usado) no es un paso propio: se deriva del año (un año pasado
+// es usado) o se resuelve junto al año (0km, o el año en curso, que es ambiguo).
+// Así se evita la pregunta redundante "2009 → ¿0km o usado?" (ver Decisión 21).
+const AUTO_STEPS = ["anio", "marca", "modelo", "version", "gnc", "cp", "plan"];
 
 /** Pasos de hogar según el camino (propietario asegura m², inquilino el contenido). */
 function hogarSteps(session: Session): string[] {
@@ -246,8 +249,7 @@ function lastFilledStep(session: Session, steps: string[]): string | null {
 /** Re-pregunta de un paso puntual, para cuando el usuario vuelve atrás a corregirlo. */
 function preguntaDePaso(session: Session, field: string): string {
   const preguntas: Record<string, string> = {
-    anio: "¿Cuál es el *año* del vehículo? (entre 2006 y el actual)",
-    condicion: "¿Es *0km* o *usado*?",
+    anio: `¿Cuál es el *año* del vehículo? (entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR}). Si es *0km*, escribilo.`,
     marca: "¿De qué *marca* es? (ej: Toyota)",
     modelo: "¿Y el *modelo*? (ej: Corolla)",
     version: "¿La *versión*? Si no la tenés a mano, escribí *no sé*.",
@@ -436,7 +438,7 @@ async function handleMainMenu(
       session.stage = "quoting_auto";
       session.data = {};
       await deps.events.log("quote_started", session.userId);
-      return `Genial, cotizamos tu *seguro de auto*. 🚗\n\n${conProgreso(session, AUTO_STEPS, "Empecemos por el *año* del vehículo (entre 2006 y el actual).")}`;
+      return `Genial, cotizamos tu *seguro de auto*. 🚗\n\n${conProgreso(session, AUTO_STEPS, `Empecemos por el *año* del vehículo (entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR}). Si es *0km*, escribilo.`)}`;
     case "2":
       session.stage = "quoting_hogar";
       session.data = {};
@@ -483,27 +485,43 @@ async function handleQuotingAuto(
 ): Promise<string | null> {
   const text = rawText.trim();
 
-  // 1) Año (validado).
+  // 1) Año + condición fusionados, como el cotizador real de La Caja: el año lleva
+  // la condición. Un año pasado es usado (no repreguntamos: esa era la fricción);
+  // "0km" se resuelve acá; solo el año en curso es ambiguo (0km o usado del año) y
+  // pasa al paso 2. Ver docs/benchmark-anio-condicion.md y Decisión 21.
   if (!session.data.anio) {
-    const anio = Number(text.replace(/\D/g, ""));
+    // Al (re)preguntar el año, la condición se re-deriva; limpiamos cualquier valor
+    // previo (ej: si se vuelve atrás para corregir el año).
+    delete session.data.condicion;
+    const t = normalize(text);
+    if (/0\s*km|cero|nuev/.test(t)) {
+      session.data.anio = String(CURRENT_YEAR);
+      session.data.condicion = "0km";
+      await deps.events.log("quote_step", session.userId, { step: "anio" });
+      return conProgreso(session, AUTO_STEPS, "¿De qué *marca* es? (ej: Toyota)");
+    }
+    const anio = Number(t.replace(/\D/g, ""));
     if (!anio || anio < MIN_AUTO_YEAR || anio > CURRENT_YEAR) {
-      return `Necesito un *año* válido, entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR}.`;
+      return `Necesito un *año* válido, entre ${MIN_AUTO_YEAR} y ${CURRENT_YEAR} (o escribí *0km*).`;
     }
     session.data.anio = String(anio);
     await deps.events.log("quote_step", session.userId, { step: "anio" });
-    return conProgreso(
-      session,
-      AUTO_STEPS,
-      "¿Es *0km* o *usado*? (un modelo de años anteriores también puede ser 0km si es stock sin patentar)",
-    );
+    // Un año pasado implica usado: se asume y se avanza, sin repreguntar.
+    if (anio < CURRENT_YEAR) {
+      session.data.condicion = "usado";
+      return conProgreso(session, AUTO_STEPS, "¿De qué *marca* es? (ej: Toyota)");
+    }
+    // Solo el año en curso es genuinamente ambiguo: ahí sí preguntamos (sin número
+    // de paso: es una aclaración del año, no un paso propio del recorrido).
+    return "Del año en curso, ¿es *0km* o *usado*? (ya rodó)";
   }
 
-  // 2) Condición (0km / usado). No se deriva del año: un modelo viejo puede ser
-  // 0km de stock, y la condición define si hace falta inspección.
+  // 2) Condición: solo se llega acá para el año en curso (ambiguo). Para el resto
+  // ya quedó resuelta junto al año.
   if (!session.data.condicion) {
     const t = normalize(text);
     const es0km = /0\s*km|cero|nuev/.test(t);
-    const esUsado = /usad|segunda|used/.test(t);
+    const esUsado = /usad|segunda|used|rod/.test(t);
     if (!es0km && !esUsado) {
       if (await shouldEscape(session, text, deps, "condicion")) return STUCK_EXIT;
       return "No te entendí. ¿El auto es *0km* o *usado*?";
