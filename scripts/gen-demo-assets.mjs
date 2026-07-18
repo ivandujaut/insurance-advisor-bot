@@ -1,4 +1,4 @@
-// Genera src/main/demo-assets.ts embebiendo los assets de la demo (logo + fondo)
+// Genera src/main/demo-assets.ts embebiendo los assets de la demo (fondo)
 // como data URIs base64, para que la página siga siendo autocontenida (sin
 // requests a hosts externos). Re-correr si cambian los archivos de assets/:
 //   node scripts/gen-demo-assets.mjs
@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assets = resolve(root, "src/main/assets");
 
-const logoSvg = readFileSync(resolve(assets, "la-caja-logo.svg")).toString("base64");
 // Tile seamless de doodles (SVG): repite sin juntas por background-repeat.
 const fondoSvg = readFileSync(resolve(assets, "fondo-tile.svg")).toString("base64");
 
@@ -18,13 +17,8 @@ const out = `/**
  * externos). NO editar a mano: generado por scripts/gen-demo-assets.mjs a
  * partir de src/main/assets/. Re-correr ese script si cambian los archivos.
  */
-export const LOGO_LACAJA = "data:image/svg+xml;base64,${logoSvg}";
 export const FONDO_WHATSAPP = "data:image/svg+xml;base64,${fondoSvg}";
 `;
 
 writeFileSync(resolve(root, "src/main/demo-assets.ts"), out);
-console.log(
-  "demo-assets.ts generado: logo %d B, fondo %d B (base64)",
-  logoSvg.length,
-  fondoSvg.length,
-);
+console.log("demo-assets.ts generado: fondo %d B (base64)", fondoSvg.length);

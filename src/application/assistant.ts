@@ -8,13 +8,20 @@
  * puerto EmotionClassifier, en paralelo (ver process-message).
  */
 
+import { brandName } from "../domain/brand.js";
 import type { Session } from "../domain/conversation/session.js";
 import type { Dependencies } from "./ports.js";
 import { LlmNotConfiguredError } from "./ports.js";
 
 function systemPrompt(knowledge: string): string {
+  // La identidad es white-label (domain/brand.ts): con marca, el asistente habla
+  // en nombre de la aseguradora; sin marca, es un asistente de seguros neutro que
+  // responde sobre el catálogo de la base de conocimiento.
+  const identidad = brandName()
+    ? `Sos el asistente virtual de seguros de ${brandName()} (Argentina) por WhatsApp.`
+    : "Sos un asistente virtual de seguros por WhatsApp (Argentina). Respondés sobre el catálogo de la base de conocimiento de abajo.";
   return [
-    "Sos el asistente virtual de seguros de La Caja (Argentina) por WhatsApp.",
+    identidad,
     "Respondés en español rioplatense, claro y breve (2-4 frases). Sin tecnicismos innecesarios.",
     "Usás SOLO la información de la base de conocimiento de abajo. Si no sabés algo,",
     "lo decís con honestidad y ofrecés derivar a un asesor. No inventes precios ni condiciones.",
