@@ -65,6 +65,7 @@ export type EventType =
   | "conversation_started"
   | "quote_started"
   | "quote_step"
+  | "quote_step_back"
   | "plan_comparison_viewed"
   | "lead_captured"
   | "advisor_requested"

@@ -197,6 +197,77 @@ function hogarSteps(session: Session): string[] {
     : ["tipoResidente", "tipoHogar", "uso", "m2", "cp"];
 }
 
+// Pasos de los flujos cortos, en orden. No llevan indicador de progreso (sumaría
+// ruido en 2 pasos), pero sí participan del "volver atrás" para corregir.
+const ACCIDENTES_STEPS = ["modalidad", "plan"];
+const BICI_STEPS = ["tipoRodado", "valor"];
+
+/** Lista ordenada de campos del flujo activo, o null si no es una cotización. */
+function stepsFor(session: Session): string[] | null {
+  switch (session.stage) {
+    case "quoting_auto":
+      return AUTO_STEPS;
+    case "quoting_hogar":
+      return hogarSteps(session);
+    case "quoting_accidentes":
+      return ACCIDENTES_STEPS;
+    case "quoting_bici":
+      return BICI_STEPS;
+    default:
+      return null;
+  }
+}
+
+// Pedido de volver un paso para corregir. "volver" a secas también entra acá cuando
+// se está a mitad de una cotización (se intercepta antes del reset a menú), así deja
+// de significar "perdé todo el progreso" y pasa a "corregí lo último".
+const BACK_KEYWORDS = [
+  "atras",
+  "atrás",
+  "volver",
+  "volver atras",
+  "volver atrás",
+  "anterior",
+  "corregir",
+];
+function isBackIntent(input: string): boolean {
+  return BACK_KEYWORDS.includes(input) || /equivoqu/.test(input);
+}
+
+/** Último campo ya cargado del flujo (el que se re-pregunta al volver atrás). */
+function lastFilledStep(session: Session, steps: string[]): string | null {
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const field = steps[i];
+    if (field && session.data[field]) return field;
+  }
+  return null;
+}
+
+/** Re-pregunta de un paso puntual, para cuando el usuario vuelve atrás a corregirlo. */
+function preguntaDePaso(session: Session, field: string): string {
+  const preguntas: Record<string, string> = {
+    anio: "¿Cuál es el *año* del vehículo? (entre 2006 y el actual)",
+    condicion: "¿Es *0km* o *usado*?",
+    marca: "¿De qué *marca* es? (ej: Toyota)",
+    modelo: "¿Y el *modelo*? (ej: Corolla)",
+    version: "¿La *versión*? Si no la tenés a mano, escribí *no sé*.",
+    gnc: "¿Tiene *GNC*? Respondé *sí* o *no*.",
+    cp:
+      session.stage === "quoting_hogar"
+        ? "¿En qué *código postal* está la vivienda?"
+        : "¿En qué *código postal* se guarda el auto?",
+    tipoResidente: "¿Sos *propietario* o *inquilino*?",
+    tipoHogar: "¿La vivienda es una *casa*, un *departamento* o un *departamento en PB o PH*?",
+    uso: "¿Qué *uso* tiene? *permanente*, *temporal* o *alquilada*.",
+    m2: "¿Cuántos *m² construidos* tiene? (entre 25 y 300)",
+    sumaContenido: "¿Cuánto costaría reponer *el contenido*? Un monto aproximado alcanza.",
+    modalidad:
+      "¿Para quién es? *1* protección familiar, *2* trabajo independiente, *3* personal doméstico.",
+    tipoRodado: "¿Es una *bicicleta* o un *monopatín eléctrico*?",
+  };
+  return preguntas[field] ?? "Contame de nuevo, por favor.";
+}
+
 /**
  * Prefija "📋 Dato N de M" a la pregunta de un paso, para que el usuario sepa cuánto
  * falta (baja el abandono en flujos largos). N sale de cuántos campos ya se llenaron.
@@ -218,6 +289,26 @@ export async function handleFlow(
     session.stage = "idle";
     await deps.events.log("advisor_requested", session.userId);
     return ADVISOR_REPLY;
+  }
+
+  // Volver atrás a corregir: si está a mitad de una cotización, deshace el último
+  // dato y lo vuelve a preguntar, en vez de mandarlo al menú y perder todo (que es
+  // lo que hacía "volver"). Se resuelve antes del reset a menú y del retomar.
+  const steps = stepsFor(session);
+  if (steps && isBackIntent(input)) {
+    const last = lastFilledStep(session, steps);
+    if (!last) {
+      // Nada que deshacer todavía (recién arrancó): lo llevo al menú a empezar.
+      session.stage = "main_menu";
+      session.data = {};
+      return MAIN_MENU;
+    }
+    delete session.data[last];
+    // Al deshacer un paso, reseteo el contador de "trabado" para no arrastrarlo.
+    session.data.stuckStep = "";
+    session.data.fails = "0";
+    await deps.events.log("quote_step_back", session.userId, { paso: last });
+    return `Listo, volvamos atrás. 👇\n\n${conProgreso(session, steps, preguntaDePaso(session, last))}`;
   }
 
   // Retomar tras un hueco: si volvió a mitad de flujo, reconocer el tiempo y
@@ -461,7 +552,11 @@ async function handleQuotingAuto(
         // confirma. Mejor mantenerlo en el embudo que perderlo en un loop.
         session.data.gnc = "no";
         await deps.events.log("quote_step", session.userId, { step: "gnc" });
-        return "Tranqui, no te compliques. 🙂 Como la mayoría no tiene GNC, pongo que *no* (el asesor lo confirma). Último dato: ¿en qué *código postal* se guarda el auto?";
+        return conProgreso(
+          session,
+          AUTO_STEPS,
+          "Tranqui, no te compliques. 🙂 Como la mayoría no tiene GNC, pongo que *no* (el asesor lo confirma). ¿En qué *código postal* se guarda el auto?",
+        );
       }
       return "No te entendí. ¿Tiene *GNC*? Respondé *sí* o *no*.";
     }

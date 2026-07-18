@@ -245,6 +245,34 @@ test("un mensaje frustrado en un flujo corta el loop al instante", async () => {
   assert.equal(stuck?.props?.emocion, "frustracion");
 });
 
+test("volver a mitad de la cotización corrige el último dato sin perder el resto", async () => {
+  const { deps, logged } = fakeDeps();
+  // Carga año, condición y marca; el bot ahora pregunta el modelo.
+  for (const t of ["hola", "1", "2020", "usado", "Toyota"]) {
+    await processMessage({ from: "u-back", text: t }, deps);
+  }
+  // "volver" deshace la marca y la re-pregunta (no manda al menú).
+  const back = await processMessage({ from: "u-back", text: "volver" }, deps);
+  assert.match(back, /volvamos atr[aá]s/i);
+  assert.match(back, /marca/i);
+  assert.doesNotMatch(back, /Cotizar mi seguro de auto/); // no reseteó al menú
+  assert.ok(logged.some((e) => e.type === "quote_step_back" && e.props?.paso === "marca"));
+  // Corrige la marca y el flujo sigue pidiendo el modelo (el año no se perdió).
+  const next = await processMessage({ from: "u-back", text: "Fiat" }, deps);
+  assert.match(next, /modelo/i);
+  const s = await deps.sessions.get("u-back");
+  assert.equal(s?.data.anio, "2020");
+  assert.equal(s?.data.marca, "Fiat");
+});
+
+test("volver sin ningún dato cargado lleva al menú (no rompe)", async () => {
+  const { deps } = fakeDeps();
+  await processMessage({ from: "u-back0", text: "hola" }, deps);
+  await processMessage({ from: "u-back0", text: "1" }, deps); // entra a auto, sin año aún
+  const r = await processMessage({ from: "u-back0", text: "volver" }, deps);
+  assert.match(r, /Cotizar mi seguro de auto/);
+});
+
 test("las sesiones de distintos usuarios no se mezclan", async () => {
   const { deps } = fakeDeps();
   // A queda a mitad de una cotización (año + condición + marca cargados).
