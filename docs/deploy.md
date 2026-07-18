@@ -26,17 +26,17 @@ demo web sube con cero secretos: solo las tres variables no sensibles del
 
 1. Asegurate de que `render.yaml` esté en `main` (ya está en el repo).
 2. Entrá a https://render.com y creá una cuenta (o logueate con GitHub).
-3. **New > Blueprint**. Autorizá el acceso al repo `lacaja-whatsapp-bot` y
+3. **New > Blueprint**. Autorizá el acceso al repo `insurance-advisor-bot` y
    seleccionalo. Render detecta el `render.yaml` y muestra el servicio
-   `lacaja-whatsapp-bot`.
+   `insurance-advisor-bot`.
 4. **Apply**. Render construye la imagen desde el `Dockerfile` y despliega. El
    primer build tarda unos minutos.
 5. Cuando termina, quedás con una URL tipo
-   `https://lacaja-whatsapp-bot.onrender.com`. Abrila: es la demo. Esa es la URL
+   `https://insurance-advisor-bot.onrender.com`. Abrila: es la demo. Esa es la URL
    para compartir.
 
 Verificá el health check: `https://<tu-url>/health` debe responder
-`lacaja-whatsapp-bot OK`.
+`insurance-advisor-bot OK`.
 
 ## Persistencia y métricas (Postgres + /funnel)
 
