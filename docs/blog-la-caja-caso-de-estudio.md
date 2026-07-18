@@ -165,7 +165,9 @@ contenido: cada rama cuenta sus pasos reales. Equivocarse tampoco cuesta caro: e
 "volver" deshace el último dato y lo vuelve a preguntar, en vez de mandarte al menú y
 tirar todo el progreso (que era lo que pasaba antes). Y en la elección final, los planes
 van numerados igual que la instrucción ("respondé 1, 2 o 3"), para no hacerte contar
-posiciones. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué la
+posiciones; tampoco hace falta contestar con el dígito: "creo que la segunda me
+sirve" o "el de granizo" también eligen, aunque si el mensaje huele a pregunta el bot
+prefiere repreguntar antes que elegir por vos. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué la
 opción "tengo una duda", que sobraba porque una consulta libre se responde con solo
 escribirla), y el momento clave (la comparación de planes) pasa dentro del chat, que es
 donde se juega la venta asesorada. Si en cualquier punto pregunto algo abierto, como

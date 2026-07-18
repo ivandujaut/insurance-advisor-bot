@@ -123,6 +123,59 @@ function normalize(text: string): string {
   return text.trim().toLowerCase();
 }
 
+// Señales de pregunta: si el usuario está preguntando algo sobre las opciones
+// ("¿la segunda cubre granizo?"), NO es una elección y no hay que secuestrarla.
+// Ojo: nada de matchear "que" a secas, que aparece en elecciones válidas
+// ("creo QUE la segunda me sirve"); solo interrogativos y verbos de consulta.
+const PREGUNTA = /\?|cu[aá]nto|cu[aá]l|c[oó]mo|por qu[eé]|cubre|incluye|diferencia/;
+
+/**
+ * Interpreta una elección entre `max` opciones desde texto libre. La gente no
+ * siempre contesta "2": dice "la segunda", "creo que la 2 me sirve", "la última".
+ * Devuelve el número de opción (1..max) o null si no hay una elección clara.
+ * Es deliberadamente conservador: ante una pregunta devuelve null (que el paso
+ * re-pregunte o derive al LLM, según el contexto), porque elegir mal es peor
+ * que pedir que lo repita.
+ */
+function parseChoice(text: string, max: number): number | null {
+  const t = normalize(text);
+  if (PREGUNTA.test(t)) return null;
+  const digito = t.match(/\b([1-9])\b/);
+  if (digito?.[1]) {
+    const n = Number(digito[1]);
+    return n <= max ? n : null;
+  }
+  if (/[uú]ltim/.test(t)) return max;
+  const ordinales: ReadonlyArray<readonly [RegExp, number]> = [
+    [/primer/, 1],
+    [/segund/, 2],
+    [/tercer/, 3],
+    [/cuart/, 4],
+    [/quint/, 5],
+  ];
+  for (const [re, n] of ordinales) {
+    if (re.test(t)) return n <= max ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Elección de plan de auto: número/ordinal (parseChoice) o el nombre del plan
+ * ("granizo", "todo riesgo"). El orden de los nombres importa: "granizo" antes que
+ * "terceros" (el plan 2 contiene "Terceros Completo" en su nombre). Comparte el
+ * guard de pregunta: "¿la 2 cubre granizo?" no debe elegir nada.
+ */
+function parsePlanAuto(text: string): (typeof AUTO_PLANS)[number] | null {
+  const eleccion = parseChoice(text, AUTO_PLANS.length);
+  if (eleccion) return AUTO_PLANS[eleccion - 1] ?? null;
+  const t = normalize(text);
+  if (PREGUNTA.test(t)) return null;
+  if (/granizo/.test(t)) return AUTO_PLANS[1];
+  if (/todo riesgo|franquicia/.test(t)) return AUTO_PLANS[2];
+  if (/tercero/.test(t)) return AUTO_PLANS[0];
+  return null;
+}
+
 // Reintentos en un mismo paso antes de ofrecer una salida, aunque no haya enojo.
 const MAX_STEP_FAILS = 2;
 
@@ -380,16 +433,19 @@ async function handlePostQuote(
   deps: Dependencies,
 ): Promise<string | null> {
   const plan = session.data.plan ?? "";
-  switch (input) {
-    case "1":
+  // parseChoice entiende "1" pero también "la primera" o "creo que la 2". Su guard
+  // de pregunta hace el reparto correcto acá: "¿la segunda cubre granizo?" no es
+  // una elección y cae al LLM (el default), que es quien responde dudas.
+  switch (parseChoice(input, 3)) {
+    case 1:
       session.stage = "capturing_contact";
       await deps.events.log("quote_accepted", session.userId, { plan, via: "asesor" });
       return "Perfecto. 🙌 Para que un asesor te contacte con tu cotización a mano, pasame *nombre, teléfono y a qué hora te viene bien* (ej: Ana, 11 5555 5555, tardes).";
-    case "2":
+    case 2:
       session.stage = "idle";
       await deps.events.log("quote_accepted", session.userId, { plan, via: "online" });
       return ONLINE_REPLY;
-    case "3":
+    case 3:
       session.stage = "main_menu";
       session.data = {};
       return MAIN_MENU;
@@ -628,8 +684,7 @@ async function handleQuotingAuto(
   }
 
   if (!session.data.plan) {
-    const index = Number(text) - 1;
-    const plan = AUTO_PLANS[index];
+    const plan = parsePlanAuto(text);
     if (!plan) {
       if (await shouldEscape(session, text, deps, "plan_auto")) return STUCK_EXIT;
       return "No te entendí el plan. Respondé *1* (Terceros Completo), *2* (con Granizo) o *3* (Todo Riesgo).";
@@ -880,11 +935,13 @@ async function handleAccidentes(
   // 1) Modalidad (para quién es).
   if (!session.data.modalidad) {
     const t = normalize(text);
+    const eleccion = parseChoice(text, 3);
     let modalidad: string | undefined;
-    if (t === "1" || /familiar|familia/.test(t)) modalidad = "familiar";
-    else if (t === "2" || /independiente|profesional|trabajo/.test(t))
+    if (eleccion === 1 || /familiar|familia/.test(t)) modalidad = "familiar";
+    else if (eleccion === 2 || /independiente|profesional|trabajo/.test(t))
       modalidad = "trabajo-independiente";
-    else if (t === "3" || /dom[eé]stic|emplead|casera/.test(t)) modalidad = "personal-domestico";
+    else if (eleccion === 3 || /dom[eé]stic|emplead|casera/.test(t))
+      modalidad = "personal-domestico";
     if (!modalidad) {
       if (await shouldEscape(session, text, deps, "modalidad")) return STUCK_EXIT;
       return "No te entendí. Respondé *1* (protección familiar), *2* (trabajo independiente) o *3* (personal doméstico).";
@@ -902,7 +959,8 @@ async function handleAccidentes(
   if (!session.data.plan) {
     const modalidad = session.data.modalidad ?? "";
     const planes = ACCIDENTES_PLANES[modalidad] ?? [];
-    const plan = planes[Number(text) - 1];
+    const eleccion = parseChoice(text, planes.length);
+    const plan = eleccion ? planes[eleccion - 1] : undefined;
     if (!plan) {
       if (await shouldEscape(session, text, deps, "plan_ap")) return STUCK_EXIT;
       return "No te entendí el plan. Respondé el *número* del plan de la lista.";

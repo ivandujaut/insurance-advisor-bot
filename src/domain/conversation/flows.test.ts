@@ -340,6 +340,63 @@ test("un plan inválido pide reintentar sin romper el flujo", async () => {
   assert.equal(deps.savedLeads.length, 0, "no guarda lead con plan inválido");
 });
 
+test('elegir el plan en lenguaje natural: "creo que la segunda me sirve" es el plan 2', async () => {
+  const s = newSession("t-plan-natural");
+  const deps = fakeDeps();
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  await handleFlow(s, "2020", deps);
+  await handleFlow(s, "Toyota", deps);
+  await handleFlow(s, "Corolla", deps);
+  await handleFlow(s, "no sé", deps);
+  await handleFlow(s, "no", deps);
+  await handleFlow(s, "3011", deps);
+  // El caso real reportado: elección dicha con ordinal, no con el dígito.
+  const final = (await handleFlow(s, "creo que la segunda me sirve", deps)) ?? "";
+  assert.match(final, /solicitud de cotización/);
+  const lead = deps.savedLeads[0];
+  if (lead?.producto !== "auto") throw new Error("esperaba un lead de auto");
+  assert.equal(lead.plan, "Terceros Completo con Granizo");
+});
+
+test("elegir el plan por nombre y por 'la última' también funciona", async () => {
+  const armar = async (eleccion: string) => {
+    const s = newSession(`t-plan-${eleccion.slice(0, 6)}`);
+    const deps = fakeDeps();
+    for (const m of ["hola", "1", "2020", "Fiat", "Cronos", "no sé", "no", "1425"]) {
+      await handleFlow(s, m, deps);
+    }
+    await handleFlow(s, eleccion, deps);
+    const lead = deps.savedLeads[0];
+    if (lead?.producto !== "auto") throw new Error("esperaba un lead de auto");
+    return lead.plan;
+  };
+  assert.equal(await armar("el de granizo"), "Terceros Completo con Granizo");
+  assert.equal(await armar("la última"), "Todo Riesgo con Franquicia");
+});
+
+test("una pregunta en el paso del plan NO elige nada (guard de pregunta)", async () => {
+  const s = newSession("t-plan-pregunta");
+  const deps = fakeDeps();
+  for (const m of ["hola", "1", "2020", "Fiat", "Cronos", "no sé", "no", "1425"]) {
+    await handleFlow(s, m, deps);
+  }
+  const reply = (await handleFlow(s, "¿la segunda cubre granizo?", deps)) ?? "";
+  assert.match(reply, /No te entendí el plan/);
+  assert.equal(deps.savedLeads.length, 0, "una pregunta no debe generar un lead");
+});
+
+test("post-cotización: 'la primera' pide el asesor como si fuera 1", async () => {
+  const s = newSession("t-cta-natural");
+  const deps = fakeDeps();
+  for (const m of ["hola", "1", "2020", "Fiat", "Cronos", "no sé", "no", "1425", "2"]) {
+    await handleFlow(s, m, deps);
+  }
+  const reply = (await handleFlow(s, "dale, la primera", deps)) ?? "";
+  assert.match(reply, /nombre.*tel[eé]fono/i);
+  assert.equal(s.stage, "capturing_contact");
+});
+
 test("rechaza un año fuera de rango y lo vuelve a pedir", async () => {
   const s = newSession("t-anio-invalido");
   const deps = fakeDeps();
