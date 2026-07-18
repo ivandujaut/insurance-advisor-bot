@@ -219,8 +219,9 @@ Decisión 17). El proveedor de embeddings es intercambiable: hoy OpenAI, mañana
 o un vector store, sin tocar el núcleo.
 
 Al lado del router entró otro puerto con un fin distinto: un **clasificador de emoción**
-(`EmotionClassifier`), que corre **en paralelo** a la respuesta y, si detecta enojo o
-frustración, hace que el bot ofrezca un asesor. Es un puerto aparte del `LlmPort` a
+(`EmotionClassifier`), que corre **en paralelo** a la respuesta y alimenta un nivel de
+malestar acumulado en la sesión: el enojo dispara la oferta de asesor de una, la
+frustración tiene que sostenerse más de un mensaje. Es un puerto aparte del `LlmPort` a
 propósito: otra tarea, otro prompt, otro modelo (Haiku, más rápido y barato). Cambiarle el
 modelo no toca la generación.
 

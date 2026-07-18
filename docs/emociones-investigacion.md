@@ -122,11 +122,19 @@ el mismo prompt v2:
 | **claude-haiku-4-5 (en producción)** | **0.869** | **87.1%** |
 
 La caída (0.909 -> 0.869) NO toca la señal accionable: sobre los 20 mensajes
-negativos (enojo + frustración), Haiku marca los 20 como negativos (los que confunde
-son enojo↔frustración, ambas disparan el aviso de asesor) y con **cero falsos
-positivos**. La pérdida está en distinciones sin consecuencia (algún `neutral`
-etiquetado como interés/confusión). A cambio: ~3-5x más rápido y barato, sin ser
-lastre de latencia. Decisión: Haiku por default (`EMOTION_MODEL` lo overridea).
+negativos (enojo + frustración), Haiku marca los 20 como negativos y con **cero falsos
+positivos**. La pérdida está en distinciones de bajo costo (algún `neutral` etiquetado
+como interés/confusión, y algún enojo↔frustración). A cambio: ~3-5x más rápido y
+barato, sin ser lastre de latencia. Decisión: Haiku por default (`EMOTION_MODEL` lo
+overridea).
+
+**Nota sobre la regla accionable (nivel).** Desde la Decisión 22, la oferta de asesor
+ya no es binaria: el enojo pesa 2 (dispara solo) y la frustración 1 (necesita
+sostenerse otro mensaje), con umbral 2. Eso le da una consecuencia menor a la confusión
+enojo↔frustración que antes no tenía: un enojo real etiquetado como frustración demora
+la oferta un mensaje (no la pierde, porque el nivel se acumula). Con los 20/20
+negativos detectados como negativos, el costo práctico es bajo, pero es el trade-off
+honesto de pasar de una regla binaria a una con nivel.
 
 ### Por qué acá va F1 y no ROC/AUC
 

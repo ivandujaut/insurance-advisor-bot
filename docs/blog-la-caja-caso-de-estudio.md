@@ -140,9 +140,9 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > **Bot:** Dato 6 de 7: ¿en qué código postal se guarda el auto?
 > **Yo:** 3011
 > **Bot:** Dato 7 de 7: al ser usado, la inspección se hace online cargando fotos.
-> Estos son los planes: Terceros Completo, Terceros Completo con Granizo (suma
-> granizo, cristales y auto sustituto) y Todo Riesgo con Franquicia (suma daños por
-> accidente). ¿Cuál te interesa: 1, 2 o 3?
+> Estos son los planes: 1 Terceros Completo · 2 Terceros Completo con Granizo (suma
+> granizo, cristales y auto sustituto) · 3 Todo Riesgo con Franquicia (suma daños por
+> accidente). ¿Qué plan te interesa? Respondé 1, 2 o 3.
 > **Yo:** 2
 > **Bot:** Listo. Con estos datos armo tu solicitud: Toyota Corolla 2020, usado,
 > plan Terceros Completo con Granizo. Estimación orientativa: $146.000 a $186.500 por
@@ -153,14 +153,20 @@ Los datos que pide (año, marca, modelo, versión, GNC) son los mismos que el
 cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
 golpe. Un detalle: no pregunto "¿0km o usado?" como paso aparte. Para un 2020 la
 respuesta es obvia (es usado), así que el año la lleva implícita; solo repregunto en
-el año en curso, que es el único ambiguo. Es lo que hace el cotizador real de La Caja,
-y le saca al bot esa pregunta que lo hace parecer que no razona. El "dato N de 7" no es
-decoración: preguntar a ciegas por chat, sin saber si faltan dos pasos o diez, es una
-causa conocida de abandono (la misma razón por la que un checkout muestra una barra de
-progreso). En hogar el contador se adapta al camino,
-porque un propietario asegura los metros y un inquilino el contenido: cada rama cuenta
-sus pasos reales. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué
-la opción "tengo una duda", que sobraba porque una consulta libre se responde con solo
+el año en curso, que es el único ambiguo, y ahí pregunto por el hecho y no por el
+juicio: "¿ya está patentado?". Un 0km es exactamente eso, un auto sin patentar; quien
+compró un auto del año con pocos km duda de si "ya es usado", pero no duda de si tiene
+patente. Es lo que hace el cotizador real de La Caja, y le saca al bot esa pregunta que
+lo hace parecer que no razona. El "dato N de 7" no es decoración: preguntar a ciegas
+por chat, sin saber si faltan dos pasos o diez, es una causa conocida de abandono (la
+misma razón por la que un checkout muestra una barra de progreso). En hogar el contador
+se adapta al camino, porque un propietario asegura los metros y un inquilino el
+contenido: cada rama cuenta sus pasos reales. Equivocarse tampoco cuesta caro: escribir
+"volver" deshace el último dato y lo vuelve a preguntar, en vez de mandarte al menú y
+tirar todo el progreso (que era lo que pasaba antes). Y en la elección final, los planes
+van numerados igual que la instrucción ("respondé 1, 2 o 3"), para no hacerte contar
+posiciones. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué la
+opción "tengo una duda", que sobraba porque una consulta libre se responde con solo
 escribirla), y el momento clave (la comparación de planes) pasa dentro del chat, que es
 donde se juega la venta asesorada. Si en cualquier punto pregunto algo abierto, como
 "¿qué es la franquicia?", ahí toma el modelo de lenguaje y responde con la información
