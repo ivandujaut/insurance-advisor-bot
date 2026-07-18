@@ -34,8 +34,13 @@ Fusionar la condición en el paso del año:
 - Se pregunta el año, ofreciendo *0km* como respuesta válida.
 - **Año pasado → usado**, y se avanza sin repreguntar (acá muere el "2009 → ¿0km?").
 - **0km** (escrito por el usuario) → condición 0km, año en curso.
-- **Año en curso → único caso ambiguo**: ahí sí una repregunta corta "¿0km o usado?",
-  presentada como aclaración del año (sin número de paso propio).
+- **Año en curso → único caso ambiguo**: ahí sí una repregunta corta, presentada como
+  aclaración del año (sin número de paso propio), y por el **criterio objetivo**:
+  "¿ya está *patentado*?". 0km significa exactamente *sin patentar* (es la definición
+  del negocio y lo que decide la inspección previa); "¿es 0km o usado?" es un juicio
+  que confunde a quien tiene un auto del año con pocos km, mientras que la patente es
+  un hecho de sí/no. El *año de patentamiento* como dato aparte no se pide: no mueve
+  el precio (la suma asegurada sale del año de modelo) y sumaría un paso.
 
 El flujo de auto pasa de 8 a **7 pasos** para el caso común (usado), y el indicador de
 progreso se ajusta solo (la condición dejó de ser un paso del recorrido). Queda alineado

@@ -262,19 +262,19 @@ test("escribir 0km en el paso del año se toma como 0km y avanza", async () => {
   assert.equal(s?.data.condicion, "0km");
 });
 
-test("el año en curso sí pregunta 0km/usado (único caso ambiguo)", async () => {
+test("el año en curso pregunta si ya está patentado (único caso ambiguo)", async () => {
   const { deps } = fakeDeps();
   const anioActual = String(new Date().getFullYear());
   await processMessage({ from: "u-curr", text: "hola" }, deps);
   await processMessage({ from: "u-curr", text: "1" }, deps);
   const r = await processMessage({ from: "u-curr", text: anioActual }, deps);
-  assert.match(r, /0km.*usado|usado.*0km/i); // pregunta la condición
+  assert.match(r, /patentado/i); // pregunta por la patente, no "¿0km o usado?"
   const mid = await deps.sessions.get("u-curr");
   assert.equal(mid?.data.condicion, undefined); // todavía sin resolver
-  const r2 = await processMessage({ from: "u-curr", text: "usado" }, deps);
+  const r2 = await processMessage({ from: "u-curr", text: "sí" }, deps);
   assert.match(r2, /marca/i);
   const s = await deps.sessions.get("u-curr");
-  assert.equal(s?.data.condicion, "usado");
+  assert.equal(s?.data.condicion, "usado"); // con patente = usado
 });
 
 test("volver a mitad de la cotización corrige el último dato sin perder el resto", async () => {

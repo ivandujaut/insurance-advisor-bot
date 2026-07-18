@@ -286,18 +286,41 @@ test("un año pasado no repregunta condición (avanza directo a la marca)", asyn
   assert.equal(s.data.condicion, "usado");
 });
 
-test("solo el año en curso pide 0km/usado y no acepta una respuesta ambigua", async () => {
+test("solo el año en curso pregunta por la patente y no acepta una respuesta ambigua", async () => {
   const s = newSession("t-cond-invalida");
   const deps = fakeDeps();
   const anioActual = String(new Date().getFullYear());
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
   const preg = (await handleFlow(s, anioActual, deps)) ?? "";
-  assert.match(preg, /0km.*usado/i, "el año en curso sí pregunta la condición");
+  assert.match(preg, /patentado/i, "el año en curso pregunta por la patente");
+  // "no sé" es duda, no una negación: NO debe interpretarse como "sin patente" (0km).
   const reply = (await handleFlow(s, "no sé", deps)) ?? "";
-  assert.match(reply, /0km.*usado/i);
+  assert.match(reply, /patentado/i);
   assert.equal(s.data.condicion, undefined, "no guarda una condición ambigua");
   assert.equal(s.stage, "quoting_auto", "sigue esperando la condición");
+});
+
+test("patente: sí es usado, no es 0km (la negación no invierte con 'patentado')", async () => {
+  const anioActual = String(new Date().getFullYear());
+  // "sí, ya está patentado" -> usado.
+  const s1 = newSession("t-pat-si");
+  const deps1 = fakeDeps();
+  await handleFlow(s1, "hola", deps1);
+  await handleFlow(s1, "1", deps1);
+  await handleFlow(s1, anioActual, deps1);
+  const r1 = (await handleFlow(s1, "sí, ya está patentado", deps1)) ?? "";
+  assert.match(r1, /marca/i);
+  assert.equal(s1.data.condicion, "usado");
+  // "no está patentado" empieza con "no": debe ser 0km, no matchear "patentad".
+  const s2 = newSession("t-pat-no");
+  const deps2 = fakeDeps();
+  await handleFlow(s2, "hola", deps2);
+  await handleFlow(s2, "1", deps2);
+  await handleFlow(s2, anioActual, deps2);
+  const r2 = (await handleFlow(s2, "no está patentado", deps2)) ?? "";
+  assert.match(r2, /marca/i);
+  assert.equal(s2.data.condicion, "0km");
 });
 
 test("un plan inválido pide reintentar sin romper el flujo", async () => {
