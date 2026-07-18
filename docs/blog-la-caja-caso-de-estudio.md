@@ -125,24 +125,21 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > cotizar tu cobertura. 1 Auto · 2 Hogar · 3 Accidentes personales · 4 Bici o
 > monopatín · 5 Comparar planes · 6 Hablar con un asesor. (O escribime tu consulta.)
 > **Yo:** 1
-> **Bot:** Genial, cotizamos tu seguro de auto. Dato 1 de 8: empecemos por el año
-> del vehículo.
+> **Bot:** Genial, cotizamos tu seguro de auto. Dato 1 de 7: empecemos por el año
+> del vehículo (entre 2006 y 2026). Si es 0km, escribilo.
 > **Yo:** 2020
-> **Bot:** Dato 2 de 8: ¿es 0km o usado? (un modelo de años anteriores también
-> puede ser 0km si es stock sin patentar)
-> **Yo:** usado
-> **Bot:** Dato 3 de 8: ¿de qué marca es?
+> **Bot:** Dato 2 de 7: ¿de qué marca es?
 > **Yo:** Toyota
-> **Bot:** Dato 4 de 8: ¿y el modelo?
+> **Bot:** Dato 3 de 7: ¿y el modelo?
 > **Yo:** Corolla
-> **Bot:** Dato 5 de 8: ¿la versión? (está en la cédula). Si no la tenés a mano,
+> **Bot:** Dato 4 de 7: ¿la versión? (está en la cédula). Si no la tenés a mano,
 > escribí "no sé".
 > **Yo:** no sé
-> **Bot:** Dato 6 de 8: ¿tiene GNC? Sí o no.
+> **Bot:** Dato 5 de 7: ¿tiene GNC? Sí o no.
 > **Yo:** no
-> **Bot:** Dato 7 de 8: ¿en qué código postal se guarda el auto?
+> **Bot:** Dato 6 de 7: ¿en qué código postal se guarda el auto?
 > **Yo:** 3011
-> **Bot:** Dato 8 de 8: al ser usado, la inspección se hace online cargando fotos.
+> **Bot:** Dato 7 de 7: al ser usado, la inspección se hace online cargando fotos.
 > Estos son los planes: Terceros Completo, Terceros Completo con Granizo (suma
 > granizo, cristales y auto sustituto) y Todo Riesgo con Franquicia (suma daños por
 > accidente). ¿Cuál te interesa: 1, 2 o 3?
@@ -152,11 +149,15 @@ auto, con el bot asesorando en lugar de tirarte un formulario:
 > mes. El precio final lo confirma un asesor. ¿Avanzamos? 1 Que me llame un asesor ·
 > 2 Contratar online · 3 Comparar otro plan.
 
-Los datos que pide (año, condición, marca, modelo, versión, GNC) son los mismos que el
+Los datos que pide (año, marca, modelo, versión, GNC) son los mismos que el
 cotizador web de La Caja, pero de a uno y conversacional, no un formulario de
-golpe. El "dato N de 8" no es decoración: preguntar a ciegas por chat, sin saber si
-faltan dos pasos o diez, es una causa conocida de abandono (la misma razón por la que
-un checkout muestra una barra de progreso). En hogar el contador se adapta al camino,
+golpe. Un detalle: no pregunto "¿0km o usado?" como paso aparte. Para un 2020 la
+respuesta es obvia (es usado), así que el año la lleva implícita; solo repregunto en
+el año en curso, que es el único ambiguo. Es lo que hace el cotizador real de La Caja,
+y le saca al bot esa pregunta que lo hace parecer que no razona. El "dato N de 7" no es
+decoración: preguntar a ciegas por chat, sin saber si faltan dos pasos o diez, es una
+causa conocida de abandono (la misma razón por la que un checkout muestra una barra de
+progreso). En hogar el contador se adapta al camino,
 porque un propietario asegura los metros y un inquilino el contenido: cada rama cuenta
 sus pasos reales. El menú hace el trabajo pesado del recorrido (y lo dejé corto: saqué
 la opción "tengo una duda", que sobraba porque una consulta libre se responde con solo

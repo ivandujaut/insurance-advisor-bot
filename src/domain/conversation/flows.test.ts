@@ -185,8 +185,7 @@ test("el flujo completo termina en un resumen y guarda el lead vía el puerto", 
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2020", deps); // año
-  await handleFlow(s, "usado", deps); // condición
+  await handleFlow(s, "2020", deps); // año (pasado → usado, sin repreguntar)
   await handleFlow(s, "Toyota", deps);
   await handleFlow(s, "Corolla", deps);
   await handleFlow(s, "XEI", deps); // versión
@@ -217,7 +216,6 @@ test('GNC: responder "no tiene" queda como sin GNC (no se invierte)', async () =
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
   await handleFlow(s, "2020", deps);
-  await handleFlow(s, "usado", deps);
   await handleFlow(s, "Toyota", deps);
   await handleFlow(s, "Corolla", deps);
   await handleFlow(s, "XEI", deps);
@@ -238,7 +236,6 @@ test("si falla el guardado del lead, NO confirma la solicitud", async () => {
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
   await handleFlow(s, "2020", deps);
-  await handleFlow(s, "usado", deps);
   await handleFlow(s, "Toyota", deps);
   await handleFlow(s, "Corolla", deps);
   await handleFlow(s, "no sé", deps);
@@ -254,8 +251,7 @@ test("auto usado dispara la nota de inspección online", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2018", deps); // año
-  await handleFlow(s, "usado", deps); // condición
+  await handleFlow(s, "2018", deps); // año (pasado → usado)
   await handleFlow(s, "Ford", deps);
   await handleFlow(s, "Ka", deps);
   await handleFlow(s, "no sé", deps); // versión salteada
@@ -264,13 +260,12 @@ test("auto usado dispara la nota de inspección online", async () => {
   assert.match(reply, /inspección se hace online/);
 });
 
-test("un 0km de un año anterior no pide inspección (condición explícita, no derivada del año)", async () => {
-  const s = newSession("t-0km-viejo");
+test("escribir 0km en el paso del año no pide inspección", async () => {
+  const s = newSession("t-0km");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2023", deps); // año anterior...
-  await handleFlow(s, "0km", deps); // ...pero es 0km de stock
+  await handleFlow(s, "0km", deps); // condición 0km, fusionada en el paso del año
   await handleFlow(s, "Fiat", deps);
   await handleFlow(s, "Cronos", deps);
   await handleFlow(s, "no sé", deps); // versión
@@ -280,12 +275,25 @@ test("un 0km de un año anterior no pide inspección (condición explícita, no 
   assert.equal(s.data.condicion, "0km");
 });
 
-test("no acepta una condición ambigua y la vuelve a pedir", async () => {
-  const s = newSession("t-cond-invalida");
+test("un año pasado no repregunta condición (avanza directo a la marca)", async () => {
+  const s = newSession("t-anio-pasado");
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2020", deps);
+  const reply = (await handleFlow(s, "2009", deps)) ?? "";
+  assert.match(reply, /marca/i);
+  assert.doesNotMatch(reply, /0km|usado/i, "no hace la pregunta redundante");
+  assert.equal(s.data.condicion, "usado");
+});
+
+test("solo el año en curso pide 0km/usado y no acepta una respuesta ambigua", async () => {
+  const s = newSession("t-cond-invalida");
+  const deps = fakeDeps();
+  const anioActual = String(new Date().getFullYear());
+  await handleFlow(s, "hola", deps);
+  await handleFlow(s, "1", deps);
+  const preg = (await handleFlow(s, anioActual, deps)) ?? "";
+  assert.match(preg, /0km.*usado/i, "el año en curso sí pregunta la condición");
   const reply = (await handleFlow(s, "no sé", deps)) ?? "";
   assert.match(reply, /0km.*usado/i);
   assert.equal(s.data.condicion, undefined, "no guarda una condición ambigua");
@@ -297,8 +305,7 @@ test("un plan inválido pide reintentar sin romper el flujo", async () => {
   const deps = fakeDeps();
   await handleFlow(s, "hola", deps);
   await handleFlow(s, "1", deps);
-  await handleFlow(s, "2021", deps);
-  await handleFlow(s, "usado", deps); // condición
+  await handleFlow(s, "2021", deps); // año (pasado → usado)
   await handleFlow(s, "Fiat", deps);
   await handleFlow(s, "Cronos", deps);
   await handleFlow(s, "no sé", deps);

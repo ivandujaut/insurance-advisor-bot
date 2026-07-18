@@ -554,6 +554,29 @@ qué dato, y qué resigné.
 - **Trade-off:** un texto más por pregunta (más verboso). A cambio, el usuario tiene
   expectativa de cuánto falta, que es lo que sostiene la finalización del flujo.
 
+### Decisión 21: fusionar la condición (0km/usado) en el paso del año
+
+- **Criterio:** no preguntar lo que ya se puede deducir. Preguntar el año y, aparte,
+  "¿es 0km o usado?" hace que para un 2009 el bot pida un dato de respuesta obvia. Eso
+  suma un paso y hace que el bot parezca no razonar, justo al arranque (donde más se
+  abandona).
+- **El benchmark:** ningún cotizador de auto pregunta 0km/usado como paso separado. El
+  cotizador real de La Caja lleva la condición implícita en el año; asegurarmiauto pone
+  el "0km" como una opción **dentro** del selector de año; los agregadores piden año +
+  marca + modelo + versión + GNC sin un paso "nuevo/usado". El patrón es unánime (ver
+  `docs/benchmark-anio-condicion.md`).
+- **La decisión:** el año lleva la condición.
+  - Año pasado → **usado**, se avanza sin repreguntar.
+  - **0km** (escrito por el usuario) → condición 0km, año en curso.
+  - Año en curso → **único caso ambiguo** (0km o usado del año): ahí sí una repregunta
+    corta, presentada como aclaración del año, no como un paso propio del recorrido.
+- **Efecto:** el flujo de auto pasa de 8 a 7 pasos para el caso común, y el indicador de
+  progreso (Decisión 20) se ajusta solo, porque la condición dejó de ser un paso.
+- **Trade-off:** se pierde el "0km de un modelo de año anterior" (0km de stock viejo),
+  un caso que ningún cotizador soporta y que se resuelve escribiendo *0km* o con el
+  asesor. A cambio, el caso mayoritario (usados) ahorra una pregunta y el bot razona
+  como la persona espera.
+
 ## 6. Cómo mediría el éxito
 
 Un bot no se evalúa por "responde lindo", sino por su efecto en el funnel. Las
@@ -658,6 +681,13 @@ métricas que instrumentaría:
 18. ~~Bajar la fricción del flujo de cotización.~~ **Hecho:** indicador de progreso
     `Dato N de M` en auto y hogar (consciente del camino propietario/inquilino), y un menú
     más corto que elimina la opción redundante "Tengo una duda". Ver Decisión 20.
+19. ~~No preguntar la condición cuando el año ya la determina.~~ **Hecho:** la condición
+    (0km/usado) se fusionó en el paso del año, como el cotizador real; un año pasado se
+    asume usado sin repreguntar, y solo el año en curso pide la aclaración. Ver Decisión 21
+    y `docs/benchmark-anio-condicion.md`.
+20. ~~Poder corregir un dato a mitad de la cotización sin empezar de cero.~~ **Hecho:**
+    "volver atrás" deshace el último dato y lo vuelve a preguntar (auto, hogar, accidentes,
+    bici), en vez de perder todo el progreso. Evento `quote_step_back`.
 
 ## 9. Qué demuestra este ejercicio
 
