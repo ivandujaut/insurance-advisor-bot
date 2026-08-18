@@ -1,24 +1,25 @@
 # Blueprint de Render: define el servicio para desplegar con un clic.
 # Render lee este archivo al conectar el repo (New > Blueprint) y crea el
 # servicio web a partir del Dockerfile. Ver docs/deploy.md para el paso a paso.
-
-# Base Postgres para persistir leads y eventos (los usa el dashboard /funnel).
-# free: sin costo pero se elimina a los ~30 días; para durar, pasar a un plan pago.
-databases:
-  - name: lacaja-db
-    plan: free
-    region: oregon
+#
+# La base Postgres NO se declara acá a propósito: vive en un proveedor externo
+# (Neon) y su URL se carga a mano como secreto. El Postgres free de Render expira
+# a los 30 días de creado y después lo borran con los datos adentro, que es
+# exactamente como se cayó la demo en agosto de 2026. Ver docs/adr/0002.
 
 services:
   - type: web
     # El nombre define la URL pública (<name>.onrender.com). Renombrado junto al
-    # repo (white-label); la base y el KV conservan su nombre interno a propósito:
-    # renombrarlos haría que el Blueprint los recree (y se pierden los datos).
+    # repo (white-label); el KV conserva su nombre interno a propósito:
+    # renombrarlo haría que el Blueprint lo recree (y se pierden las sesiones).
     name: insurance-advisor-bot
     runtime: docker
     dockerfilePath: ./Dockerfile
-    # free: sin costo pero se duerme tras inactividad (cold start ~30-50s).
-    # starter: ~US$7/mes, siempre caliente (recomendado para una demo activa).
+    # free: se duerme tras 15 min sin tráfico y tarda ~1 min en despertar. Ese
+    # minuto se evita con un ping externo cada 5 min (ver docs/deploy.md): Render
+    # da 750 instance-hours por workspace por mes y un servicio despierto 24/7
+    # consume 744 en un mes de 31 días, así que entra sin pagar, pero SOLO si
+    # este es el único free web service del workspace.
     plan: free
     healthCheckPath: /health
     autoDeploy: true # redeploya solo en cada push a la branch conectada
@@ -33,10 +34,17 @@ services:
       # spin-down (con jsonl el disco de Render es efímero y se borran).
       - key: PERSISTENCE
         value: postgres
+      # La connection string de Neon se pega a mano en Environment. Es un
+      # secreto (trae usuario y password), así que sync:false: no se versiona.
+      # Sin ella el server falla al arrancar con un mensaje claro, no con un
+      # ECONNREFUSED opaco (ver assertConfig en src/main/container.ts).
       - key: DATABASE_URL
-        fromDatabase:
-          name: lacaja-db
-          property: connectionString
+        sync: false
+      # Los managed externos exigen TLS. Las URLs de Neon ya vienen con
+      # sslmode=require (que el pool detecta solo), pero se deja explícito para
+      # que no dependa del formato de la URL que se pegue.
+      - key: DATABASE_SSL
+        value: "true"
       # Sesiones en Redis (Key Value): sobreviven al redeploy/spin-down y sirven
       # para más de una instancia (con "memory" se pierden en cada deploy).
       - key: SESSION_STORE
@@ -68,8 +76,12 @@ services:
         sync: false
 
   # Key Value (Redis) para el store de sesiones. free: 25 MB, suficiente para la
-  # demo. ipAllowList vacío = solo conexiones internas (el web service, misma
-  # región). Las sesiones tienen TTL, así que allkeys-lru no molesta.
+  # demo, y no expira por fecha como sí lo hacía el Postgres free. ipAllowList
+  # vacío = solo conexiones internas (el web service, misma región). Las sesiones
+  # tienen TTL, así que allkeys-lru no molesta.
+  # Límite del plan free: es in-memory only, o sea que si la instancia del KV se
+  # reinicia se pierden las sesiones abiertas. Sobrevive a los redeploys del web
+  # service (que es para lo que se puso), no a un reinicio del propio KV.
   - type: redis
     name: lacaja-kv
     plan: free
