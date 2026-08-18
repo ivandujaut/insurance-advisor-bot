@@ -68,8 +68,9 @@ sin `DATABASE_URL` falla con un mensaje claro y no levanta (`assertConfig` en
 `src/main/container.ts`). Así que la base va primero.
 
 1. Entrá a https://neon.com y creá una cuenta (free, sin tarjeta).
-2. Nuevo proyecto, región **US East** (la más cerca de Oregon, donde corre el
-   servicio; no es crítico, son unos ms).
+2. Nuevo proyecto, región **US West (Oregon)**, la misma en la que el
+   `render.yaml` declara el servicio y el Key Value. Una región del otro lado del
+   país agrega unos 50-60 ms a cada query, y `/funnel` hace varias por carga.
 3. Copiá la **connection string** del dashboard. Viene con `?sslmode=require`.
 
 Notas del plan free de Neon, para saber con qué se convive:
