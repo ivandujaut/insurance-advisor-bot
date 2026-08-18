@@ -147,12 +147,23 @@ Sin esto la demo funciona, pero con un minuto de espera en la primera visita.
 
 1. Creá una cuenta en https://uptimerobot.com (free: 50 monitores, intervalo de
    5 min, sin tarjeta).
-2. Nuevo monitor de tipo **keyword**, no de status code:
+2. Nuevo monitor de tipo **keyword**, no de status code. **El tipo se elige al
+   crear el monitor y después no se puede cambiar editándolo**: si quedó como
+   HTTP(s), hay que crear uno nuevo y borrar el viejo.
    - URL: `https://bot.ivandujaut.com/health` (el dominio propio, no el de
      Render: así el monitor también cubre que el DNS y el certificado sigan bien)
    - Keyword: `insurance-advisor-bot OK`
+   - Condición: **Keyword Not Exists**. Es fácil de invertir, y hacerlo lo deja
+     inservible. En UptimeRobot la condición elegida es la que pone el monitor en
+     DOWN: con `Exists` caería cuando *encuentra* la palabra (útil para detectar
+     textos de error), o sea que alertaría mientras la demo funciona y diría "up"
+     justo cuando se rompe. `Not Exists` alerta cuando la palabra esperada
+     desaparece, que es lo que queremos.
    - Intervalo: 5 minutos
 3. Alerta por mail a tu casilla.
+
+No hace falta tocar el método HTTP: los monitores keyword usan GET solos, porque
+necesitan el cuerpo de la respuesta.
 
 **Por qué keyword y no status code:** un 200 no prueba que la app esté viva. Una
 plataforma puede devolver 200 desde una página de error o un redirect a la raíz.
