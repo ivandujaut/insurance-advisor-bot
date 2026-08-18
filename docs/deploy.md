@@ -13,7 +13,7 @@ plan free.
 La base Postgres, en cambio, vive **afuera de Render**, en Neon. No es una
 preferencia técnica: el Postgres free de Render expira a los 30 días de creado y
 después Render lo borra con los datos adentro. La demo se cayó exactamente así en
-agosto de 2026. Ver [ADR 0002](adr/0002-base-de-datos-fuera-de-la-plataforma.md).
+agosto de 2026. Ver [ADR 0002](adr/0002-independencia-del-proveedor-en-el-deploy.md).
 
 El objetivo del setup es que la demo **no cueste nada y responda igual**, porque
 es una vitrina de portfolio: si un reclutador hace clic y tarda un minuto, se va.
@@ -25,6 +25,7 @@ es una vitrina de portfolio: si un reclutador hace clic y tarda un minuto, se va
 | Compute | Render | Free web service | No |
 | Postgres | Neon | Free | No. "None of these limits delete your data" |
 | Sesiones | Render Key Value | Free, 25 MB | No |
+| Dominio + TLS | Render + Cloudflare | Hobby incluye 2 dominios; certificados automáticos | No |
 | Keep-alive + alertas | UptimeRobot | Free, 50 monitores | No |
 
 ### El cold start y cómo se evita gratis
@@ -98,21 +99,56 @@ Notas del plan free de Neon, para saber con qué se convive:
    `DATABASE_URL`. Está declarada como `sync: false` en el blueprint justamente
    para que no viva en el repo. Guardá: Render redeploya solo.
 6. Cuando termina, quedás con una URL tipo
-   `https://insurance-advisor-bot.onrender.com`. Abrila: es la demo. Esa es la URL
-   para compartir.
+   `https://insurance-advisor-bot.onrender.com`. Abrila: es la demo.
 
 Verificá el health check: `https://<tu-url>/health` debe responder
 `insurance-advisor-bot OK`. Y entrá a `/funnel`: si la base quedó bien conectada,
 carga el dashboard (vacío al principio) en vez de tirar error.
 
-### 3. Mantenerlo despierto y enterarse cuando se cae
+### 3. El dominio propio (`bot.ivandujaut.com`)
+
+**La URL para compartir no es la de Render.** El dominio propio no es cosmético:
+es lo que hace que mudarse de plataforma no obligue a editar el portfolio, donde
+la URL de la demo está escrita en cuatro lugares. Con `bot.ivandujaut.com`, una
+mudanza futura es cambiar un registro DNS.
+
+Es gratis: el plan **Hobby** de Render (el de US$0) incluye **2 dominios propios**,
+y "Render automatically creates and renews TLS certificates for all custom
+domains" sin costo extra. El HTTP se redirige solo a HTTPS.
+
+**El cambio no rompe nada:** los servicios con dominio propio "also keep their
+`onrender.com` subdomain". Las dos URLs quedan funcionando en paralelo, así que
+cualquier link viejo sigue vivo y el portfolio se puede actualizar sin apuro.
+
+Pasos:
+
+1. En Render, servicio > **Settings > Custom Domains > Add Custom Domain**:
+   `bot.ivandujaut.com`. Render muestra el target del CNAME.
+2. En Cloudflare (ahí está el DNS de `ivandujaut.com`), agregá un **CNAME**:
+   - Name: `bot`
+   - Target: el que dio Render (`insurance-advisor-bot.onrender.com`)
+   - **Proxy status: DNS only (nube gris).** No es opcional al principio: la doc
+     de Render dice que así "requests go to Render instead of Cloudflare, so that
+     we can verify the domain and issue a certificate". Con la nube naranja, la
+     validación del certificado falla.
+3. En Cloudflare, **SSL/TLS > Overview**: modo **Full**. Con `Flexible` se arma
+   un loop de redirects, porque Render ya redirige todo el HTTP a HTTPS.
+4. Esperá a que Render marque el dominio como verificado y el certificado como
+   emitido. Recién ahí, si querés, podés pasar el registro a **Proxied**.
+
+**Cuidado con los AAAA:** Render todavía no soporta IPv6, y su guía avisa que los
+registros AAAA "can interfere with your custom domain's behavior on Render". Si
+hay alguno colgando de `bot`, borralo.
+
+### 4. Mantenerlo despierto y enterarse cuando se cae
 
 Sin esto la demo funciona, pero con un minuto de espera en la primera visita.
 
 1. Creá una cuenta en https://uptimerobot.com (free: 50 monitores, intervalo de
    5 min, sin tarjeta).
 2. Nuevo monitor de tipo **keyword**, no de status code:
-   - URL: `https://insurance-advisor-bot.onrender.com/health`
+   - URL: `https://bot.ivandujaut.com/health` (el dominio propio, no el de
+     Render: así el monitor también cubre que el DNS y el certificado sigan bien)
    - Keyword: `insurance-advisor-bot OK`
    - Intervalo: 5 minutos
 3. Alerta por mail a tu casilla.
@@ -201,6 +237,9 @@ use" al intentar el renombre manual después). Consecuencias prácticas:
 - **La URL vieja muere sin redirect** (a diferencia de GitHub, que sí redirige el
   repo renombrado). Si el webhook de WhatsApp apuntaba ahí, hay que actualizar la
   Callback URL en Meta.
+  (Desde que existe `bot.ivandujaut.com` esto pesa mucho menos: la URL pública ya
+  no es la de Render, así que un rename se absorbe reapuntando el CNAME. Es
+  exactamente para lo que está el dominio propio.)
 - **El servicio viejo hay que borrarlo a mano** (después de verificar el nuevo:
   health + una FAQ + una pregunta abierta, que es lo que prueba las dos keys).
 

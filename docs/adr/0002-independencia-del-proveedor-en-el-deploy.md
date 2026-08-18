@@ -1,9 +1,11 @@
-# ADR 0002: La base de datos vive fuera de la plataforma de compute
+# ADR 0002: Independencia del proveedor en el deploy de la demo
 
-- **Estado:** Aceptada (2026-08-17).
+- **Estado:** Aceptada (2026-08-18).
 - **Ámbito:** Infraestructura del deploy de la demo pública.
 - **Reemplaza:** la sección de persistencia de `docs/deploy.md`, que declaraba la
   base dentro del blueprint de Render.
+- **En una línea:** lo que la demo no puede perder (los datos y la URL) deja de
+  vivir adentro del proveedor de compute, sin dejar de costar US$0.
 
 ## Contexto
 
@@ -45,12 +47,17 @@ Dos cosas lo hicieron peor de lo necesario:
 
 ## Decisión
 
-**El compute se queda en Render free; la base de datos se va a Neon free.**
+**El compute se queda en Render free; la base de datos se va a Neon free; la URL
+pública deja de ser la del proveedor.**
 
 Nada en el `render.yaml` declara ya una base. `DATABASE_URL` pasa a ser un
 secreto (`sync: false`) que se carga a mano apuntando a Neon.
 
-Se agregan dos piezas gratuitas más:
+El criterio de fondo: el compute es reemplazable y perderlo no cuesta nada, así
+que puede vivir en una capa gratuita. Los datos y la URL no son reemplazables, así
+que no.
+
+Se agregan tres piezas gratuitas más:
 
 - **UptimeRobot** (free) pingueando `/health` cada 5 minutos. Cumple dos
   funciones con un solo monitor: mantiene el servicio despierto (Render duerme a
@@ -58,6 +65,27 @@ Se agregan dos piezas gratuitas más:
 - El monitor es de tipo **keyword** contra `insurance-advisor-bot OK`, no de
   status code, porque un 200 no prueba que la app esté viva: puede venir de una
   página de error o de un redirect de la infraestructura de adelante.
+- **Un dominio propio, `bot.ivandujaut.com`**, como URL pública de la demo. Ver
+  "El dominio propio" más abajo.
+
+### El dominio propio
+
+La URL de la demo está escrita en cuatro lugares del portfolio (los dos `demo:`
+del frontmatter y las dos líneas de cierre, en ES y EN). Mientras esa URL sea la
+del proveedor, **cada mudanza de plataforma es una edición de contenido**, y el
+contenido tiene su propio flujo de revisión: no es algo que uno quiera disparar
+por una decisión de infraestructura.
+
+Con `bot.ivandujaut.com` esa dependencia se corta: mudarse pasa a ser cambiar un
+registro DNS, y el portfolio no se entera.
+
+Es gratis. El plan Hobby de Render (el de US$0) incluye 2 dominios propios, y los
+certificados TLS se emiten y renuevan solos. Y no rompe nada en el camino: los
+servicios con dominio propio conservan también su subdominio `onrender.com`, así
+que las dos URLs conviven y ningún link viejo se cae.
+
+El monitor de UptimeRobot apunta al dominio propio, no al de Render, para que
+cubra también que el DNS y el certificado sigan sanos.
 
 ### Por qué Neon y no las otras
 
@@ -78,9 +106,11 @@ errores de conexión transitorios.
 ### Por qué el compute no se movió
 
 Se evaluaron Fly.io (~US$2/mes, sin free tier) y Vercel Hobby (US$0). Ambos
-resuelven el cold start mejor que Render, y Vercel además daría un dominio propio
-gratis, que arreglaría de raíz el problema de que la URL de la demo esté escrita
-en cuatro lugares del portfolio.
+resuelven el cold start de forma nativa, sin depender de un ping externo.
+
+El dominio propio no entró en esta comparación, aunque al principio parecía un
+punto a favor de Vercel: Render también lo da gratis (2 dominios en el plan
+Hobby, certificados incluidos). No era un argumento para mudarse.
 
 No se movió por tres razones:
 
@@ -106,6 +136,9 @@ No se movió por tres razones:
 - La demo deja de tener cold start, así que el aviso de "puede tardar unos
   segundos en despertar" del caso del portfolio deja de ser necesario.
 - Las caídas se saben el mismo día.
+- **Mudarse de plataforma deja de tocar el portfolio.** Es la consecuencia que
+  más vale a futuro: la próxima decisión de infraestructura se toma por sus
+  méritos, sin arrastrar una edición de contenido con su propio flujo de revisión.
 
 **En contra, y asumido:**
 
@@ -118,14 +151,17 @@ No se movió por tres razones:
 - **Un proveedor más que administrar.** La base ya no se crea sola con el
   blueprint: hay que crearla en Neon y pegar la URL a mano. Un paso más en el
   setup a cambio de que no se autodestruya.
-- **La URL sigue siendo `insurance-advisor-bot.onrender.com`**, o sea que sigue
-  atada al proveedor. Si algún día hay que mudarse, hay que volver a editar el
-  portfolio. La solución real es un dominio propio (`bot.ivandujaut.com`), que
-  queda pendiente.
+- **El DNS pasa a ser parte del deploy.** Antes, si la demo no cargaba, el
+  problema estaba en Render y nada más. Ahora puede estar en Render, en Neon, en
+  el CNAME de Cloudflare o en el certificado. Más superficie de falla a cambio de
+  independencia del proveedor. El monitor apunta al dominio propio justamente
+  para que esa superficie extra quede vigilada.
+- **Hay que acordarse de la nube gris.** El CNAME tiene que quedar en "DNS only"
+  hasta que Render emita el certificado, y el modo SSL de Cloudflare en "Full".
+  Son dos settings fáciles de olvidar y difíciles de diagnosticar después.
 
 ## Pendiente
 
-- Dominio propio para la demo, para que la URL deje de depender del proveedor.
 - Evaluar mover el rate limiter a un store compartido. Hoy la decisión de quedarse
   en un solo contenedor es en parte una consecuencia de que sea en memoria: si
   dejara de serlo, se abren opciones de compute que hoy están cerradas.
